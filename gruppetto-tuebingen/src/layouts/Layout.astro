@@ -1,0 +1,163 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Gruppetto Tübingen – lokale Rennrad-Community" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content={description} />
+    <title>{title} · Gruppetto Tübingen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;700;800&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav">
+        <a href="/" class="brand">Gruppetto Tübingen</a>
+        <div class="nav-links">
+          <a href="/rides">Rides</a>
+          <a href="/links">Links</a>
+          <a href="/ueber-uns">Über uns</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <p>Gruppetto Tübingen · Rennrad-Community aus Tübingen</p>
+      <p class="footer-links">
+        <a href="https://instagram.com/" target="_blank" rel="noopener">Instagram</a>
+        <span>·</span>
+        <a href="/links">Alle Links</a>
+      </p>
+    </footer>
+
+    <style is:global>
+      :root {
+        --color-bg: #0f1210;
+        --color-bg-alt: #171b18;
+        --color-text: #f2f4f1;
+        --color-text-muted: #a9b0aa;
+        --color-accent: #d7f542;
+        --font-title: "League Spartan", sans-serif;
+        --font-body: "Inter", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family: var(--font-body);
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-title);
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        line-height: 1.1;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      .site-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .nav {
+        max-width: 960px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+      }
+
+      .brand {
+        font-family: var(--font-title);
+        font-weight: 800;
+        font-size: 1.25rem;
+        text-decoration: none;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: var(--color-text-muted);
+        font-weight: 500;
+      }
+
+      .nav-links a:hover {
+        color: var(--color-accent);
+      }
+
+      .site-footer {
+        margin-top: 4rem;
+        padding: 2rem 1.5rem 3rem;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+      }
+
+      .footer-links a {
+        text-decoration: none;
+        color: var(--color-text-muted);
+      }
+
+      .footer-links a:hover {
+        color: var(--color-accent);
+      }
+
+      .btn {
+        display: inline-block;
+        background: var(--color-accent);
+        color: #0f1210;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 999px;
+        text-decoration: none;
+      }
+
+      .card {
+        background: var(--color-bg-alt);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,42 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+// Trag hier eure kommenden Rides ein – einfach neue Objekte hinzufügen.
+const rides = [
+  {
+    title: "Sonntags-Grundlagenride",
+    when: "Jeden Sonntag, 9:00 Uhr",
+    meet: "Treffpunkt: Neckarbrücke Tübingen",
+    level: "Locker · alle Levels",
+  },
+  {
+    title: "Feierabendrunde",
+    when: "Mittwochs, 18:00 Uhr (Sommerzeit)",
+    meet: "Treffpunkt: wird in der WhatsApp-Gruppe angekündigt",
+    level: "Zügig",
+  },
+];
+---
+
+<Layout title="Rides" description="Kommende Ausfahrten von Gruppetto Tübingen">
+  <section style="padding: 3rem 0;">
+    <h1>Rides</h1>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+      Unsere regelmäßigen und kommenden Ausfahrten. Genaue Treffpunkte und
+      kurzfristige Änderungen gibt's in der WhatsApp-Gruppe.
+    </p>
+
+    {
+      rides.map((ride) => (
+        <div class="card">
+          <h3 style="margin: 0 0 0.5rem;">{ride.title}</h3>
+          <p style="margin: 0; color: var(--color-text-muted);">{ride.when}</p>
+          <p style="margin: 0; color: var(--color-text-muted);">{ride.meet}</p>
+          <p style="margin: 0.5rem 0 0; color: var(--color-accent); font-weight: 600;">
+            {ride.level}
+          </p>
+        </div>
+      ))
+    }
+  </section>
+</Layout>

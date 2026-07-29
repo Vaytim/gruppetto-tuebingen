@@ -1,0 +1,33 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+// Passt die Links unten einfach mit euren echten URLs an.
+const links = [
+  { label: "Instagram", url: "https://instagram.com/", note: "Route-Reels & Ausfahrten" },
+  { label: "WhatsApp – Gruppetto Rookies", url: "https://chat.whatsapp.com/", note: "Für Neueinsteiger:innen" },
+  { label: "Strava Club", url: "https://www.strava.com/clubs", note: "Aktivitäten & Kudos" },
+];
+---
+
+<Layout title="Links" description="Alle wichtigen Links von Gruppetto Tübingen">
+  <section style="padding: 3rem 0;">
+    <h1>Links</h1>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+      Alles an einem Ort – Social Media, WhatsApp-Gruppen und mehr.
+    </p>
+
+    {
+      links.map((link) => (
+        <a href={link.url} target="_blank" rel="noopener" style="text-decoration: none;">
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="margin: 0 0 0.25rem;">{link.label}</h3>
+              <p style="margin: 0; color: var(--color-text-muted);">{link.note}</p>
+            </div>
+            <span style="color: var(--color-accent); font-weight: 700;">→</span>
+          </div>
+        </a>
+      ))
+    }
+  </section>
+</Layout>
