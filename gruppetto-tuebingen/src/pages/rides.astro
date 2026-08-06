@@ -87,18 +87,20 @@ const routes = [
 
     {
       routes.map((route) => (
-        <div class="card">
-          <h3 style="margin: 0 0 0.75rem;">{route.title}</h3>
-          <div style="background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); margin-bottom: 0.75rem;">
-            Streckenbild folgt
+        <div class="card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem;">
+            <div style="flex: 1 1 240px;">
+              <h3 style="margin: 0 0 0.75rem;">{route.title}</h3>
+              <p style="margin: 0; color: var(--color-text-muted);">
+                {route.distance} · {route.elevation}
+              </p>
+              <a href={route.komoot} target="_blank" rel="noopener" class="btn" style="margin-top: 1rem;">
+                Zur Route auf Komoot
+              </a>
+            </div>
+            <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
+              Streckenbild folgt
+            </div>
           </div>
-          <p style="margin: 0; color: var(--color-text-muted);">
-            {route.distance} · {route.elevation}
-          </p>
-          <a href={route.komoot} target="_blank" rel="noopener" class="btn" style="margin-top: 1rem;">
-            Zur Route auf Komoot
-          </a>
-        </div>
       ))
     }
   </section>
