@@ -23,30 +23,35 @@ const routes = [
     komoot: "https://www.komoot.de/tour/3107579171?ref=aso&share_token=ayTfFgHvYGZdibSgub9XGmMQ8EvotFr8nTJZtIXo7nAPHO5blk&t_s=referral&t_cid=route_share",
     distance: "40,5 km",
     elevation: "320 hm",
+    gpx: "2026-08-07_3178072259_Gruppetto - Wildgehege.gpx",
   },
   {
     title: "Route Remmingsheim - Abfahrt Obernau",
     komoot: "https://www.komoot.de/tour/2872772668?ref=aso&share_token=aN1dHrUuscpq2MVgFKhKswQlz03wEG4leQlEhfZCBJy46ctMdd&t_s=referral&t_cid=route_share",
     distance: "42,2 km",
     elevation: "330 hm",
+    gpx: "2026-08-07_3178073250_Gruppetto - Remmingsheim - Abfahrt Obernau.gpx",
   },
   {
     title: "Route Anstieg Gomaringen",
     komoot: "https://www.komoot.de/tour/2872010328?ref=aso&share_token=aBtwKAVuSfEaoloLvlk81wIlTYgJjC3GZpNni7NyQ59HKCBaO0&t_s=referral&t_cid=route_share",
     distance: "44,1 km",
     elevation: "430 hm",
+    gpx: "2026-08-07_3178073931_Gruppetto - Anstieg Gomaringen.gpx",
   },
   {
     title: "Route Kressbach - Dettinger Täle",
     komoot: "https://www.komoot.de/tour/2872010477?ref=aso&share_token=aw8bAQE3GblVSgYUOJT7GCX7wuU5wuDj4KFXrT7XOCGS6oyLLi&t_s=referral&t_cid=route_share",
     distance: "39,5 km",
     elevation: "320 hm",
+    gpx: "2026-08-07_3178074443_Gruppetto - Kressbach - Dettinger Täle.gpx",
   },
   {
     title: "Route Hornbach Climb - Ofterdingen",
     komoot: "https://www.komoot.de/tour/2872010689?ref=aso&share_token=aVZ58OnvVY3l8x75EeTBxinXafU48ZBwXNZchfzp0ksKfrAqED&t_s=referral&t_cid=route_share",
     distance: "39,4 km",
     elevation: "280 hm",
+    gpx: "2026-07-29_3152890761_Gruppetto - Hornbach Climb - Ofterdingen.gpx",
   },
   {
     title: "Route Hügellover",
@@ -87,7 +92,7 @@ const routes = [
     </p>
 
     {
-      routes.map((route) => (
+                routes.map((route, i) => (
         <div class="card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem;">
             <div style="flex: 1 1 240px;">
               <h3 style="margin: 0 0 0.75rem;">{route.title}</h3>
@@ -98,11 +103,39 @@ const routes = [
                 Zur Route auf Komoot
               </a>
             </div>
-            <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
-              Streckenbild folgt
-            </div>
+{route.gpx ? (
+              <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden;"></div>
+            ) : (
+              <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
+                Streckenbild folgt
+              </div>
+            )}
           </div>
       ))
     }
   </section>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script is:inline src="https://unpkg.com/leaflet-gpx@2.1.2/gpx.js"></script>
+    <script is:inline>
+      window.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("[data-gpx]").forEach(function (el) {
+          var gpxUrl = encodeURI("/" + el.dataset.gpx);
+          var map = L.map(el, { scrollWheelZoom: false });
+          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+            attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+            maxZoom: 19,
+          }).addTo(map);
+          new L.GPX(gpxUrl, {
+            async: true,
+            polyline_options: { color: "#d7f542", weight: 4 },
+          })
+            .on("loaded", function (e) {
+              map.fitBounds(e.target.getBounds());
+            })
+            .addTo(map);
+        });
+      });
+    </script>
 </Layout>
