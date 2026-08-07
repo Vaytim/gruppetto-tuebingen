@@ -140,11 +140,14 @@ const routes = [
           })
             .on("loaded", function (e) {
               map.fitBounds(e.target.getBounds());
-              e.target.eachLayer(function (layer) {
+              function stripMarkers(layer) {
                 if (layer instanceof L.Marker) {
-                  e.target.removeLayer(layer);
+                  layer.remove();
+                } else if (layer.eachLayer) {
+                  layer.eachLayer(stripMarkers);
                 }
-              });
+              }
+              e.target.eachLayer(stripMarkers);
             })
             .addTo(map);
         });
