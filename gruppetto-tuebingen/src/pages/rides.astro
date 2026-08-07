@@ -44,7 +44,7 @@ const routes = [
     komoot: "https://www.komoot.de/tour/2872010477?ref=aso&share_token=aw8bAQE3GblVSgYUOJT7GCX7wuU5wuDj4KFXrT7XOCGS6oyLLi&t_s=referral&t_cid=route_share",
     distance: "39,5 km",
     elevation: "320 hm",
-    gpx: "2026-08-07_3178074443_Gruppetto - Kressbach - Dettinger Täle.gpx",
+    gpx: "2026-08-07_3178074443_Gruppetto - Kressbach - Dettinger Täle.gpx",
   },
   {
     title: "Route Hornbach Climb - Ofterdingen",
@@ -123,14 +123,24 @@ const routes = [
         document.querySelectorAll("[data-gpx]").forEach(function (el) {
           var gpxUrl = encodeURI("/" + el.dataset.gpx);
           var map = L.map(el, { scrollWheelZoom: false });
-          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", {
             attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+            maxZoom: 19,
+          }).addTo(map);
+          map.createPane("labelsPane");
+          map.getPane("labelsPane").style.zIndex = 650;
+          map.getPane("labelsPane").style.pointerEvents = "none";
+          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
+            pane: "labelsPane",
             maxZoom: 19,
           }).addTo(map);
           new L.GPX(gpxUrl, {
             async: true,
             polyline_options: { color: "#d7f542", weight: 4 },
           })
+            .on("addpoint", function (e) {
+              e.point.remove();
+            })
             .on("loaded", function (e) {
               map.fitBounds(e.target.getBounds());
             })
