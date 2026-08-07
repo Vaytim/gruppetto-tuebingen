@@ -8,6 +8,7 @@ const rides = [
     when: "Jeden Mittwoch, 18:15 Uhr",
     meet: "Treffpunkt: Finanzamt Tübingen",
     level: "Locker · alle Levels",
+    cta: { label: "Zu den Routen", href: "#unsere-routen" },
   },
   {
     title: "Gravel-Treff",
@@ -79,12 +80,24 @@ const routes = [
           <p style="margin: 0.5rem 0 0; color: var(--color-accent); font-weight: 600;">
             {ride.level}
           </p>
+        {ride.cta && (
+          <a href={ride.cta.href} class="btn" style="margin-top: 1rem;">
+            {ride.cta.label}
+          </a>
+        )}
         </div>
       ))
     }
   </section>
 
-  <section style="padding: 3rem 0;">
+<section style="padding: 3rem 0;">
+  <h1>Unser Konzept</h1>
+  <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+    Inhalt folgt.
+  </p>
+</section>
+
+<section id="unsere-routen" style="padding: 3rem 0;">
     <h1>Unsere Routen</h1>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
       Unsere liebsten Strecken rund um Tübingen. Falls ihr bei unseren Afterwork Rides teilnehmen wollt, ist es sinnvol die Strecken vorab herunterzuladen. Es gibt keinen offiziellen Lead mehr!
