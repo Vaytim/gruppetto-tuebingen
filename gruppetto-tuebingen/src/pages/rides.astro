@@ -138,11 +138,13 @@ const routes = [
             async: true,
             polyline_options: { color: "#d7f542", weight: 4 },
           })
-            .on("addpoint", function (e) {
-              e.point.remove();
-            })
             .on("loaded", function (e) {
               map.fitBounds(e.target.getBounds());
+              e.target.eachLayer(function (layer) {
+                if (layer instanceof L.Marker) {
+                  e.target.removeLayer(layer);
+                }
+              });
             })
             .addTo(map);
         });
