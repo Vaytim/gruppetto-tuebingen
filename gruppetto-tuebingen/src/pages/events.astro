@@ -1,12 +1,139 @@
 ---
-import Layout from "../layouts/Layout.astro";
+  import Layout from "../layouts/Layout.astro";
+
+  const events = [
+  {
+  title: "Sommer-Grillfahrt an den Neckar",
+  dateISO: "2026-08-15",
+  dateLabel: "15. August 2026",
+  time: "17:30 Uhr",
+  location: "Treffpunkt: Neckarbrücke Tübingen",
+  level: "Locker · alle Levels",
+  description:
+  "Entspannte Ausfahrt entlang des Neckars mit anschließendem Grillen am Fluss. Bringt gute Laune und etwas für den Grill mit - Getränke sind organisiert.",
+  image: "https://picsum.photos/seed/gruppetto-grill/640/420",
+  },
+  {
+  title: "Nachtfahrt mit Lichterkette",
+  dateISO: "2026-08-29",
+  dateLabel: "29. August 2026",
+  time: "20:30 Uhr",
+  location: "Treffpunkt: Finanzamt Tübingen",
+  level: "Mittel · Beleuchtung Pflicht",
+  description:
+  "Wenn es dunkel wird, drehen wir eine ruhige Runde durchs Umland - mit Lichtern an den Rädern und guter Stimmung. Helm und Licht sind Pflicht.",
+  image: "https://picsum.photos/seed/gruppetto-night/640/420",
+  },
+  {
+    title: "Rookie-Workshop: Erste Gruppenfahrt",
+    dateISO: "2026-09-12",
+    dateLabel: "12. September 2026",
+    time: "10:00 Uhr",
+    location: "Treffpunkt: Technisches Rathaus",
+    level: "Einsteiger · geführt",
+    description:
+    "Für alle, die noch nie in der Gruppe gefahren sind: Wir erklären Handzeichen, Windschattenfahren und Verhalten im Verkehr, bevor es auf eine kurze Übungsrunde geht.",
+    image: "https://picsum.photos/seed/gruppetto-rookie/640/420",
+    },
+    {
+    title: "Gruppetto-Vereinsausflug: Schwäbische Alb",
+    dateISO: "2026-09-27",
+    dateLabel: "27. September 2026",
+    time: "08:00 Uhr",
+    location: "Treffpunkt: Bahnhof Tübingen",
+    level: "Anspruchsvoll · Höhenmeter",
+    description:
+    "Ein ganzer Tag auf der Alb mit ordentlich Höhenmetern, tollen Ausblicken und einer wohlverdienten Einkehr zum Abschluss. Verpflegung für unterwegs nicht vergessen!",
+    image: "https://picsum.photos/seed/gruppetto-alb/640/420",
+    },
+
+{
+  title: "Herbst-Ausfahrt & Saisonabschluss",
+  dateISO: "2026-10-17",
+  dateLabel: "17. Oktober 2026",
+  time: "13:00 Uhr",
+  location: "Treffpunkt: Finanzamt Tübingen",
+  level: "Locker · alle Levels",
+  description:
+  "Wir lassen die Saison gemeinsam ausklingen: eine entspannte Fahrt durchs bunte Herbstlaub, danach Punsch und Rückblick auf ein tolles Jahr.",
+  image: "https://picsum.photos/seed/gruppetto-herbst/640/420",
+  },
+];
+
+const today = new Date(new Date().toDateString());
+
+const upcomingEvents = events
+.filter((event) => new Date(event.dateISO) >= today)
+.sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime());
 ---
 
-const events = [
-  { Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: Mehr gemeinsame Events! Wer Wären wir, wenn wir dem nicht nachkommen.
-    Hier findet ihr unseren aktuellen Eventkalender und alle, von uns organisierten Rides. }
+<Layout title="Events">
+<section class="events-hero">
+<h1>Events</h1>
+<p>Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
 
+</section>
 
+<section class="events-section">
+{upcomingEvents.length > 0 ? (
+<div class="events-grid">
+{upcomingEvents.map((event) => (
+<article class="event-card" tabindex="0">
 
+<div class="event-card-front">
+<p class="event-date">{event.dateLabel} &middot; {event.time}</p>
+<h3>{event.title}</h3>
+<p class="event-location">{event.location}</p>
+<p class="event-level">{event.level}</p>
+</div>
 
-]
+<div class="event-card-reveal">
+<img src={event.image} alt={event.title} loading="lazy" />
+<div class="event-card-reveal-text">
+<p>{event.description}</p>
+</div>
+</div>
+
+</article>
+))}
+</div>
+) : (
+<p class="no-events">Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
+)}
+
+</section>
+</Layout>
+
+<style>
+.events-hero {
+padding: 4rem 0 2rem;
+}
+.events-hero p {
+max-width: 42rem;
+color: var(--color-text-muted);
+font-size: 1.1rem;
+margin-top: 1rem;
+}
+.events-section {
+padding-bottom: 4rem;
+}
+.events-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+gap: 1.75rem;
+}
+.event-card { position: relative; background: var(--color-bg-alt); border-radius: 16px; padding: 1.5rem; overflow: hidden; cursor: default; transition: transform 0.35s ease, box-shadow 0.35s ease; will-change: transform; outline: none; }
+.event-card:hover, .event-card:focus-within { transform: scale(1.08); box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45); z-index: 5; }
+.event-card-front { position: relative; transition: opacity 0.3s ease; }
+.event-card:hover .event-card-front, .event-card:focus-within .event-card-front { opacity: 0; }
+.event-date { margin: 0 0 0.5rem; color: var(--color-accent); font-weight: 600; }
+.event-card h3 { margin: 0 0 0.5rem; }
+.event-location, .event-level { margin: 0; color: var(--color-text-muted); }
+.event-level { margin-top: 0.5rem; }
+.event-card-reveal { position: absolute; inset: 0; border-radius: 16px; opacity: 0; visibility: hidden; transition: opacity 0.35s ease; pointer-events: none; overflow: hidden; }
+.event-card:hover .event-card-reveal, .event-card:focus-within .event-card-reveal { opacity: 1; visibility: visible; }
+.event-card-reveal img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.event-card-reveal-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem; background: linear-gradient(180deg, rgba(23, 27, 24, 0.15) 0%, rgba(23, 27, 24, 0.75) 45%, rgba(23, 27, 24, 0.97) 75%); }
+.event-card-reveal-text p { margin: 0; color: var(--color-text); font-size: 0.95rem; line-height: 1.4; }
+.no-events { color: var(--color-text-muted); }
+</style>
