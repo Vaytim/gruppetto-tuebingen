@@ -3,8 +3,80 @@
   ---
 
   <Layout title="Shop">
-  <section style="padding: 4rem 0 3rem;">
-  <h1 style="font-size: 2.75rem; margin-bottom: 1rem;">Shop</h1>
-  <p style="font-size: 1.15rem; color: var(--color-text-muted); max-width: 40rem;">Unser Gruppetto-Shop ist gerade im Aufbau – schaut bald wieder vorbei!</p>
+  <section class="shop-hero">
+  <h1>Shop</h1>
+  <p class="shop-intro">Hier findet ihr unsere Gruppetto-Ausrüstung. Finale Bilder und Kauf-Links folgen in Kürze.</p>
+  </section>
+
+  <section class="shop-row">
+  <div class="shop-info">
+  <h2>Season 2026 Kit</h2>
+  <p class="shop-text">Platzhaltertext für das Season 2026 Kit – wird noch ergänzt.</p>
+  <p class="shop-partner-note">Der Kauf erfolgt über unseren Partner Spatzwear.</p>
+  <a href="#" class="btn shop-buy">Kaufen</a>
+  </div>
+  <div class="shop-carousel">
+  <img src="https://picsum.photos/seed/gruppetto-kit-1/600/600" alt="Season 2026 Kit Ansicht 1" class="carousel-img active" />
+  <img src="https://picsum.photos/seed/gruppetto-kit-2/600/600" alt="Season 2026 Kit Ansicht 2" class="carousel-img" />
+  <img src="https://picsum.photos/seed/gruppetto-kit-3/600/600" alt="Season 2026 Kit Ansicht 3" class="carousel-img" />
+  <img src="https://picsum.photos/seed/gruppetto-kit-4/600/600" alt="Season 2026 Kit Ansicht 4" class="carousel-img" />
+  <img src="https://picsum.photos/seed/gruppetto-kit-5/600/600" alt="Season 2026 Kit Ansicht 5" class="carousel-img" />
+  </div>
+  </section>
+
+  <section class="shop-row shop-row-reverse">
+  <div class="shop-carousel">
+  <img src="https://picsum.photos/seed/gruppetto-sticker-1/600/600" alt="Sticker Set Ansicht 1" class="carousel-img active" />
+  <img src="https://picsum.photos/seed/gruppetto-sticker-2/600/600" alt="Sticker Set Ansicht 2" class="carousel-img" />
+  <img src="https://picsum.photos/seed/gruppetto-sticker-3/600/600" alt="Sticker Set Ansicht 3" class="carousel-img" />
+  <img src="https://picsum.photos/seed/gruppetto-sticker-4/600/600" alt="Sticker Set Ansicht 4" class="carousel-img" />
+  <img src="https://picsum.photos/seed/gruppetto-sticker-5/600/600" alt="Sticker Set Ansicht 5" class="carousel-img" />
+  </div>
+  <div class="shop-info">
+  <h2>Gruppetto Sticker Set</h2>
+  <p class="shop-text">Platzhaltertext für das Sticker Set – wird noch ergänzt.</p>
+  <div class="shop-controls">
+  <div class="quantity-control">
+  <button type="button" class="qty-btn" data-action="decrease">−</button>
+  <input type="number" class="qty-input" value="1" min="1" />
+  <button type="button" class="qty-btn" data-action="increase">+</button>
+  </div>
+  <div class="variant-control">
+  <button type="button" class="variant-btn active" data-variant="weiß">Weiß</button>
+  <button type="button" class="variant-btn" data-variant="schwarz">Schwarz</button>
+  </div>
+  </div>
+  <a href="#" class="btn shop-buy">Kaufen</a>
+  </div>
   </section>
   </Layout>
+
+  <script>
+  document.querySelectorAll(".shop-carousel").forEach((carousel) => { const imgs = carousel.querySelectorAll("img"); let idx = 0; setInterval(() => { imgs[idx].classList.remove("active"); idx = (idx + 1) % imgs.length; imgs[idx].classList.add("active"); }, 3000); });
+  document.querySelectorAll(".quantity-control").forEach((control) => { const input = control.querySelector(".qty-input"); const dec = control.querySelector('[data-action="decrease"]'); const inc = control.querySelector('[data-action="increase"]'); dec.addEventListener("click", () => { input.value = Math.max(1, parseInt(input.value || "1", 10) - 1); }); inc.addEventListener("click", () => { input.value = parseInt(input.value || "1", 10) + 1; }); });
+  document.querySelectorAll(".variant-control").forEach((control) => { control.querySelectorAll(".variant-btn").forEach((btn) => { btn.addEventListener("click", () => { control.querySelectorAll(".variant-btn").forEach((b) => b.classList.remove("active")); btn.classList.add("active"); }); }); });
+  </script>
+
+  <style>
+  .shop-hero { padding: 4rem 0 2rem; }
+  .shop-hero h1 { font-size: 2.75rem; margin-bottom: 1rem; }
+  .shop-intro { color: var(--color-text-muted); font-size: 1.1rem; max-width: 42rem; }
+  .shop-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center; padding: 3rem 0; }
+  .shop-row-reverse .shop-info { order: 2; }
+  .shop-info h2 { margin: 0 0 0.75rem; font-size: 1.75rem; }
+  .shop-text { color: var(--color-text-muted); margin-bottom: 0.75rem; }
+  .shop-partner-note { color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .shop-buy { margin-top: 0.5rem; }
+  .shop-carousel { position: relative; aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden; background: var(--color-bg-alt); }
+  .carousel-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.6s ease; }
+  .carousel-img.active { opacity: 1; }
+  .shop-controls { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .quantity-control { display: flex; align-items: center; gap: 0.5rem; }
+  .qty-btn { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--color-text-muted); background: transparent; color: var(--color-text); font-size: 1.1rem; cursor: pointer; }
+  .qty-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .qty-input { width: 3rem; text-align: center; background: var(--color-bg-alt); color: var(--color-text); border: 1px solid var(--color-text-muted); border-radius: 8px; padding: 0.4rem; }
+  .variant-control { display: flex; gap: 0.5rem; }
+  .variant-btn { padding: 0.5rem 1rem; border-radius: 999px; border: 1px solid var(--color-text-muted); background: transparent; color: var(--color-text); cursor: pointer; }
+  .variant-btn.active { border-color: var(--color-accent); color: var(--color-accent); }
+  @media (max-width: 768px) { .shop-row { grid-template-columns: 1fr; } .shop-row-reverse .shop-info { order: 0; } }
+  </style>
