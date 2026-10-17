@@ -17,6 +17,17 @@ So funktioniert's: Anmeldeformular auf `/events` → Platz wird 30 Min. reservie
 
 Gespeichert wird in **Netlify Blobs** (in eurer Netlify-Site enthalten, nichts extra einzurichten).
 
+## Testen in StackBlitz (ohne Netlify, ohne Stripe)
+
+`npm run dev` startet automatisch den **Testmodus**, solange kein `STRIPE_SECRET_KEY` gesetzt ist:
+
+1. `/events` → bei einem Event mit offener Anmeldung auf „Anmelden" → Formular ausfüllen.
+2. Statt Stripe kommt eine orange markierte **Test-Bezahlseite** → „Testzahlung abschließen" (oder „Abbrechen" zum Testen des Abbruchs).
+3. **Danke-Seite** mit Startnummer → Button „Testmodus: Bestätigungsmail ansehen".
+4. Alle Test-Mails: `/api/test-postfach` · Teilnehmerliste: `/api/teilnehmer` (Passwort `test`).
+
+Die Testdaten liegen nur im Arbeitsspeicher; ein Neustart des Dev-Servers setzt alles zurück. Die Test-Seiten (`dev/`) werden nie auf Netlify deployt.
+
 ## Einmalige Einrichtung
 
 ### 1. Stripe-Konto
