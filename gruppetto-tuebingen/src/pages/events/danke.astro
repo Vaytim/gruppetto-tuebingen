@@ -17,6 +17,7 @@ const titles = Object.fromEntries(events.map((e) => [e.id, `${e.title} · ${e.da
     </div>
 
     <p id="message">Das dauert meist nur ein paar Sekunden.</p>
+    <a class="test-mail" id="test-mail" href="#" hidden>🧪 Testmodus: Bestätigungsmail ansehen →</a>
     <a class="back" href="/events">← Zurück zu den Events</a>
   </section>
 </Layout>
@@ -42,6 +43,11 @@ const titles = Object.fromEntries(events.map((e) => [e.id, `${e.title} · ${e.da
         document.getElementById("start-number").textContent = data.startNumber;
         document.getElementById("number-card").hidden = false;
         message.textContent = "Wir haben dir eine Bestätigung mit Startnummer und Zahlungseingang per E-Mail geschickt. Schau auch im Spam-Ordner nach.";
+        if (data.testMailUrl) {
+          const link = document.getElementById("test-mail");
+          link.href = data.testMailUrl;
+          link.hidden = false;
+        }
         return;
       }
     } catch {
@@ -68,5 +74,7 @@ const titles = Object.fromEntries(events.map((e) => [e.id, `${e.title} · ${e.da
   .number-card p { margin: 0; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
   .number-card strong { display: block; font-family: var(--font-title); font-size: 4.5rem; line-height: 1.1; color: var(--color-accent); }
   #message { color: var(--color-text-muted); line-height: 1.5; }
+  .test-mail { display: block; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 12px; background: #ffb020; color: #3d2600; font-weight: 600; text-decoration: none; width: fit-content; }
+  .test-mail[hidden] { display: none; }
   .back { display: inline-block; margin-top: 1.5rem; color: var(--color-accent); }
 </style>
