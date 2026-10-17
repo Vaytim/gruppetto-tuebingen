@@ -5,6 +5,7 @@ import { completeRegistration } from "../netlify/lib/complete-registration";
 import { releaseSeat, updateLedger } from "../netlify/lib/registrations";
 import { escapeHtml, ledgerStore } from "../netlify/lib/services";
 import { isTestMode, testCheckouts } from "../netlify/lib/testmode";
+import { recordTestPaymentDetails } from "../netlify/lib/testmode-accounting";
 
 const euro = (cents: number) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
 const redirect = (to: string) => new Response(null, { status: 303, headers: { location: to } });
@@ -29,7 +30,10 @@ export default async (req: Request) => {
         amountPaid: checkout.amount,
         paidAt: new Date().toISOString(),
         paymentIntent: `pi_test_${crypto.randomUUID().slice(0, 12)}`,
-      });
+      }, () =>
+        // Gebühr wie bei Stripe (1,5 % + 0,25 €) für die Verwaltungsseite
+        recordTestPaymentDetails(ledgerStore(), event.id, event.registration?.firstStartNumber ?? 1, checkout.reservationId, checkout.amount),
+      );
       return redirect(checkout.successUrl);
     }
     await updateLedger(ledgerStore(), event.id, event.registration?.firstStartNumber ?? 1, (l) =>
