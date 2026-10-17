@@ -102,7 +102,7 @@ const page = (title: string, body: string) =>
     `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>${h(title)} · Gruppetto Verwaltung</title>
 <style>
-:root{--bg:#0f1210;--alt:#171b18;--line:#2a302b;--text:#f2f4f1;--muted:#a9b0aa;--acc:#d7f542;--warn:#ffb3a7}
+:root{--bg:#0d1e40;--alt:#021859;--line:#04328c;--text:#f2f2f2;--muted:rgba(242,242,242,.72);--acc:#f2f2f2;--blue:#0f4abf;--warn:#ffb3a7}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,system-ui,sans-serif}
 main{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}a{color:var(--acc)}h1{margin:.2rem 0 1.5rem;font-size:1.8rem}h2{margin:2.5rem 0 .8rem;font-size:1.2rem}
 .muted{color:var(--muted)}.kicker{color:var(--acc);font-weight:600;margin:0}
@@ -112,12 +112,12 @@ main{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}a{color:var(--acc)}h1
 table{border-collapse:collapse;width:100%;font-size:.92rem}th,td{padding:.6rem .8rem;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{color:var(--muted);font-weight:500}td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}tr:last-child td{border-bottom:0}
 tfoot td{font-weight:700;border-top:1px solid var(--line)}
-.tag{display:inline-block;padding:.1rem .55rem;border-radius:99px;font-size:.8rem;background:#253017;color:var(--acc)}
-.tag.ref{background:#3a2420;color:var(--warn)}.tag.wait{background:#2a2f2b;color:var(--muted)}
+.tag{display:inline-block;padding:.1rem .55rem;border-radius:99px;font-size:.8rem;background:var(--blue);color:var(--text)}
+.tag.ref{background:#3a2420;color:var(--warn)}.tag.wait{background:var(--line);color:var(--text)}
 .actions{display:flex;flex-wrap:wrap;gap:.6rem;margin:0 0 1rem}
-.btn{display:inline-block;border:0;border-radius:99px;padding:.55rem 1rem;background:var(--acc);color:#0f1210;font:600 .9rem Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}
+.btn{display:inline-block;border:0;border-radius:99px;padding:.55rem 1rem;background:var(--blue);color:var(--text);font:600 .9rem Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}
 .btn.sec{background:var(--alt);color:var(--text);border:1px solid var(--line)}
-.note{background:var(--alt);border-left:3px solid var(--acc);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
+.note{background:var(--alt);border-left:3px solid var(--blue);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
 .warn{border-left-color:var(--warn)}
 </style><main>${body}</main></html>`,
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
