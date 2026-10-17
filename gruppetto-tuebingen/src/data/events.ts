@@ -79,17 +79,15 @@ export const events: GruppettoEvent[] = [
     registration: { price: 20, capacity: 100 },
   },
   {
-    id: "2026-saisonabschluss",
-    title: "Herbst-Ausfahrt & Saisonabschluss",
-    dateISO: "2026-10-17",
-    dateLabel: "17. Oktober 2026",
-    time: "13:00 Uhr",
-    location: "Treffpunkt: Finanzamt Tübingen",
-    level: "Locker · alle Levels",
-    description:
-      "Wir lassen die Saison gemeinsam ausklingen: eine entspannte Fahrt durchs bunte Herbstlaub, danach Punsch und Rückblick auf ein tolles Jahr.",
-    image: "https://picsum.photos/seed/gruppetto-herbst/640/420",
-    registration: { price: 20, capacity: 100, closesAt: "2026-10-17T23:59" },
+    id: "2026-christmas-ride",
+    title: "Christmas Ride",
+    dateISO: "2026-12-12",
+    dateLabel: "12. Dezember 2026",
+    time: "12:00 Uhr",
+    location: "Treffpunkt: Gartenstraße 235, Tübingen",
+    level: "Infos folgen",
+    description: "Unser Christmas Ride zum Jahresende. Die Route wird noch veröffentlicht.",
+    image: "https://picsum.photos/seed/gruppetto-christmas/640/420",
   },
 ];
 
