@@ -1,0 +1,275 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { events, formatEuro, registrationClosesAt } from "../data/events";
+
+const today = new Date(new Date().toDateString());
+
+const upcomingEvents = events
+  .filter((event) => new Date(event.dateISO) >= today)
+  .sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime());
+---
+
+<Layout title="Events">
+  <section class="events-hero">
+    <h1>Events</h1>
+    <p>Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
+  </section>
+
+  <p class="notice" id="cancel-notice" hidden>
+    Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
+  </p>
+
+  <section class="events-section">
+    {upcomingEvents.length > 0 ? (
+      <div class="events-grid">
+        {upcomingEvents.map((event) => (
+          <article class="event-card" tabindex="0">
+            <div class="event-card-front">
+              <p class="event-date">{event.dateLabel} &middot; {event.time}</p>
+              <h3>{event.title}</h3>
+              <p class="event-location">{event.location}</p>
+              <p class="event-level">{event.level}</p>
+            </div>
+
+            <div class="event-card-reveal">
+              <img src={event.image} alt={event.title} loading="lazy" />
+              <div class="event-card-reveal-text">
+                <p>{event.description}</p>
+              </div>
+            </div>
+
+            {event.registration && (
+              <div class="event-card-actions">
+                <button
+                  type="button"
+                  class="btn-register"
+                  data-event-id={event.id}
+                  data-event-title={event.title}
+                  data-event-date={`${event.dateLabel} · ${event.time}`}
+                  data-event-price={formatEuro(event.registration.price)}
+                  data-closes-at={registrationClosesAt(event).toISOString()}
+                  disabled
+                >
+                  Anmelden · {formatEuro(event.registration.price)}
+                </button>
+                <p class="seats" data-seats-for={event.id}>Plätze werden geladen …</p>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    ) : (
+      <p class="no-events">Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
+    )}
+  </section>
+
+  <dialog id="register-dialog" aria-labelledby="register-title">
+    <form id="register-form" novalidate>
+      <button type="button" class="dialog-close" aria-label="Schließen" data-close>×</button>
+      <p class="event-date" id="register-date"></p>
+      <h2 id="register-title">Anmeldung</h2>
+
+      <label>
+        Vor- und Nachname
+        <input name="name" autocomplete="name" required minlength="2" maxlength="100" />
+      </label>
+      <label>
+        E-Mail (für Startnummer &amp; Bestätigung)
+        <input name="email" type="email" autocomplete="email" required maxlength="200" />
+      </label>
+      <label class="checkbox">
+        <input name="acceptTerms" type="checkbox" required />
+        <span>
+          Ich habe die <a href="/rechtliches" target="_blank">Teilnahmebedingungen und die Datenschutzhinweise</a> gelesen und nehme auf eigene Verantwortung teil.
+        </span>
+      </label>
+
+      <p class="form-error" role="alert" hidden></p>
+
+      <button type="submit" class="btn-pay">Weiter zur Bezahlung · <span id="register-price"></span></button>
+      <p class="form-hint">Sichere Bezahlung über Stripe (Karte, Apple Pay, Google Pay). Dein Platz ist 30 Minuten für dich reserviert.</p>
+    </form>
+  </dialog>
+</Layout>
+
+<script>
+  const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
+  const form = document.getElementById("register-form") as HTMLFormElement;
+  const errorBox = form.querySelector(".form-error") as HTMLElement;
+  const payButton = form.querySelector(".btn-pay") as HTMLButtonElement;
+  let currentEventId = "";
+
+  type Status = Record<string, { capacity: number; taken: number; remaining: number; open: boolean }>;
+
+  function setSeats(eventId: string, text: string, soldOut = false) {
+    const el = document.querySelector<HTMLElement>(`[data-seats-for="${eventId}"]`);
+    if (el) {
+      el.textContent = text;
+      el.classList.toggle("sold-out", soldOut);
+    }
+  }
+
+  async function loadStatus() {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(".btn-register");
+    let status: Status = {};
+    try {
+      const res = await fetch("/api/event-status", { cache: "no-store" });
+      if (res.ok) status = await res.json();
+    } catch {
+      /* offline oder lokale Vorschau ohne Backend */
+    }
+    buttons.forEach((btn) => {
+      const id = btn.dataset.eventId!;
+      const s = status[id];
+      const closed = Date.now() >= new Date(btn.dataset.closesAt!).getTime();
+      if (closed) {
+        btn.disabled = true;
+        btn.textContent = "Anmeldung geschlossen";
+        setSeats(id, "");
+      } else if (!s) {
+        btn.disabled = true;
+        setSeats(id, "Anmeldung gerade nicht verfügbar");
+      } else if (s.remaining <= 0) {
+        btn.disabled = true;
+        btn.textContent = "Ausgebucht";
+        setSeats(id, `Alle ${s.capacity} Plätze vergeben`, true);
+      } else {
+        btn.disabled = false;
+        setSeats(id, `Noch ${s.remaining} von ${s.capacity} Plätzen frei`);
+      }
+    });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>(".btn-register").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentEventId = btn.dataset.eventId!;
+      document.getElementById("register-title")!.textContent = btn.dataset.eventTitle!;
+      document.getElementById("register-date")!.textContent = btn.dataset.eventDate!;
+      document.getElementById("register-price")!.textContent = btn.dataset.eventPrice!;
+      errorBox.hidden = true;
+      dialog.showModal();
+      (form.elements.namedItem("name") as HTMLInputElement).focus();
+    });
+  });
+
+  dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) dialog.close(); // Klick auf den Hintergrund
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.hidden = true;
+    if (!form.reportValidity()) return;
+
+    const data = new FormData(form);
+    payButton.disabled = true;
+    const label = payButton.innerHTML;
+    payButton.textContent = "Einen Moment …";
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          eventId: currentEventId,
+          name: data.get("name"),
+          email: data.get("email"),
+          acceptTerms: data.get("acceptTerms") === "on",
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.url) {
+        window.location.href = body.url; // → Stripe Checkout
+        return;
+      }
+      errorBox.textContent = body.error ?? "Etwas ist schiefgelaufen. Bitte versuch es erneut.";
+      errorBox.hidden = false;
+      if (body.soldOut) loadStatus();
+    } catch {
+      errorBox.textContent = "Keine Verbindung. Bitte prüf dein Internet und versuch es erneut.";
+      errorBox.hidden = false;
+    }
+    payButton.disabled = false;
+    payButton.innerHTML = label;
+  });
+
+  if (new URLSearchParams(location.search).has("abgebrochen")) {
+    document.getElementById("cancel-notice")!.hidden = false;
+  }
+
+  loadStatus();
+</script>
+
+<style>
+  .events-hero {
+    padding: 4rem 0 2rem;
+  }
+  .events-hero p {
+    max-width: 42rem;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    margin-top: 1rem;
+  }
+  .events-section {
+    padding-bottom: 4rem;
+  }
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.75rem;
+  }
+  .event-card { position: relative; display: flex; flex-direction: column; background: var(--color-bg-alt); border-radius: 16px; padding: 1.5rem; overflow: hidden; cursor: default; transition: transform 0.35s ease, box-shadow 0.35s ease; will-change: transform; outline: none; }
+  .event-card:hover, .event-card:focus-within { transform: scale(1.08); box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45); z-index: 5; }
+  .event-card-front { position: relative; flex: 1; transition: opacity 0.3s ease; }
+  .event-card:hover .event-card-front, .event-card:focus-within .event-card-front { opacity: 0; }
+  .event-date { margin: 0 0 0.5rem; color: var(--color-accent); font-weight: 600; }
+  .event-card h3 { margin: 0 0 0.5rem; }
+  .event-location, .event-level { margin: 0; color: var(--color-text-muted); }
+  .event-level { margin-top: 0.5rem; }
+  .event-card-reveal { position: absolute; inset: 0; z-index: 1; border-radius: 16px; opacity: 0; visibility: hidden; transition: opacity 0.35s ease; pointer-events: none; overflow: hidden; }
+  .event-card:hover .event-card-reveal, .event-card:focus-within .event-card-reveal { opacity: 1; visibility: visible; }
+  .event-card-reveal img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .event-card-reveal-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem 1.25rem 6.5rem; background: linear-gradient(180deg, rgba(23, 27, 24, 0.15) 0%, rgba(23, 27, 24, 0.75) 45%, rgba(23, 27, 24, 0.97) 75%); }
+  .event-card-reveal-text p { margin: 0; color: var(--color-text); font-size: 0.95rem; line-height: 1.4; }
+  .no-events { color: var(--color-text-muted); }
+
+  /* Anmeldung – bleibt auch beim Hover-Bild sichtbar */
+  .event-card-actions { position: relative; z-index: 2; margin-top: 1.25rem; }
+  .btn-register, .btn-pay {
+    width: 100%; border: 0; border-radius: 999px; padding: 0.8rem 1.2rem;
+    background: var(--color-accent); color: #0f1210; font: 700 1rem var(--font-body); cursor: pointer;
+    transition: filter 0.2s ease, opacity 0.2s ease;
+  }
+  .btn-register:hover:not(:disabled), .btn-pay:hover:not(:disabled) { filter: brightness(1.1); }
+  .btn-register:disabled, .btn-pay:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-register:focus-visible, .btn-pay:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
+  .seats { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--color-text-muted); text-align: center; min-height: 1.2em; }
+  .seats.sold-out { color: #ff8a7a; }
+
+  .notice { margin: 0 0 1.5rem; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--color-bg-alt); border-left: 4px solid var(--color-accent); }
+
+  dialog {
+    width: min(460px, calc(100vw - 2rem)); padding: 0; border: 0; border-radius: 20px;
+    background: var(--color-bg-alt); color: var(--color-text); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  }
+  dialog::backdrop { background: rgba(5, 7, 6, 0.7); backdrop-filter: blur(3px); }
+  #register-form { position: relative; display: grid; gap: 1rem; padding: 2rem 1.5rem 1.5rem; }
+  #register-form h2 { margin: 0 0 0.25rem; font-family: var(--font-title); }
+  #register-form .event-date { margin: 0; }
+  .dialog-close {
+    position: absolute; top: 0.75rem; right: 0.75rem; width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%;
+    background: transparent; color: var(--color-text-muted); font-size: 1.6rem; line-height: 1; cursor: pointer;
+  }
+  .dialog-close:hover { background: rgba(255, 255, 255, 0.08); color: var(--color-text); }
+  #register-form label { display: grid; gap: 0.4rem; font-size: 0.9rem; color: var(--color-text-muted); }
+  #register-form input:not([type="checkbox"]) {
+    padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px solid #2f3630; background: var(--color-bg);
+    color: var(--color-text); font: 1rem var(--font-body);
+  }
+  #register-form input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  #register-form label.checkbox { grid-template-columns: auto 1fr; align-items: start; gap: 0.6rem; }
+  #register-form label.checkbox input { margin-top: 0.2rem; accent-color: var(--color-accent); width: 1.1rem; height: 1.1rem; }
+  #register-form a { color: var(--color-accent); }
+  .form-error { margin: 0; padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(255, 110, 90, 0.12); color: #ffb3a7; font-size: 0.9rem; }
+  .form-hint { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; }
+</style>

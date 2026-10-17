@@ -1,0 +1,13 @@
+# Abhängigkeiten & Build
+node_modules/
+dist/
+.astro/
+.netlify/
+
+# Geheimnisse – niemals committen
+.env
+.env.*
+!.env.example
+
+# System
+.DS_Store

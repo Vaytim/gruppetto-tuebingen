@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Danke-Seite und Teilnehmerliste nicht in Suchmaschinen
+[[headers]]
+  for = "/events/danke*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
