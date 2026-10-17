@@ -89,7 +89,7 @@ export const events: GruppettoEvent[] = [
     description:
       "Wir lassen die Saison gemeinsam ausklingen: eine entspannte Fahrt durchs bunte Herbstlaub, danach Punsch und Rückblick auf ein tolles Jahr.",
     image: "https://picsum.photos/seed/gruppetto-herbst/640/420",
-    registration: { price: 20, capacity: 100 },
+    registration: { price: 20, capacity: 100, closesAt: "2026-10-17T23:59" },
   },
 ];
 
