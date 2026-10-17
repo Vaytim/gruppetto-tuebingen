@@ -20,6 +20,23 @@ export interface Participant {
   paidAt: string; // ISO
   paymentIntent?: string;
   mailSent: boolean;
+  // --- Zahlungsdetails aus Stripe (für die Buchhaltung) ---
+  chargeId?: string;
+  /** Stripe-Gebühr in Cent */
+  fee?: number;
+  /** Gutgeschrieben nach Gebühr, in Cent */
+  net?: number;
+  /** Erstatteter Betrag in Cent (0 = keine Erstattung) */
+  refunded?: number;
+  refundedAt?: string;
+  /** Auszahlung, mit der die Zahlung aufs Vereinskonto kam */
+  payoutId?: string;
+  payoutDate?: string; // YYYY-MM-DD
+}
+
+/** Teilnahme zählt, solange nicht voll erstattet. */
+export function isActive(p: Participant): boolean {
+  return (p.refunded ?? 0) < p.amountPaid;
 }
 
 export interface EventLedger {
@@ -39,6 +56,7 @@ export interface LedgerStore {
     value: unknown,
     opts?: { onlyIfMatch?: string } | { onlyIfNew?: boolean },
   ): Promise<{ modified: boolean; etag?: string }>;
+  list(opts: { prefix: string }): Promise<{ blobs: { key: string }[] }>;
 }
 
 export class ConflictError extends Error {}
@@ -55,7 +73,7 @@ function dropExpired(ledger: EventLedger, now: number) {
 
 export function seatsTaken(ledger: EventLedger, now = Date.now()): number {
   const pending = Object.values(ledger.pending).filter((r) => r.expiresAt > now).length;
-  return ledger.paid.length + pending;
+  return ledger.paid.filter(isActive).length + pending;
 }
 
 export async function readLedger(
@@ -71,26 +89,35 @@ export async function readLedger(
  * Liest das Dokument, wendet `change` an und schreibt bedingt zurück.
  * `change` darf Fehler werfen (z. B. "ausgebucht"), dann wird nichts geschrieben.
  */
-export async function updateLedger<T>(
+export function updateLedger<T>(
   store: LedgerStore,
   eventId: string,
   firstStartNumber: number,
   change: (ledger: EventLedger, now: number) => T,
+): Promise<T> {
+  return updateJSON<EventLedger, T>(store, eventId, () => emptyLedger(firstStartNumber), (ledger, now) => {
+    dropExpired(ledger, now);
+    return change(ledger, now);
+  });
+}
+
+/** Allgemeines "lesen → ändern → bedingt schreiben" für ein JSON-Dokument. */
+export async function updateJSON<D, T>(
+  store: LedgerStore,
+  key: string,
+  init: () => D,
+  change: (doc: D, now: number) => T,
   maxMillis = 7000, // unter Netlifys 10-Sekunden-Limit für Functions bleiben
 ): Promise<T> {
   const started = Date.now();
   for (let attempt = 0; Date.now() - started < maxMillis; attempt++) {
-    const entry = await store.getWithMetadata(eventId, { type: "json" });
-    const ledger: EventLedger = structuredClone(
-      (entry?.data as EventLedger | undefined) ?? emptyLedger(firstStartNumber),
-    );
-    const now = Date.now();
-    dropExpired(ledger, now);
-    const result = change(ledger, now);
+    const entry = await store.getWithMetadata(key, { type: "json" });
+    const doc: D = structuredClone((entry?.data as D | undefined) ?? init());
+    const result = change(doc, Date.now());
 
     const write = entry?.etag
-      ? await store.setJSON(eventId, ledger, { onlyIfMatch: entry.etag })
-      : await store.setJSON(eventId, ledger, { onlyIfNew: true });
+      ? await store.setJSON(key, doc, { onlyIfMatch: entry.etag })
+      : await store.setJSON(key, doc, { onlyIfNew: true });
     if (write.modified) return result;
 
     // Jemand anderes war schneller – kurz (zufällig, wachsend) warten und neu versuchen.
@@ -143,3 +170,64 @@ export function markMailSent(ledger: EventLedger, reservationId: string) {
 export function releaseSeat(ledger: EventLedger, reservationId: string) {
   delete ledger.pending[reservationId];
 }
+
+export function findByCharge(ledger: EventLedger, chargeId: string): Participant | undefined {
+  return ledger.paid.find((p) => p.chargeId === chargeId);
+}
+
+export function setPaymentDetails(
+  ledger: EventLedger,
+  reservationId: string,
+  d: { chargeId: string; fee: number; net: number },
+) {
+  const p = ledger.paid.find((x) => x.reservationId === reservationId);
+  if (p) Object.assign(p, d);
+}
+
+/** Erstattung vermerken. Bei voller Erstattung wird der Platz wieder frei (Startnummer bleibt vergeben). */
+export function markRefunded(ledger: EventLedger, chargeId: string, refunded: number, at: string): boolean {
+  const p = findByCharge(ledger, chargeId);
+  if (!p) return false;
+  if ((p.refunded ?? 0) !== refunded) {
+    p.refunded = refunded;
+    p.refundedAt = at;
+  }
+  return true;
+}
+
+export function markPaidOut(ledger: EventLedger, chargeIds: Set<string>, payoutId: string, payoutDate: string): number {
+  let n = 0;
+  for (const p of ledger.paid) {
+    if (p.chargeId && chargeIds.has(p.chargeId)) {
+      p.payoutId = payoutId;
+      p.payoutDate = payoutDate;
+      n++;
+    }
+  }
+  return n;
+}
+
+// ---------------------------------------------------------------------------
+// Auszahlungen (eine Stripe-Überweisung aufs Vereinskonto)
+
+export interface PayoutLine {
+  eventId: string; // "sonstiges" für nicht zuordenbare Posten
+  /** Anzahl bezahlter Anmeldungen in dieser Auszahlung */
+  payments: number;
+  gross: number; // Cent
+  fees: number; // Cent (positiv = Ausgabe)
+  refunds: number; // Cent (positiv = zurückgezahlt)
+  refundCount: number;
+  other: number; // Cent, sonstige Posten (z. B. Stripe-Korrekturen), vorzeichenbehaftet
+}
+
+export interface PayoutRecord {
+  id: string;
+  arrivalDate: string; // YYYY-MM-DD
+  amount: number; // Cent, Betrag auf dem Kontoauszug
+  status: string;
+  lines: PayoutLine[];
+  syncedAt: string;
+}
+
+export const payoutKey = (id: string) => `payouts/${id}`;

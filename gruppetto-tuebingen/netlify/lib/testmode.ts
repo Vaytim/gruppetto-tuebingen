@@ -49,6 +49,9 @@ export const memoryStore: LedgerStore = {
     state.blobs.set(key, { data: structuredClone(value), etag });
     return { modified: true, etag };
   },
+  async list({ prefix }) {
+    return { blobs: [...state.blobs.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })) };
+  },
 };
 
 export const testCheckouts = state.checkouts;
