@@ -5,12 +5,14 @@ import type { Config } from "@netlify/functions";
 import { events, findEvent } from "../../src/data/events";
 import { readLedger, seatsTaken } from "../lib/registrations";
 import { env, escapeHtml, ledgerStore } from "../lib/services";
+import { isTestMode } from "../lib/testmode";
 
 function authorized(req: Request): boolean {
   const header = req.headers.get("authorization") ?? "";
   if (!header.startsWith("Basic ")) return false;
   const [, password = ""] = atob(header.slice(6)).split(/:(.*)/s);
-  const expected = env("ADMIN_PASSWORD");
+  // Im Testmodus (StackBlitz) ohne gesetztes Passwort: "test"
+  const expected = isTestMode() ? process.env.ADMIN_PASSWORD || "test" : env("ADMIN_PASSWORD");
   // Zeitkonstanter Vergleich
   if (password.length !== expected.length) return false;
   let diff = 0;

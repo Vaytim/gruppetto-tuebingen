@@ -4,6 +4,7 @@ import type { Config } from "@netlify/functions";
 import { events, findEvent, registrationClosesAt } from "../../src/data/events";
 import { readLedger, seatsTaken } from "../lib/registrations";
 import { json, ledgerStore } from "../lib/services";
+import { isTestMode } from "../lib/testmode";
 
 export default async (req: Request) => {
   const url = new URL(req.url);
@@ -15,7 +16,13 @@ export default async (req: Request) => {
     if (!event?.registration) return json({ status: "unknown" }, 404);
     const ledger = await readLedger(store, event.id, event.registration.firstStartNumber);
     const paid = ledger.paid.find((p) => p.reservationId === ref);
-    if (paid) return json({ status: "paid", startNumber: paid.startNumber, mailSent: paid.mailSent });
+    if (paid)
+      return json({
+        status: "paid",
+        startNumber: paid.startNumber,
+        mailSent: paid.mailSent,
+        ...(isTestMode() && { testMailUrl: `/api/test-postfach?ref=${encodeURIComponent(ref)}` }),
+      });
     if (ledger.pending[ref]) return json({ status: "pending" });
     return json({ status: "unknown" });
   }

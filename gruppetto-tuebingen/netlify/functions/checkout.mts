@@ -11,6 +11,7 @@ import {
   updateLedger,
 } from "../lib/registrations";
 import { json, ledgerStore, siteUrl, stripe } from "../lib/services";
+import { isTestMode, testCheckouts } from "../lib/testmode";
 
 const HOLD_MINUTES = 30; // Minimum bei Stripe Checkout
 
@@ -52,7 +53,24 @@ export default async (req: Request) => {
     throw err;
   }
 
-  // 2) Stripe-Checkout anlegen
+  // 2a) Testmodus (StackBlitz/Dev-Server): statt Stripe eine Test-Bezahlseite
+  if (isTestMode()) {
+    const id = `cs_test_${crypto.randomUUID().slice(0, 12)}`;
+    testCheckouts.set(id, {
+      id,
+      eventId: event.id,
+      reservationId,
+      name,
+      email,
+      amount: Math.round(reg.price * 100),
+      productName: `Anmeldung: ${event.title}`,
+      successUrl: `/events/danke?event=${encodeURIComponent(event.id)}&ref=${reservationId}`,
+      cancelUrl: `/events?abgebrochen=${encodeURIComponent(event.id)}`,
+    });
+    return json({ url: `/api/test-zahlung?session=${id}` });
+  }
+
+  // 2b) Stripe-Checkout anlegen
   const base = siteUrl(req);
   try {
     const session = await stripe().checkout.sessions.create({

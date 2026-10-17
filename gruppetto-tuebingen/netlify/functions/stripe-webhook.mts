@@ -4,9 +4,9 @@
 import type { Config } from "@netlify/functions";
 import type Stripe from "stripe";
 import { findEvent } from "../../src/data/events";
-import { confirmationMail } from "../lib/confirmation-mail";
-import { confirmPayment, markMailSent, releaseSeat, updateLedger } from "../lib/registrations";
-import { env, json, ledgerStore, mailer, stripe } from "../lib/services";
+import { completeRegistration, MailFailedError } from "../lib/complete-registration";
+import { releaseSeat, updateLedger } from "../lib/registrations";
+import { env, json, ledgerStore, stripe } from "../lib/services";
 
 export default async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Nur POST erlaubt" }, 405);
@@ -42,9 +42,8 @@ export default async (req: Request) => {
 
   if (session.payment_status !== "paid") return json({ waiting: session.payment_status });
 
-  // Startnummer vergeben (idempotent – doppelte Webhooks vergeben keine zweite Nummer)
-  const participant = await updateLedger(store, eventId, first, (ledger) =>
-    confirmPayment(ledger, {
+  try {
+    const participant = await completeRegistration(event, {
       reservationId,
       checkoutSessionId: session.id,
       name: session.metadata?.name ?? session.customer_details?.name ?? "",
@@ -52,31 +51,14 @@ export default async (req: Request) => {
       amountPaid: session.amount_total ?? 0,
       paidAt: new Date(evt.created * 1000).toISOString(),
       paymentIntent: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
-    }),
-  );
-
-  if (!participant.mailSent) {
-    const mail = confirmationMail(event, participant);
-    // Schlägt der Versand fehl, antworten wir mit 500 → Stripe wiederholt den
-    // Webhook später, die Startnummer bleibt dabei dieselbe.
-    try {
-      await mailer().sendMail({
-        from: env("MAIL_FROM"),
-        replyTo: process.env.MAIL_REPLY_TO || undefined,
-        bcc: process.env.MAIL_BCC || undefined,
-        to: participant.email,
-        subject: mail.subject,
-        text: mail.text,
-        html: mail.html,
-      });
-    } catch (err) {
-      console.error(`Mailversand an ${participant.email} fehlgeschlagen – Stripe versucht es erneut`, err);
-      return json({ error: "Mailversand fehlgeschlagen", startNumber: participant.startNumber }, 500);
-    }
-    await updateLedger(store, eventId, first, (ledger) => markMailSent(ledger, reservationId));
+    });
+    return json({ ok: true, startNumber: participant.startNumber });
+  } catch (err) {
+    if (!(err instanceof MailFailedError)) throw err;
+    // 500 → Stripe wiederholt den Webhook später, die Startnummer bleibt dieselbe.
+    console.error(`Mailversand an ${err.participant.email} fehlgeschlagen – Stripe versucht es erneut`, err.cause);
+    return json({ error: "Mailversand fehlgeschlagen", startNumber: err.participant.startNumber }, 500);
   }
-
-  return json({ ok: true, startNumber: participant.startNumber });
 };
 
 export const config: Config = { path: "/api/stripe-webhook" };
