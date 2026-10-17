@@ -87,7 +87,7 @@ export const events: GruppettoEvent[] = [
     location: "Treffpunkt: Gartenstraße 235, Tübingen",
     level: "Infos folgen",
     description: "Unser Christmas Ride zum Jahresende. Die Route wird noch veröffentlicht.",
-    image: "https://picsum.photos/seed/gruppetto-christmas/640/420",
+    image: "/images/christmas-ride.jpg",
   },
 ];
 
