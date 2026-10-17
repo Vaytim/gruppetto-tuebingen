@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { getStore } from "@netlify/blobs";
 import nodemailer, { type Transporter } from "nodemailer";
 import type { LedgerStore } from "./registrations";
+import { isTestMode, memoryStore, testOutbox } from "./testmode";
 
 export function env(name: string): string {
   const value = process.env[name];
@@ -16,6 +17,7 @@ export function stripe(): Stripe {
 }
 
 export function ledgerStore(): LedgerStore {
+  if (isTestMode()) return memoryStore;
   // "strong", damit direkt nach einem Schreiben der neue Stand gelesen wird.
   return getStore({ name: "event-registrations", consistency: "strong" }) as unknown as LedgerStore;
 }
@@ -41,6 +43,31 @@ export function mailer(): Transporter {
     auth: { user: env("SMTP_USER"), pass: env("SMTP_PASS") },
   });
   return transport;
+}
+
+export interface OutgoingMail {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  /** Anmelde-Referenz, nur für die Test-Postfach-Ansicht */
+  ref?: string;
+}
+
+/** Verschickt eine Mail – im Testmodus landet sie stattdessen im Test-Postfach. */
+export async function sendMail(mail: OutgoingMail): Promise<void> {
+  if (isTestMode()) {
+    testOutbox.unshift({ ...mail, sentAt: new Date().toISOString() });
+    console.log(`[Testmodus] Mail an ${mail.to}: ${mail.subject}`);
+    return;
+  }
+  const { ref: _ref, ...content } = mail;
+  await mailer().sendMail({
+    from: env("MAIL_FROM"),
+    replyTo: process.env.MAIL_REPLY_TO || undefined,
+    bcc: process.env.MAIL_BCC || undefined,
+    ...content,
+  });
 }
 
 export function escapeHtml(text: string): string {
