@@ -26,6 +26,17 @@ export interface GruppettoEvent {
   image: string;
   /** Weglassen = Event ohne Anmeldung (wird nur angezeigt) */
   registration?: Registration;
+  /** Link zum Strava-Event / zur Route (optional) */
+  strava?: string;
+  /** "code" = hier in der Datei, "admin" = in der Verwaltung angelegt */
+  source?: "code" | "admin";
+}
+
+/** Datum als "12. Dezember 2026" */
+export function germanDateLabel(dateISO: string): string {
+  return new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${dateISO}T12:00:00Z`),
+  );
 }
 
 export const events: GruppettoEvent[] = [
