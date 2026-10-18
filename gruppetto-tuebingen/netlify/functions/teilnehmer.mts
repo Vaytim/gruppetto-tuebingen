@@ -12,6 +12,7 @@ import { type Participant, type PayoutRecord, isActive, readLedger, seatsTaken }
 import { env, escapeHtml as h, ledgerStore } from "../lib/services";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
+import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
 
 // ---------- Hilfen ----------
 function authorized(req: Request): boolean {
@@ -119,11 +120,12 @@ tfoot td{font-weight:700;border-top:1px solid var(--line)}
 .btn.sec{background:var(--alt);color:var(--text);border:1px solid var(--line)}
 .note{background:var(--alt);border-left:3px solid var(--blue);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
 .warn{border-left-color:var(--warn)}
+.setting{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;background:var(--alt);border-radius:14px;padding:1rem}
 </style><main>${body}</main></html>`,
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
   );
 
-function overviewPage(all: EventTotals[], payouts: PayoutRecord[], flash?: string) {
+function overviewPage(all: EventTotals[], payouts: PayoutRecord[], settings: SiteSettings, flash?: string) {
   const sum = all.reduce((s, t) => ({ gross: s.gross + t.gross, fees: s.fees + t.fees, refunds: s.refunds + t.refunds, net: s.net + t.net }), { gross: 0, fees: 0, refunds: 0, net: 0 });
   // Tatsächlich überwiesen = Summe der Stripe-Auszahlungen (Erstattungen sind dort schon abgezogen)
   const onAccount = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
@@ -171,6 +173,14 @@ ${missing ? `<div class="note warn">Bei ${missing} Zahlung(en) fehlen noch die S
   <form method="post" action="?action=sync"><button class="btn">${isTestMode() ? "🧪 Test-Auszahlung simulieren" : "Mit Stripe abgleichen"}</button></form>
   <a class="btn sec" href="?export=kassenbuch&jahr=${year}">Kassenbuch ${year} (CSV)</a>
   <a class="btn sec" href="?export=kassenbuch&jahr=${year - 1}">Kassenbuch ${year - 1} (CSV)</a>
+</div>
+
+<h2>Website</h2>
+<div class="setting">
+  <div><b>Off-Season</b> <span class="tag ${settings.offseason ? "" : "wait"}">${settings.offseason ? "aktiv" : "aus"}</span>
+  <p class="muted" style="margin:.3rem 0 0">Zeigt auf der Rides-Seite „Season Closed“ über den Weekly Rides. Wirkt sofort, ohne neuen Deploy.</p></div>
+  <form method="post" action="?action=offseason"><input type="hidden" name="value" value="${settings.offseason ? "off" : "on"}">
+  <button class="btn ${settings.offseason ? "sec" : ""}">${settings.offseason ? "Off-Season beenden" : "Off-Season aktivieren"}</button></form>
 </div>
 
 <h2>Events</h2>
@@ -273,6 +283,13 @@ export default async (req: Request) => {
   const url = new URL(req.url);
   const store = ledgerStore();
 
+  if (req.method === "POST" && url.searchParams.get("action") === "offseason") {
+    const value = (await req.formData()).get("value");
+    const s = await updateSettings(store, { offseason: value === "on" });
+    return overviewPage(await loadAll(), await listPayouts(store), s, s.offseason ? "Off-Season ist jetzt aktiv." : "Off-Season ist beendet – die Rides sind wieder sichtbar.");
+  }
+  const settings = await readSettings(store);
+
   if (req.method === "POST" && url.searchParams.get("action") === "sync") {
     let flash: string;
     try {
@@ -281,6 +298,7 @@ export default async (req: Request) => {
         return overviewPage(
           await loadAll(),
           await listPayouts(store),
+          settings,
           r.payouts
             ? `Testmodus: Auszahlung über ${(r.amount / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })} simuliert.`
             : "Testmodus: Nichts auszuzahlen – erst eine Testanmeldung bezahlen.",
@@ -292,7 +310,7 @@ export default async (req: Request) => {
       console.error("Abgleich fehlgeschlagen", err);
       flash = "Abgleich fehlgeschlagen – bitte später erneut versuchen (Details im Netlify-Log).";
     }
-    return overviewPage(await loadAll(), await listPayouts(store), flash);
+    return overviewPage(await loadAll(), await listPayouts(store), settings, flash);
   }
 
   if (url.searchParams.get("export") === "kassenbuch") {
@@ -307,7 +325,7 @@ export default async (req: Request) => {
     return url.searchParams.get("format") === "csv" ? eventCsv(t) : eventPage(t);
   }
 
-  return overviewPage(await loadAll(), await listPayouts(store));
+  return overviewPage(await loadAll(), await listPayouts(store), settings);
 };
 
 export const config: Config = { path: "/api/teilnehmer" };
