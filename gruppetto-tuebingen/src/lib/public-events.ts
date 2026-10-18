@@ -30,11 +30,11 @@ export function todayISO(now = new Date()): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(now);
 }
 
-/** Kommende Events (ab dem nächsten, aufsteigend) + die letzten 4 vergangenen (neueste zuerst) */
-export function splitEvents(all: PublicEvent[], today = todayISO()) {
+/** Kommende Events (ab dem nächsten, aufsteigend) + vergangene (neueste zuerst, standardmäßig die letzten 4) */
+export function splitEvents(all: PublicEvent[], pastLimit = 4, today = todayISO()) {
   const sorted = all.slice().sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
   const upcoming = sorted.filter((e) => e.dateISO >= today);
-  const past = sorted.filter((e) => e.dateISO < today).reverse().slice(0, 4);
+  const past = sorted.filter((e) => e.dateISO < today).reverse().slice(0, pastLimit);
   return { upcoming, past };
 }
 
@@ -61,47 +61,99 @@ export function safeUrl(u: string | undefined): string {
   return u && /^https?:\/\//i.test(u) ? u : "";
 }
 
-/** Eine Event-Karte (Events-Seite). Vergangene Events: ohne Anmeldung, gedämpft. */
-export function eventCardHTML(e: PublicEvent, past = false): string {
+export const eventAnchor = (id: string) => `event-${id}`;
+
+/**
+ * Ein Event-Block im Slider-Stil (Startseite + Events-Seite).
+ * mode "home":   Bild + Titel verlinken auf das Event auf der Events-Seite
+ * mode "detail": Events-Seite – mit Treffpunkt, Level, Anmeldung und Strava-Link
+ */
+export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" | "detail" } = {}): string {
+  const { past = false, mode = "home" } = opts;
+  const link = `/events#${eventAnchor(e.id)}`;
+  const media = e.image ? `<img src="${esc(e.image)}" alt="" loading="lazy" />` : `<span class="slide-noimg"></span>`;
+  const meta = `${past ? "Vergangen · " : ""}${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}`;
+
+  if (mode === "home") {
+    return `<article class="slide${past ? " is-past" : ""}" data-past="${past ? 1 : 0}">
+  <a class="slide-media" href="${link}" tabindex="-1" aria-hidden="true">${media}</a>
+  <h3><a href="${link}">${esc(e.title)}</a></h3>
+  <p class="slide-meta">${meta}</p>
+  <p>${esc(e.description)}</p>
+</article>`;
+  }
+
   const strava = safeUrl(e.strava);
   const r = !past && e.registration;
-  const actions =
-    r || strava
-      ? `<div class="event-card-actions">
+  return `<article class="slide${past ? " is-past" : ""}" id="${esc(eventAnchor(e.id))}">
+  <div class="slide-media">${media}</div>
+  <p class="slide-meta">${meta}</p>
+  <h3>${esc(e.title)}</h3>
+  ${e.location ? `<p class="slide-loc">${esc(e.location)}</p>` : ""}
+  ${e.level ? `<p class="slide-loc">${esc(e.level)}</p>` : ""}
+  ${e.description ? `<p class="slide-desc">${esc(e.description)}</p>` : ""}
   ${
-    r
-      ? `<button type="button" class="btn-register" data-event-id="${esc(e.id)}" data-event-title="${esc(e.title)}"
-      data-event-date="${esc(`${e.dateLabel} · ${e.time}`)}" data-event-price="${esc(formatEuro(r.price))}"
-      data-closes-at="${esc(r.closesAt)}" disabled>Anmelden · ${esc(formatEuro(r.price))}</button>
-    <p class="seats" data-seats-for="${esc(e.id)}">Plätze werden geladen …</p>`
+    r || strava
+      ? `<div class="slide-actions">
+    ${
+      r
+        ? `<button type="button" class="btn-register" data-event-id="${esc(e.id)}" data-event-title="${esc(e.title)}"
+        data-event-date="${esc(`${e.dateLabel} · ${e.time}`)}" data-event-price="${esc(formatEuro(r.price))}"
+        data-closes-at="${esc(r.closesAt)}" disabled>Anmelden · ${esc(formatEuro(r.price))}</button>
+      <p class="seats" data-seats-for="${esc(e.id)}">Plätze werden geladen …</p>`
+        : ""
+    }
+    ${strava ? `<a class="btn-strava" href="${esc(strava)}" target="_blank" rel="noopener">${past ? "Aktivität auf Strava" : "Auf Strava ansehen"} ↗</a>` : ""}
+  </div>`
       : ""
   }
-  ${strava ? `<a class="btn-strava" href="${esc(strava)}" target="_blank" rel="noopener">${past ? "Aktivität auf Strava" : "Auf Strava ansehen"} ↗</a>` : ""}
-</div>`
-      : "";
-  return `<article class="event-card${past ? " is-past" : ""}" tabindex="0">
-  <div class="event-card-front">
-    <p class="event-date">${esc(e.dateLabel)}${e.time ? ` &middot; ${esc(e.time)}` : ""}</p>
-    <h3>${esc(e.title)}</h3>
-    ${e.location ? `<p class="event-location">${esc(e.location)}</p>` : ""}
-    ${e.level ? `<p class="event-level">${esc(e.level)}</p>` : ""}
-  </div>
-  <div class="event-card-reveal${e.image ? "" : " no-image"}">
-    ${e.image ? `<img src="${esc(e.image)}" alt="${esc(e.title)}" loading="lazy" />` : ""}
-    <div class="event-card-reveal-text"><p>${esc(e.description)}</p></div>
-  </div>
-  ${actions}
 </article>`;
 }
 
-/** Eine Karte im Events-Slider der Startseite */
-export function slideHTML(e: PublicEvent, past = false): string {
-  return `<article class="slide${past ? " is-past" : ""}">
-  ${e.image ? `<img src="${esc(e.image)}" alt="" loading="lazy" />` : `<div class="slide-noimg" aria-hidden="true"></div>`}
-  <h3><a href="/events">${esc(e.title)}</a></h3>
-  <p class="slide-meta">${past ? "Vergangen · " : ""}${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}</p>
-  <p>${esc(e.description)}</p>
-</article>`;
+/** Slider so scrollen, dass das erste kommende Event links steht (vergangene liegen links davon). */
+export function scrollToFirstUpcoming(track: HTMLElement) {
+  const slides = Array.from(track.querySelectorAll<HTMLElement>(".slide"));
+  const target = slides.find((s) => s.dataset.past !== "1") ?? slides[slides.length - 1];
+  if (!target) return;
+  const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+  // Bei nur wenigen kommenden Events reicht die Breite nicht, um das nächste Event
+  // ganz links anzuzeigen → rechts Platz anhängen, damit Vergangenes verborgen bleibt.
+  track.style.paddingRight = "";
+  track.style.gridAutoColumns = "";
+  // Spaltenbreite festhalten – sonst schrumpfen die Blöcke durch das zusätzliche Padding
+  track.style.gridAutoColumns = `${target.offsetWidth}px`;
+  const last = slides[slides.length - 1];
+  const contentRight = last.offsetLeft + last.offsetWidth + pad;
+  const missing = target.offsetLeft - pad + track.clientWidth - contentRight;
+  if (missing > 0) track.style.paddingRight = `${pad + missing}px`;
+  const prev = track.style.scrollSnapType;
+  track.style.scrollSnapType = "none";
+  track.scrollLeft = target.offsetLeft - pad;
+  requestAnimationFrame(() => (track.style.scrollSnapType = prev));
+}
+
+/** Bei Größenänderung neu ausrichten */
+export function keepAlignedOnResize(track: HTMLElement) {
+  let t: ReturnType<typeof setTimeout>;
+  let w = window.innerWidth;
+  window.addEventListener("resize", () => {
+    if (window.innerWidth === w) return; // mobile Adressleiste o. ä.
+    w = window.innerWidth;
+    clearTimeout(t);
+    t = setTimeout(() => scrollToFirstUpcoming(track), 150);
+  });
+}
+
+/** Pfeil-Buttons eines Sliders verbinden */
+export function wireSlider(slider: HTMLElement) {
+  const track = slider.querySelector<HTMLElement>(".slider-track")!;
+  slider.querySelectorAll<HTMLButtonElement>(".slider-nav button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const slide = track.querySelector<HTMLElement>(".slide");
+      const step = slide ? slide.offsetWidth + 18 : track.clientWidth * 0.8;
+      track.scrollBy({ left: Number(btn.dataset.dir) * step, behavior: "smooth" });
+    });
+  });
 }
 
 export const shortDate = (iso: string) => {
