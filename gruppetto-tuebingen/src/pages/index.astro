@@ -9,6 +9,7 @@
 // Alle Texte/Bilder unten in den Konstanten anpassen.
 import Layout from "../layouts/Layout.astro";
 import { codeEventsPublic, shortDate, slideHTML, splitEvents } from "../lib/public-events";
+import "../styles/event-slider.css";
 
 const hero = {
   // Hintergrundvideo: stumm, Dauerschleife. Poster = Standbild, bis das Video lädt.
@@ -47,9 +48,12 @@ const shopBand = {
 
 // Events: vorab aus src/data/events.ts gerendert, im Browser durch /api/events
 // ersetzt (dann auch mit den Events aus der Verwaltung).
-const { upcoming, past } = splitEvents(codeEventsPublic());
+const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle vergangenen
 const next = upcoming[0];
-const slides = [...upcoming.map((e) => slideHTML(e)), ...past.map((e) => slideHTML(e, true))].join("");
+// Vergangene Events links vom nächsten Event (älteste ganz links), kommende rechts
+const slidesFor = (u: typeof upcoming, p: typeof past) =>
+  [...p.slice().reverse().map((e) => slideHTML(e, { past: true })), ...u.map((e) => slideHTML(e))].join("");
+const slides = slidesFor(upcoming, past);
 ---
 
 <Layout title="Startseite" fullBleed>
@@ -120,14 +124,17 @@ const slides = [...upcoming.map((e) => slideHTML(e)), ...past.map((e) => slideHT
 </Layout>
 
 <script>
-  import { fetchEvents, shortDate, slideHTML, splitEvents } from "../lib/public-events";
+  import { fetchEvents, keepAlignedOnResize, scrollToFirstUpcoming, shortDate, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
 
   // Events inkl. der in der Verwaltung angelegten nachladen
   fetchEvents().then((all) => {
     if (!all) return;
-    const { upcoming, past } = splitEvents(all);
+    const { upcoming, past } = splitEvents(all, Infinity);
     const track = document.querySelector<HTMLElement>(".slider-track");
-    if (track) track.innerHTML = [...upcoming.map((e) => slideHTML(e)), ...past.map((e) => slideHTML(e, true))].join("");
+    if (track) {
+      track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("");
+      scrollToFirstUpcoming(track);
+    }
     const next = upcoming[0];
     const hero = document.querySelector<HTMLAnchorElement>(".hero-date");
     if (hero) {
@@ -145,14 +152,10 @@ const slides = [...upcoming.map((e) => slideHTML(e)), ...past.map((e) => slideHT
   }
 
   document.querySelectorAll<HTMLElement>(".slider").forEach((slider) => {
+    wireSlider(slider);
     const track = slider.querySelector<HTMLElement>(".slider-track")!;
-    slider.querySelectorAll<HTMLButtonElement>(".slider-nav button").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const slide = track.querySelector<HTMLElement>(".slide");
-        const step = slide ? slide.offsetWidth + 18 : track.clientWidth * 0.8;
-        track.scrollBy({ left: Number(btn.dataset.dir) * step, behavior: "smooth" });
-      });
-    });
+    scrollToFirstUpcoming(track); // vorab gerenderte Liste
+    keepAlignedOnResize(track);
   });
 </script>
 
@@ -197,32 +200,6 @@ const slides = [...upcoming.map((e) => slideHTML(e)), ...past.map((e) => slideHT
   }
   .banner-cta { position: absolute; z-index: 1; left: var(--gutter); bottom: var(--gutter); }
 
-  /* 5. Slider */
-  .slider { padding: 7rem 0 6rem; }
-  .slider-head { display: flex; justify-content: space-between; align-items: center; padding: 0 var(--gutter); margin-bottom: 1.6rem; }
-  /* gleiche Schriftgröße & Art wie die Banner-Headline "Gruppetto Rookies" */
-  .slider-head h2 { margin: 0; font-size: clamp(2.8rem, 6vw, 6.5rem); line-height: 1; }
-  .slider-nav { display: flex; gap: 0.5rem; }
-  .slider-nav button {
-    width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 1.5px solid var(--color-text); background: transparent;
-    color: var(--color-text); font-size: 1.1rem; cursor: pointer;
-  }
-  .slider-nav button:hover { background: var(--blue-500); border-color: var(--blue-500); }
-  .slider-track {
-    display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 2 * var(--gutter) - 3 * 18px) / 3.3);
-    gap: 18px; padding: 0 var(--gutter); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: var(--gutter); scrollbar-width: none;
-  }
-  .slider-track::-webkit-scrollbar { display: none; }
-  .slider-track :global(.slide) { scroll-snap-align: start; }
-  .slider-track :global(.slide-noimg) { width: 100%; aspect-ratio: 1; margin-bottom: 1.4rem; background: linear-gradient(135deg, var(--navy-700), var(--blue-500)); }
-  .slider-track :global(.slide.is-past) { opacity: 0.6; }
-  .slider-track :global(.slide img) { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; margin-bottom: 1.4rem; }
-  .slider-track :global(.slide h3) { margin: 0 0 0.6rem; font-family: var(--font-body); font-weight: 500; font-size: 1.3rem; line-height: 1.35; }
-  .slider-track :global(.slide h3 a) { text-underline-offset: 5px; }
-  .slider-track :global(.slide h3 a:hover) { text-decoration-thickness: 2px; }
-  .slider-track :global(.slide-meta) { margin: 0 0 0.8rem; color: var(--color-highlight); font-weight: 600; font-size: 0.95rem; }
-  .slider-track :global(.slide p) { margin: 0; font-size: 1.05rem; line-height: 1.5; color: var(--color-text-muted); }
-
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
   .band-title { margin: 0 0 4rem; padding-left: 0.5rem; font-size: clamp(2.6rem, 4.6vw, 4.6rem); }
@@ -243,7 +220,6 @@ const slides = [...upcoming.map((e) => slideHTML(e)), ...past.map((e) => slideHT
     .intro p { grid-column: 1; }
     .tiles { grid-template-columns: 1fr; }
     .tile { padding-bottom: 3.5rem; }
-    .slider-track { grid-auto-columns: 82%; }
     .band-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>

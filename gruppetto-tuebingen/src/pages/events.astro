@@ -1,30 +1,35 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, eventCardHTML, splitEvents } from "../lib/public-events";
+import { codeEventsPublic, slideHTML, splitEvents } from "../lib/public-events";
+import "../styles/event-slider.css";
 
 // Vorab gerendert (Fallback ohne JavaScript/Backend). Im Browser wird die Liste
 // mit /api/events ersetzt – dort sind auch die Events aus der Verwaltung dabei.
 const { upcoming, past } = splitEvents(codeEventsPublic());
 ---
 
-<Layout title="Events">
-  <section class="events-hero">
-    <h1>Events</h1>
-    <p>Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
-  </section>
-
-  <p class="notice" id="cancel-notice" hidden>
-    Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
-  </p>
-
-  <section class="events-section">
-    <div class="events-grid" id="events-upcoming" set:html={upcoming.map((e) => eventCardHTML(e)).join("")} />
+<Layout title="Events" fullBleed>
+  <!-- Kommende Events: gleiche Slider-Blöcke wie auf der Startseite -->
+  <section class="slider events-slider" aria-labelledby="events-title">
+    <div class="slider-head">
+      <h1 id="events-title">Events</h1>
+      <div class="slider-nav">
+        <button type="button" data-dir="-1" aria-label="Zurück">←</button>
+        <button type="button" data-dir="1" aria-label="Weiter">→</button>
+      </div>
+    </div>
+    <p class="events-intro">Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
+    <p class="notice" id="cancel-notice" hidden>
+      Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
+    </p>
+    <div class="slider-track" tabindex="0" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("")} />
     <p class="no-events" id="events-none" hidden={upcoming.length > 0}>Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
   </section>
 
-  <section class="events-section past-section" id="past-section" hidden={past.length === 0}>
-    <h2 class="past-title">Vergangene Events</h2>
-    <div class="events-grid" id="events-past" set:html={past.map((e) => eventCardHTML(e, true)).join("")} />
+  <!-- Vergangene Events: separat darunter, kleiner -->
+  <section class="past-section" id="past-section" hidden={past.length === 0} aria-labelledby="past-title">
+    <h2 class="past-title" id="past-title">Vergangene Events</h2>
+    <div class="past-grid" id="events-past" set:html={past.map((e) => slideHTML(e, { past: true, mode: "detail" })).join("")} />
   </section>
 
   <dialog id="register-dialog" aria-labelledby="register-title">
@@ -57,7 +62,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
 </Layout>
 
 <script>
-  import { eventCardHTML, fetchEvents, splitEvents } from "../lib/public-events";
+  import { fetchEvents, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
 
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
   const form = document.getElementById("register-form") as HTMLFormElement;
@@ -168,62 +173,64 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
     const all = await fetchEvents();
     if (all) {
       const { upcoming, past } = splitEvents(all);
-      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => eventCardHTML(ev)).join("");
+      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("");
       document.getElementById("events-none")!.hidden = upcoming.length > 0;
-      document.getElementById("events-past")!.innerHTML = past.map((ev) => eventCardHTML(ev, true)).join("");
+      document.getElementById("events-past")!.innerHTML = past.map((ev) => slideHTML(ev, { past: true, mode: "detail" })).join("");
       document.getElementById("past-section")!.hidden = past.length === 0;
     }
     loadStatus();
+    focusHashTarget();
   }
+
+  // Von der Startseite kommend (/events#event-…): Event ins Bild holen und kurz hervorheben
+  function focusHashTarget() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const el = id ? document.getElementById(id) : null;
+    if (!el) return;
+    const track = el.closest<HTMLElement>(".slider-track");
+    if (track) {
+      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+      track.scrollTo({ left: el.offsetLeft - pad });
+    }
+    el.scrollIntoView({ block: "center" });
+    el.classList.add("is-target");
+    setTimeout(() => el.classList.remove("is-target"), 2200);
+  }
+
+  wireSlider(document.querySelector<HTMLElement>(".events-slider")!);
   init();
 </script>
 
 <style is:global>
-  .events-hero {
-    padding: 4rem 0 2rem;
-  }
-  .events-hero p {
-    max-width: 42rem;
-    color: var(--color-text-muted);
-    font-size: 1.1rem;
-    margin-top: 1rem;
-  }
-  .events-section {
-    padding-bottom: 4rem;
-  }
-  .events-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.75rem;
-  }
-  .event-card { position: relative; display: flex; flex-direction: column; background: var(--color-bg-alt); border-radius: 16px; padding: 1.5rem; overflow: hidden; cursor: default; transition: transform 0.35s ease, box-shadow 0.35s ease; will-change: transform; outline: none; }
-  .event-card:hover, .event-card:focus-within { transform: scale(1.08); box-shadow: 0 20px 45px rgba(2, 24, 89, 0.6); z-index: 5; }
-  .event-card-front { position: relative; flex: 1; transition: opacity 0.3s ease; }
-  .event-card:hover .event-card-front, .event-card:focus-within .event-card-front { opacity: 0; }
-  .event-date { margin: 0 0 0.5rem; color: var(--color-highlight); font-weight: 600; }
-  .event-card h3 { margin: 0 0 0.5rem; }
-  .event-location, .event-level { margin: 0; color: var(--color-text-muted); }
-  .event-level { margin-top: 0.5rem; }
-  .event-card-reveal { position: absolute; inset: 0; z-index: 1; border-radius: 16px; opacity: 0; visibility: hidden; transition: opacity 0.35s ease; pointer-events: none; overflow: hidden; }
-  .event-card:hover .event-card-reveal, .event-card:focus-within .event-card-reveal { opacity: 1; visibility: visible; }
-  .event-card-reveal img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .event-card-reveal-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem 1.25rem 6.5rem; background: linear-gradient(180deg, rgba(2, 24, 89, 0.15) 0%, rgba(2, 24, 89, 0.75) 45%, rgba(2, 24, 89, 0.97) 75%); }
-  .event-card-reveal-text p { margin: 0; color: var(--color-text); font-size: 0.95rem; line-height: 1.4; }
-  .no-events { color: var(--color-text-muted); }
-  .event-card-reveal.no-image { background: var(--color-bg-raised, #04328c); }
+  .events-slider { padding-top: calc(var(--gutter) * 2 + 8rem); padding-bottom: 5rem; }
+  .events-intro { max-width: 42rem; margin: 0 0 2.5rem; padding: 0 var(--gutter); color: var(--color-text-muted); font-size: 1.1rem; }
+  .no-events { padding: 0 var(--gutter); color: var(--color-text-muted); }
+  .events-slider .notice { margin: 0 var(--gutter) 1.5rem; }
+
+  .slide-actions { margin-top: auto; padding-top: 1.25rem; }
+  .slide.is-target .slide-media { outline: 3px solid var(--color-highlight); outline-offset: 4px; }
+
   .btn-strava {
     display: block; margin-top: 0.6rem; text-align: center; border-radius: 999px; padding: 0.7rem 1.2rem;
     border: 1px solid var(--color-text); color: var(--color-text); text-decoration: none; font-weight: 700; font-size: 0.95rem;
-    background: rgba(13, 30, 64, 0.55); transition: background 0.2s ease, color 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease;
   }
   .btn-strava:hover { background: var(--color-text); color: var(--navy-800, #021859); }
   .btn-strava:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
-  .past-section { padding-top: 1rem; }
-  .past-title { font-family: var(--font-title); font-size: clamp(1.8rem, 3.5vw, 2.6rem); margin: 0 0 1.5rem; }
-  .event-card.is-past .event-card-front { opacity: 0.7; }
-  .event-card.is-past .event-date { color: var(--color-text-muted); }
 
-  /* Anmeldung – bleibt auch beim Hover-Bild sichtbar */
+  /* Vergangene Events – kleiner, 4 nebeneinander */
+  .past-section { padding: 1rem var(--gutter) 6rem; border-top: 1px solid var(--color-line); }
+  .past-title { margin: 2.5rem 0 1.6rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
+  .past-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .past-grid .slide-media { aspect-ratio: 4 / 3; margin-bottom: 0.9rem; }
+  .past-grid .slide h3 { font-size: 1.05rem; margin-bottom: 0.4rem; }
+  .past-grid .slide-meta { font-size: 0.85rem; margin-bottom: 0.5rem; }
+  .past-grid .slide p { font-size: 0.9rem; }
+  .past-grid .slide .slide-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .past-grid .btn-strava { padding: 0.5rem 0.9rem; font-size: 0.85rem; }
+  @media (max-width: 900px) { .past-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Anmeldung */
   .event-card-actions { position: relative; z-index: 2; margin-top: 1.25rem; }
   .btn-register, .btn-pay {
     width: 100%; border: 0; border-radius: 999px; padding: 0.8rem 1.2rem;
@@ -236,7 +243,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
   .seats { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--color-text-muted); text-align: center; min-height: 1.2em; }
   .seats.sold-out { color: #ff8a7a; }
 
-  .notice { margin: 0 0 1.5rem; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--color-bg-alt); border-left: 4px solid var(--color-accent); }
+  .notice { padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--color-bg-alt); border-left: 4px solid var(--color-accent); }
 
   dialog {
     width: min(460px, calc(100vw - 2rem)); padding: 0; border: 0; border-radius: 20px;
