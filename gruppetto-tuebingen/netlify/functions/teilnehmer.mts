@@ -13,6 +13,7 @@ import { env, escapeHtml as h, ledgerStore } from "../lib/services";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
 import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
+import { ADMIN_EVENTS_CSS, eventsAdminBody, handleEventDelete, handleEventSave, tabNav } from "../lib/admin-events-page";
 
 // ---------- Anmeldung ----------
 // Login über ein normales Formular (funktioniert auch in der StackBlitz-Vorschau,
@@ -183,6 +184,7 @@ tfoot td{font-weight:700;border-top:1px solid var(--line)}
 .btn.sec{background:var(--alt);color:var(--text);border:1px solid var(--line)}
 .note{background:var(--alt);border-left:3px solid var(--blue);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
 .warn{border-left-color:var(--warn)}
+${ADMIN_EVENTS_CSS}
 .setting{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;background:var(--alt);border-radius:14px;padding:1rem}
 </style><main>${body}</main></html>`,
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
@@ -223,6 +225,7 @@ function overviewPage(all: EventTotals[], payouts: PayoutRecord[], settings: Sit
   return page(
     "Übersicht",
     `<p class="kicker">Gruppetto Tübingen · Verwaltung · <a href="?action=logout">Abmelden</a></p><h1>Event-Anmeldungen & Zahlungen</h1>
+${tabNav("zahlungen")}
 ${flash ? `<div class="note">${h(flash)}</div>` : ""}
 ${missing ? `<div class="note warn">Bei ${missing} Zahlung(en) fehlen noch die Stripe-Gebühren. Klick auf „Mit Stripe abgleichen“.</div>` : ""}
 <div class="cards">
@@ -366,6 +369,19 @@ export default async (req: Request) => {
     return overviewPage(await loadAll(), await listPayouts(store), s, s.offseason ? "Off-Season ist jetzt aktiv." : "Off-Season ist beendet – die Rides sind wieder sichtbar.");
   }
   const settings = await readSettings(store);
+
+  // ---------- Reiter „Events“ ----------
+  if (url.searchParams.get("tab") === "events") {
+    let result: { flash?: string; error?: string; editId?: string } = {};
+    if (req.method === "POST" && action === "event-save") result = await handleEventSave(store, await req.formData());
+    else if (req.method === "POST" && action === "event-delete") result = await handleEventDelete(store, await req.formData());
+    const editId = result.error ? result.editId : (url.searchParams.get("edit") ?? undefined);
+    const body = await eventsAdminBody(store, { ...result, editId });
+    return page(
+      "Events",
+      `<p class="kicker">Gruppetto Tübingen · Verwaltung · <a href="?action=logout">Abmelden</a></p><h1>Events</h1>${tabNav("events")}${body}`,
+    );
+  }
 
   if (req.method === "POST" && url.searchParams.get("action") === "sync") {
     let flash: string;
