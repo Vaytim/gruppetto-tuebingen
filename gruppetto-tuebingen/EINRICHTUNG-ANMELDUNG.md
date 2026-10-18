@@ -65,6 +65,7 @@ Danach einmal neu deployen.
   - Pro Event: jede:r Teilnehmer:in mit Startnummer, Zahlung, Gebühr, Netto, Status (bezahlt/erstattet) und mit welcher Auszahlung das Geld aufs Konto kam. Als CSV herunterladbar.
   - **Kassenbuch-CSV** pro Jahr: je Auszahlung die Zeilen Einnahmen (brutto), Erstattungen und Stripe-Gebühren mit Belegnummer `ST-Datum-…` – die Summe entspricht dem Betrag auf dem Kontoauszug.
   - „Mit Stripe abgleichen" holt fehlende Gebühren/Auszahlungen nach, falls ein Webhook mal nicht ankam.
+- **Off-Season:** In der Verwaltung unter „Website“ → „Off-Season aktivieren“. Die Rides-Seite zeigt dann „season closed.“ mit Animation über den Weekly Rides – sofort, ohne neuen Deploy. Gleicher Knopf zum Beenden.
 - **Storno/Erstattung:** im Stripe-Dashboard bei der Zahlung „Erstatten". Bei voller Erstattung wird der Platz automatisch wieder frei (die Startnummer wird nicht neu vergeben).
 - **Anmeldeschluss:** standardmäßig um 0:00 Uhr am Event-Tag, anpassbar per `registration.closesAt: "2027-05-06T23:59"`.
 - **Buchhaltung:** Kassenbuch-CSV aus der Verwaltung übernehmen; als Beleg je Auszahlung zusätzlich den Auszahlungsbericht aus dem Stripe-Dashboard (Auszahlungen → Auszahlung → Exportieren) mit derselben Belegnummer ablegen. Die monatliche Gebührenübersicht findet ihr in Stripe unter Dokumente.
