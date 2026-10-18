@@ -1,12 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { events, formatEuro, registrationClosesAt } from "../data/events";
+import { codeEventsPublic, eventCardHTML, splitEvents } from "../lib/public-events";
 
-const today = new Date(new Date().toDateString());
-
-const upcomingEvents = events
-  .filter((event) => new Date(event.dateISO) >= today)
-  .sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime());
+// Vorab gerendert (Fallback ohne JavaScript/Backend). Im Browser wird die Liste
+// mit /api/events ersetzt – dort sind auch die Events aus der Verwaltung dabei.
+const { upcoming, past } = splitEvents(codeEventsPublic());
 ---
 
 <Layout title="Events">
@@ -20,47 +18,13 @@ const upcomingEvents = events
   </p>
 
   <section class="events-section">
-    {upcomingEvents.length > 0 ? (
-      <div class="events-grid">
-        {upcomingEvents.map((event) => (
-          <article class="event-card" tabindex="0">
-            <div class="event-card-front">
-              <p class="event-date">{event.dateLabel} &middot; {event.time}</p>
-              <h3>{event.title}</h3>
-              <p class="event-location">{event.location}</p>
-              <p class="event-level">{event.level}</p>
-            </div>
+    <div class="events-grid" id="events-upcoming" set:html={upcoming.map((e) => eventCardHTML(e)).join("")} />
+    <p class="no-events" id="events-none" hidden={upcoming.length > 0}>Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
+  </section>
 
-            <div class="event-card-reveal">
-              <img src={event.image} alt={event.title} loading="lazy" />
-              <div class="event-card-reveal-text">
-                <p>{event.description}</p>
-              </div>
-            </div>
-
-            {event.registration && (
-              <div class="event-card-actions">
-                <button
-                  type="button"
-                  class="btn-register"
-                  data-event-id={event.id}
-                  data-event-title={event.title}
-                  data-event-date={`${event.dateLabel} · ${event.time}`}
-                  data-event-price={formatEuro(event.registration.price)}
-                  data-closes-at={registrationClosesAt(event).toISOString()}
-                  disabled
-                >
-                  Anmelden · {formatEuro(event.registration.price)}
-                </button>
-                <p class="seats" data-seats-for={event.id}>Plätze werden geladen …</p>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
-    ) : (
-      <p class="no-events">Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
-    )}
+  <section class="events-section past-section" id="past-section" hidden={past.length === 0}>
+    <h2 class="past-title">Vergangene Events</h2>
+    <div class="events-grid" id="events-past" set:html={past.map((e) => eventCardHTML(e, true)).join("")} />
   </section>
 
   <dialog id="register-dialog" aria-labelledby="register-title">
@@ -93,6 +57,8 @@ const upcomingEvents = events
 </Layout>
 
 <script>
+  import { eventCardHTML, fetchEvents, splitEvents } from "../lib/public-events";
+
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
   const form = document.getElementById("register-form") as HTMLFormElement;
   const errorBox = form.querySelector(".form-error") as HTMLElement;
@@ -140,16 +106,17 @@ const upcomingEvents = events
     });
   }
 
-  document.querySelectorAll<HTMLButtonElement>(".btn-register").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentEventId = btn.dataset.eventId!;
-      document.getElementById("register-title")!.textContent = btn.dataset.eventTitle!;
-      document.getElementById("register-date")!.textContent = btn.dataset.eventDate!;
-      document.getElementById("register-price")!.textContent = btn.dataset.eventPrice!;
-      errorBox.hidden = true;
-      dialog.showModal();
-      (form.elements.namedItem("name") as HTMLInputElement).focus();
-    });
+  // Event-Delegation: funktioniert auch, nachdem die Liste neu gerendert wurde
+  document.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".btn-register");
+    if (!btn || btn.disabled) return;
+    currentEventId = btn.dataset.eventId!;
+    document.getElementById("register-title")!.textContent = btn.dataset.eventTitle!;
+    document.getElementById("register-date")!.textContent = btn.dataset.eventDate!;
+    document.getElementById("register-price")!.textContent = btn.dataset.eventPrice!;
+    errorBox.hidden = true;
+    dialog.showModal();
+    (form.elements.namedItem("name") as HTMLInputElement).focus();
   });
 
   dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
@@ -197,10 +164,21 @@ const upcomingEvents = events
     document.getElementById("cancel-notice")!.hidden = false;
   }
 
-  loadStatus();
+  async function init() {
+    const all = await fetchEvents();
+    if (all) {
+      const { upcoming, past } = splitEvents(all);
+      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => eventCardHTML(ev)).join("");
+      document.getElementById("events-none")!.hidden = upcoming.length > 0;
+      document.getElementById("events-past")!.innerHTML = past.map((ev) => eventCardHTML(ev, true)).join("");
+      document.getElementById("past-section")!.hidden = past.length === 0;
+    }
+    loadStatus();
+  }
+  init();
 </script>
 
-<style>
+<style is:global>
   .events-hero {
     padding: 4rem 0 2rem;
   }
@@ -232,6 +210,18 @@ const upcomingEvents = events
   .event-card-reveal-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem 1.25rem 6.5rem; background: linear-gradient(180deg, rgba(2, 24, 89, 0.15) 0%, rgba(2, 24, 89, 0.75) 45%, rgba(2, 24, 89, 0.97) 75%); }
   .event-card-reveal-text p { margin: 0; color: var(--color-text); font-size: 0.95rem; line-height: 1.4; }
   .no-events { color: var(--color-text-muted); }
+  .event-card-reveal.no-image { background: var(--color-bg-raised, #04328c); }
+  .btn-strava {
+    display: block; margin-top: 0.6rem; text-align: center; border-radius: 999px; padding: 0.7rem 1.2rem;
+    border: 1px solid var(--color-text); color: var(--color-text); text-decoration: none; font-weight: 700; font-size: 0.95rem;
+    background: rgba(13, 30, 64, 0.55); transition: background 0.2s ease, color 0.2s ease;
+  }
+  .btn-strava:hover { background: var(--color-text); color: var(--navy-800, #021859); }
+  .btn-strava:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
+  .past-section { padding-top: 1rem; }
+  .past-title { font-family: var(--font-title); font-size: clamp(1.8rem, 3.5vw, 2.6rem); margin: 0 0 1.5rem; }
+  .event-card.is-past .event-card-front { opacity: 0.7; }
+  .event-card.is-past .event-date { color: var(--color-text-muted); }
 
   /* Anmeldung – bleibt auch beim Hover-Bild sichtbar */
   .event-card-actions { position: relative; z-index: 2; margin-top: 1.25rem; }
