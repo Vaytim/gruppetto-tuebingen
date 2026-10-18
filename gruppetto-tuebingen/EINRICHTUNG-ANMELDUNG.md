@@ -70,6 +70,18 @@ Danach einmal neu deployen.
 - **Anmeldeschluss:** standardmäßig um 0:00 Uhr am Event-Tag, anpassbar per `registration.closesAt: "2027-05-06T23:59"`.
 - **Buchhaltung:** Kassenbuch-CSV aus der Verwaltung übernehmen; als Beleg je Auszahlung zusätzlich den Auszahlungsbericht aus dem Stripe-Dashboard (Auszahlungen → Auszahlung → Exportieren) mit derselben Belegnummer ablegen. Die monatliche Gebührenübersicht findet ihr in Stripe unter Dokumente.
 
+## Events ohne Code planen
+
+In der Verwaltung (`/api/teilnehmer`) gibt es den Reiter **Events**. Dort Titel, Datum, Uhrzeit,
+Treffpunkt, Beschreibung, Strava-Link und ein Bild eintragen → **Event anlegen**. Das Event erscheint
+sofort auf der Events-Seite und im Events-Slider der Startseite – ohne neuen Deploy.
+
+- Bilder werden im Browser auf max. 1600 px verkleinert und in Netlify Blobs (`event-images`) gespeichert.
+- Angezeigt werden alle kommenden Events (beginnend beim nächsten) und darunter die **letzten 4 vergangenen**.
+- Events aus `src/data/events.ts` erscheinen weiter, sind in der Verwaltung aber nur lesbar
+  („im Code“). Events **mit Anmeldung/Bezahlung** werden weiterhin dort angelegt.
+- Im Testmodus (StackBlitz) liegen angelegte Events nur im Arbeitsspeicher und sind nach einem Neustart weg.
+
 ## Noch zu erledigen (rechtlich)
 - `/rechtliches`: Teilnahmebedingungen (Haftung, Storno) und Datenschutzhinweise für die Anmeldung ergänzen (Name, E-Mail, Zahlungsabwicklung durch Stripe, Speicherung bei Netlify, Löschfrist).
 - Auftragsverarbeitungsverträge (AVV) mit Netlify und Stripe abschließen (beide bieten das online an).
