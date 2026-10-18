@@ -13,11 +13,17 @@
 .slider-track {
   position: relative;
   display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 2 * var(--gutter) - 3 * 18px) / 3.3);
-  gap: 18px; padding: 0 var(--gutter); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: var(--gutter); scrollbar-width: none;
+  gap: 18px; padding: 14px var(--gutter); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: var(--gutter); scrollbar-width: none;
 }
 .slider-track::-webkit-scrollbar { display: none; }
 
-.slide { scroll-snap-align: start; display: flex; flex-direction: column; }
+.slide {
+  scroll-snap-align: start; display: flex; flex-direction: column;
+  /* leicht schräg + "Tanzen" beim Scrollen (Werte setzt src/lib/motion.ts) */
+  transform: rotate(var(--tilt, 0deg)) translateY(var(--dance-y, 0px));
+  rotate: var(--dance-rot, 0deg);
+  transform-origin: 50% 40%;
+}
 .slide-media { display: block; overflow: hidden; aspect-ratio: 1; margin-bottom: 1.4rem; }
 .slide-media img, .slide-noimg {
   display: block; width: 100%; height: 100%; object-fit: cover;
@@ -41,4 +47,26 @@
 
 @media (max-width: 760px) {
   .slider-track { grid-auto-columns: 82%; }
+}
+
+/* ---------- Wipe: kommende Events horizontal beim Scrollen (Events-Seite) ---------- */
+.wipe-runway { position: relative; }
+.wipe-viewport {
+  position: sticky; top: 0; height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column; justify-content: center; overflow: hidden;
+}
+.wipe-strip {
+  --card-w: min(calc((100vw - 2 * var(--gutter) - 3 * 28px) / 3.3), 46dvh);
+  display: flex; gap: 28px; padding: 0 var(--gutter); will-change: transform;
+}
+.wipe-strip .slide { flex: 0 0 var(--card-w); width: var(--card-w); }
+.wipe-progress { margin: 2rem var(--gutter) 0; height: 2px; background: var(--color-line); position: relative; overflow: hidden; }
+.wipe-progress::after {
+  content: ""; position: absolute; inset: 0; background: var(--color-text);
+  transform-origin: left; transform: scaleX(var(--wipe-progress, 0));
+}
+.wipe-runway:not(.is-wiping) .wipe-progress { display: none; }
+.wipe-runway:not(.is-wiping) .wipe-viewport { position: static; height: auto; padding-block: 1rem; }
+@media (max-width: 760px) {
+  .wipe-strip { --card-w: min(78vw, 40dvh); gap: 18px; }
 }
