@@ -22,7 +22,13 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
     <p class="notice" id="cancel-notice" hidden>
       Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
     </p>
-    <div class="slider-track" tabindex="0" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("")} />
+    <!-- Wipe: beim Runterscrollen wandern alle kommenden Events nach links durch -->
+    <div class="wipe-runway" id="wipe">
+      <div class="wipe-viewport">
+        <div class="wipe-strip" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("")} />
+        <div class="wipe-progress" aria-hidden="true"></div>
+      </div>
+    </div>
     <p class="no-events" id="events-none" hidden={upcoming.length > 0}>Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
   </section>
 
@@ -32,7 +38,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
     <div class="past-grid" id="events-past" set:html={past.map((e) => slideHTML(e, { past: true, mode: "detail" })).join("")} />
   </section>
 
-  <dialog id="register-dialog" aria-labelledby="register-title">
+  <dialog id="register-dialog" aria-labelledby="register-title" data-lenis-prevent>
     <form id="register-form" novalidate>
       <button type="button" class="dialog-close" aria-label="Schließen" data-close>×</button>
       <p class="event-date" id="register-date"></p>
@@ -62,7 +68,8 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
 </Layout>
 
 <script>
-  import { fetchEvents, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+  import { fetchEvents, slideHTML, splitEvents } from "../lib/public-events";
+  import { danceCards, getLenis, initWipe } from "../lib/motion";
 
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
   const form = document.getElementById("register-form") as HTMLFormElement;
@@ -121,9 +128,11 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
     document.getElementById("register-price")!.textContent = btn.dataset.eventPrice!;
     errorBox.hidden = true;
     dialog.showModal();
+    getLenis()?.stop(); // Seite dahinter nicht mitscrollen
     (form.elements.namedItem("name") as HTMLInputElement).focus();
   });
 
+  dialog.addEventListener("close", () => getLenis()?.start());
   dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) dialog.close(); // Klick auf den Hintergrund
@@ -187,22 +196,30 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
     const id = decodeURIComponent(location.hash.slice(1));
     const el = id ? document.getElementById(id) : null;
     if (!el) return;
-    const track = el.closest<HTMLElement>(".slider-track");
-    if (track) {
-      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-      track.scrollTo({ left: el.offsetLeft - pad });
-    }
-    el.scrollIntoView({ block: "center" });
+    const go = () => {
+      if (el.closest(".wipe-strip")) wipe.scrollToCard(el, true);
+      else el.scrollIntoView({ block: "center" });
+    };
+    go();
+    // Bilder/Schriften verändern das Layout noch → nach dem Laden nachjustieren
+    if (document.readyState !== "complete") addEventListener("load", go, { once: true });
+    setTimeout(go, 400);
     el.classList.add("is-target");
     setTimeout(() => el.classList.remove("is-target"), 2200);
   }
 
-  wireSlider(document.querySelector<HTMLElement>(".events-slider")!);
+  const wipe = initWipe(document.getElementById("wipe")!);
+  document.querySelectorAll<HTMLButtonElement>(".events-slider .slider-nav button").forEach((b) =>
+    b.addEventListener("click", () => wipe.step(Number(b.dataset.dir))),
+  );
+  danceCards(document.getElementById("events-upcoming")!);
+  danceCards(document.getElementById("events-past")!);
   init();
 </script>
 
 <style is:global>
-  .events-slider { padding-top: calc(var(--gutter) * 2 + 8rem); padding-bottom: 5rem; }
+  .events-slider { padding-top: calc(var(--gutter) * 2 + 8rem); padding-bottom: 3rem; }
+  .events-slider:not(:has(.is-wiping)) .slider-nav { visibility: hidden; }
   .events-intro { max-width: 42rem; margin: 0 0 2.5rem; padding: 0 var(--gutter); color: var(--color-text-muted); font-size: 1.1rem; }
   .no-events { padding: 0 var(--gutter); color: var(--color-text-muted); }
   .events-slider .notice { margin: 0 var(--gutter) 1.5rem; }

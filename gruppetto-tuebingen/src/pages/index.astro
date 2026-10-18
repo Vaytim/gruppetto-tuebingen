@@ -124,6 +124,7 @@ const slides = slidesFor(upcoming, past);
 </Layout>
 
 <script>
+  import { danceCards } from "../lib/motion";
   import { fetchEvents, keepAlignedOnResize, scrollToFirstUpcoming, shortDate, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
 
   // Events inkl. der in der Verwaltung angelegten nachladen
@@ -156,6 +157,7 @@ const slides = slidesFor(upcoming, past);
     const track = slider.querySelector<HTMLElement>(".slider-track")!;
     scrollToFirstUpcoming(track); // vorab gerenderte Liste
     keepAlignedOnResize(track);
+    danceCards(track);
   });
 </script>
 
