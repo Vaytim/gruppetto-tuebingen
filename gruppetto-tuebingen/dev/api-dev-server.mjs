@@ -10,6 +10,8 @@ const ROUTES = {
   "/api/stripe-webhook": "/netlify/functions/stripe-webhook.mts",
   "/api/teilnehmer": "/netlify/functions/teilnehmer.mts",
   "/api/site-settings": "/netlify/functions/site-settings.mts",
+  "/api/events": "/netlify/functions/events.mts",
+  "/api/event-image": "/netlify/functions/event-image.mts",
   "/api/test-zahlung": "/dev/test-zahlung.ts",
   "/api/test-postfach": "/dev/test-postfach.ts",
 };
