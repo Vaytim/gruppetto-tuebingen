@@ -9,6 +9,7 @@ const ROUTES = {
   "/api/event-status": "/netlify/functions/event-status.mts",
   "/api/stripe-webhook": "/netlify/functions/stripe-webhook.mts",
   "/api/teilnehmer": "/netlify/functions/teilnehmer.mts",
+  "/api/site-settings": "/netlify/functions/site-settings.mts",
   "/api/test-zahlung": "/dev/test-zahlung.ts",
   "/api/test-postfach": "/dev/test-postfach.ts",
 };
