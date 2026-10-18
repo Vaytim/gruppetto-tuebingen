@@ -60,7 +60,7 @@ Danach einmal neu deployen.
 
 - **Neues Event:** in `src/data/events.ts` eintragen, `id` eindeutig wählen und später **nicht mehr ändern**.
 - **Anmeldegebühr pro Event:** im jeweiligen Event `registration: { price: 15, capacity: 60 }` setzen – jedes Event hat seinen eigenen Preis (Cent-Beträge wie `12.5` gehen, Minimum 0,50 €). Preisänderung = Datei ändern + pushen; gilt für alle neuen Anmeldungen, bereits Bezahlte behalten ihren Betrag. Ein Tippfehler (z. B. Preis 0) lässt den Build absichtlich fehlschlagen.
-- **Verwaltung:** `https://gruppetto-tuebingen.de/api/teilnehmer` öffnen → Passwort = `ADMIN_PASSWORD` (Benutzername egal).
+- **Verwaltung:** `https://gruppetto-tuebingen.de/api/teilnehmer` öffnen → im Anmeldeformular das Passwort = `ADMIN_PASSWORD` eingeben (bleibt 12 Stunden angemeldet, „Abmelden“ oben).
   - Übersicht: Brutto, Gebühren, Erstattungen, Netto, was schon aufs Konto überwiesen wurde, und jede Stripe-Auszahlung mit Aufschlüsselung pro Event (Abgleich „stimmt").
   - Pro Event: jede:r Teilnehmer:in mit Startnummer, Zahlung, Gebühr, Netto, Status (bezahlt/erstattet) und mit welcher Auszahlung das Geld aufs Konto kam. Als CSV herunterladbar.
   - **Kassenbuch-CSV** pro Jahr: je Auszahlung die Zeilen Einnahmen (brutto), Erstattungen und Stripe-Gebühren mit Belegnummer `ST-Datum-…` – die Summe entspricht dem Betrag auf dem Kontoauszug.
