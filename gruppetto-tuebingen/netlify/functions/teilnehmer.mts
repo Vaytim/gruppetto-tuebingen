@@ -1,4 +1,4 @@
-// Passwortgeschützte Vereinsübersicht (Benutzer beliebig, Passwort = ADMIN_PASSWORD)
+// Passwortgeschützte Vereinsübersicht (Anmeldeformular, Passwort = ADMIN_PASSWORD)
 //
 // GET  /api/teilnehmer                          → Übersicht: Events, Summen, Auszahlungen
 // GET  /api/teilnehmer?event=X                  → Teilnehmer eines Events mit Zahlungsstatus
@@ -14,17 +14,80 @@ import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
 import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
 
-// ---------- Hilfen ----------
-function authorized(req: Request): boolean {
-  const header = req.headers.get("authorization") ?? "";
-  if (!header.startsWith("Basic ")) return false;
-  const [, password = ""] = atob(header.slice(6)).split(/:(.*)/s);
+// ---------- Anmeldung ----------
+// Login über ein normales Formular (funktioniert auch in der StackBlitz-Vorschau,
+// wo Browser keine Passwort-Abfrage anzeigen). Danach merkt sich ein signiertes
+// Cookie die Anmeldung für 12 Stunden. Basic-Auth (z. B. per curl) geht weiterhin.
+const COOKIE = "gt_admin";
+const SESSION_HOURS = 12;
+
+function adminPassword(): string {
   // Im Testmodus (StackBlitz) ohne gesetztes Passwort: "test"
-  const expected = isTestMode() ? process.env.ADMIN_PASSWORD || "test" : env("ADMIN_PASSWORD");
-  if (password.length !== expected.length) return false;
+  return isTestMode() ? process.env.ADMIN_PASSWORD || "test" : env("ADMIN_PASSWORD");
+}
+
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
   let diff = 0;
-  for (let i = 0; i < expected.length; i++) diff |= password.charCodeAt(i) ^ expected.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+async function sign(value: string): Promise<string> {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(adminPassword()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`gruppetto-admin:${value}`));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sessionCookie(): Promise<string> {
+  const exp = Date.now() + SESSION_HOURS * 3_600_000;
+  // SameSite=None + Secure, damit es auch in der eingebetteten StackBlitz-Vorschau klappt
+  return `${COOKIE}=${exp}.${await sign(String(exp))}; Path=/api/teilnehmer; Max-Age=${SESSION_HOURS * 3600}; HttpOnly; Secure; SameSite=None`;
+}
+
+async function authorized(req: Request): Promise<boolean> {
+  const header = req.headers.get("authorization") ?? "";
+  if (header.startsWith("Basic ")) {
+    const [, password = ""] = atob(header.slice(6)).split(/:(.*)/s);
+    if (safeEqual(password, adminPassword())) return true;
+  }
+  const cookie = (req.headers.get("cookie") ?? "").split(/;\s*/).find((c) => c.startsWith(`${COOKIE}=`));
+  if (!cookie) return false;
+  const [exp, sig = ""] = cookie.slice(COOKIE.length + 1).split(".");
+  if (!exp || Number(exp) < Date.now()) return false;
+  return safeEqual(sig, await sign(exp));
+}
+
+/** POST nur von der eigenen Seite annehmen (Schutz vor fremden Formularen). */
+function sameOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin || origin === "null") return true; // manche Browser senden keinen Origin
+  return origin === new URL(req.url).origin;
+}
+
+function loginPage(error?: string, status = 401) {
+  return new Response(
+    `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Anmelden · Gruppetto Verwaltung</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d1e40;color:#f2f2f2;font:16px/1.45 Inter,system-ui,sans-serif;padding:16px}
+form{width:min(360px,100%);background:#021859;padding:2rem 1.5rem;display:grid;gap:1rem}
+h1{margin:0;font-size:1.5rem}p{margin:0;color:rgba(242,242,242,.72);font-size:.9rem}
+label{display:grid;gap:.4rem;font-size:.9rem}
+input{padding:.75rem .9rem;border:1px solid #04328c;background:#0d1e40;color:#f2f2f2;font:inherit}
+input:focus{outline:2px solid #f2f2f2;outline-offset:1px}
+button{padding:.85rem;border:0;background:#0f4abf;color:#f2f2f2;font:600 1rem Inter,system-ui,sans-serif;cursor:pointer}
+.err{color:#ffb3a7}
+</style>
+<form method="post" action="?action=login">
+  <h1>Verwaltung</h1>
+  <p>Gruppetto Tübingen · Anmeldungen, Zahlungen, Website</p>
+  ${error ? `<p class="err" role="alert">${h(error)}</p>` : ""}
+  <label>Passwort<input type="password" name="password" autocomplete="current-password" required autofocus></label>
+  <button>Anmelden</button>
+</form></html>`,
+    { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
+  );
 }
 
 const eur = (cents: number) => (cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
@@ -159,7 +222,7 @@ function overviewPage(all: EventTotals[], payouts: PayoutRecord[], settings: Sit
 
   return page(
     "Übersicht",
-    `<p class="kicker">Gruppetto Tübingen · Verwaltung</p><h1>Event-Anmeldungen & Zahlungen</h1>
+    `<p class="kicker">Gruppetto Tübingen · Verwaltung · <a href="?action=logout">Abmelden</a></p><h1>Event-Anmeldungen & Zahlungen</h1>
 ${flash ? `<div class="note">${h(flash)}</div>` : ""}
 ${missing ? `<div class="note warn">Bei ${missing} Zahlung(en) fehlen noch die Stripe-Gebühren. Klick auf „Mit Stripe abgleichen“.</div>` : ""}
 <div class="cards">
@@ -274,13 +337,27 @@ function kassenbuchCsv(payouts: PayoutRecord[], year?: string) {
 
 // ---------- Handler ----------
 export default async (req: Request) => {
-  if (!authorized(req)) {
-    return new Response("Anmeldung erforderlich", {
-      status: 401,
-      headers: { "www-authenticate": 'Basic realm="Gruppetto Verwaltung", charset="UTF-8"' },
+  const url = new URL(req.url);
+  const action = url.searchParams.get("action");
+
+  if (req.method === "POST" && !sameOrigin(req)) return new Response("Nicht erlaubt", { status: 403 });
+
+  if (req.method === "POST" && action === "login") {
+    const password = String((await req.formData()).get("password") ?? "");
+    if (!safeEqual(password, adminPassword())) {
+      await new Promise((r) => setTimeout(r, 800)); // Raten bremsen
+      return loginPage("Falsches Passwort.");
+    }
+    return new Response(null, { status: 303, headers: { location: url.pathname, "set-cookie": await sessionCookie() } });
+  }
+  if (action === "logout") {
+    return new Response(null, {
+      status: 303,
+      headers: { location: url.pathname, "set-cookie": `${COOKIE}=; Path=/api/teilnehmer; Max-Age=0; HttpOnly; Secure; SameSite=None` },
     });
   }
-  const url = new URL(req.url);
+  if (!(await authorized(req))) return loginPage();
+
   const store = ledgerStore();
 
   if (req.method === "POST" && url.searchParams.get("action") === "offseason") {
