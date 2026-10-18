@@ -145,6 +145,11 @@ const footerColumns = [
     </footer>
 
     <script>
+      import "lenis/dist/lenis.css";
+      import { initSmoothScroll } from "../lib/motion";
+      initSmoothScroll(); // weiches Scrollen auf allen Seiten
+    </script>
+    <script>
       const toggle = document.querySelector<HTMLButtonElement>(".menu-toggle")!;
       const menu = document.getElementById("site-menu")!;
       const setOpen = (open: boolean) => {
