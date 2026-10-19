@@ -12,6 +12,10 @@ export interface PublicEvent {
   description: string;
   image: string;
   strava?: string;
+  /** Link zum Instagram-Reel */
+  reelUrl?: string;
+  /** Reel-Video (spielt beim Hovern stumm ab) */
+  reelVideo?: string;
   registration?: { price: number; closesAt: string };
 }
 
@@ -71,11 +75,16 @@ export const eventAnchor = (id: string) => `event-${id}`;
 export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" | "detail" } = {}): string {
   const { past = false, mode = "home" } = opts;
   const link = `/events#${eventAnchor(e.id)}`;
-  const media = e.image ? `<img src="${esc(e.image)}" alt="" loading="lazy" />` : `<span class="slide-noimg"></span>`;
+  const video = e.reelVideo && e.reelVideo.startsWith("/api/event-video?") ? e.reelVideo : "";
+  const media =
+    (e.image ? `<img src="${esc(e.image)}" alt="" loading="lazy" />` : `<span class="slide-noimg"></span>`) +
+    (video ? `<video class="slide-reel" muted loop playsinline preload="none" data-src="${esc(video)}" aria-hidden="true"></video><span class="reel-badge">▶ Reel</span>` : "");
+  const reel = safeUrl(e.reelUrl);
+  const cls = `slide${past ? " is-past" : ""}${video ? " has-reel" : ""}`;
   const meta = `${past ? "Vergangen · " : ""}${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}`;
 
   if (mode === "home") {
-    return `<article class="slide${past ? " is-past" : ""}" data-past="${past ? 1 : 0}">
+    return `<article class="${cls}" data-past="${past ? 1 : 0}">
   <a class="slide-media" href="${link}" tabindex="-1" aria-hidden="true">${media}</a>
   <h3><a href="${link}">${esc(e.title)}</a></h3>
   <p class="slide-meta">${meta}</p>
@@ -85,7 +94,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
 
   const strava = safeUrl(e.strava);
   const r = !past && e.registration;
-  return `<article class="slide${past ? " is-past" : ""}" id="${esc(eventAnchor(e.id))}">
+  return `<article class="${cls}" id="${esc(eventAnchor(e.id))}">
   <div class="slide-media">${media}</div>
   <p class="slide-meta">${meta}</p>
   <h3>${esc(e.title)}</h3>
@@ -93,7 +102,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
   ${e.level ? `<p class="slide-loc">${esc(e.level)}</p>` : ""}
   ${e.description ? `<p class="slide-desc">${esc(e.description)}</p>` : ""}
   ${
-    r || strava
+    r || strava || reel
       ? `<div class="slide-actions">
     ${
       r
@@ -104,6 +113,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
         : ""
     }
     ${strava ? `<a class="btn-strava" href="${esc(strava)}" target="_blank" rel="noopener">${past ? "Aktivität auf Strava" : "Auf Strava ansehen"} ↗</a>` : ""}
+    ${reel ? `<a class="btn-strava btn-reel" href="${esc(reel)}" target="_blank" rel="noopener">Reel auf Instagram ↗</a>` : ""}
   </div>`
       : ""
   }

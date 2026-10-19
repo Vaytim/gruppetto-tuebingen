@@ -150,3 +150,46 @@ export function initWipe(runway: HTMLElement) {
     },
   };
 }
+
+/**
+ * Reel-Vorschau: Fährt man über eine Karte mit Reel-Video, wird sie größer und das
+ * Video spielt stumm ab. Auf Touch-Geräten (kein Hovern) spielt es, sobald die Karte
+ * gut sichtbar ist. Das Video wird erst bei Bedarf geladen.
+ */
+export function initReelHover(root: HTMLElement | Document = document) {
+  const canHover = window.matchMedia("(hover: hover)").matches;
+  const start = (card: HTMLElement) => {
+    const v = card.querySelector<HTMLVideoElement>("video.slide-reel");
+    if (!v) return;
+    if (!v.src && v.dataset.src) v.src = v.dataset.src;
+    card.classList.add("reel-playing");
+    v.play().catch(() => {});
+  };
+  const stop = (card: HTMLElement) => {
+    const v = card.querySelector<HTMLVideoElement>("video.slide-reel");
+    card.classList.remove("reel-playing");
+    v?.pause();
+  };
+
+  if (canHover) {
+    root.addEventListener("mouseover", (e) => {
+      const card = (e.target as HTMLElement).closest<HTMLElement>(".slide.has-reel");
+      if (card && !card.classList.contains("reel-playing")) start(card);
+    });
+    root.addEventListener("mouseout", (e) => {
+      const card = (e.target as HTMLElement).closest<HTMLElement>(".slide.has-reel");
+      const to = (e as MouseEvent).relatedTarget as Node | null;
+      if (card && !(to && card.contains(to))) stop(card);
+    });
+    return;
+  }
+
+  // Touch: abspielen, solange die Karte zu mind. 70 % sichtbar ist
+  const io = new IntersectionObserver(
+    (entries) => entries.forEach((en) => (en.intersectionRatio >= 0.7 ? start : stop)(en.target as HTMLElement)),
+    { threshold: [0, 0.7] },
+  );
+  const scan = () => document.querySelectorAll<HTMLElement>(".slide.has-reel").forEach((c) => io.observe(c));
+  scan();
+  new MutationObserver(scan).observe(root instanceof Document ? root.body : root, { childList: true, subtree: true });
+}
