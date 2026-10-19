@@ -69,7 +69,7 @@ const footerColumns = [
       rel="stylesheet"
     />
   </head>
-  <body class={fullBleed ? "is-full-bleed" : ""}>
+  <body class:list={[{ "is-full-bleed": fullBleed, "is-subpage": Astro.url.pathname !== "/" }]}>
     <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
 
     <!-- Info-Leiste -->
@@ -237,6 +237,9 @@ const footerColumns = [
       .menu-toggle:hover span { background: var(--blue-500); }
       /* Geöffnetes Menü (Navy-Hintergrund): X hell, damit es sichtbar bleibt */
       .menu-toggle[aria-expanded="true"] span { background: var(--light-100); }
+      /* Unterseiten: Menü-Button immer im Weiß der Palette (auch beim Hovern) – auf dem dunklen Grund sonst kaum sichtbar */
+      body.is-subpage .menu-toggle span,
+      body.is-subpage .menu-toggle:hover span { background: var(--light-100); }
       .menu-toggle[aria-expanded="true"]:hover span { background: var(--blue-500); }
       .menu-toggle[aria-expanded="true"] span:first-child { transform: translateY(6px) rotate(45deg); }
       .menu-toggle[aria-expanded="true"] span:last-child { transform: translateY(-6px) rotate(-45deg); }
