@@ -13,7 +13,15 @@ import { env, escapeHtml as h, ledgerStore } from "../lib/services";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
 import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
-import { ADMIN_EVENTS_CSS, eventsAdminBody, handleEventDelete, handleEventSave, tabNav } from "../lib/admin-events-page";
+import {
+  ADMIN_EVENTS_CSS,
+  eventsAdminBody,
+  handleEventDelete,
+  handleEventReset,
+  handleEventSave,
+  handleVideoAction,
+  tabNav,
+} from "../lib/admin-events-page";
 
 // ---------- Anmeldung ----------
 // Login über ein normales Formular (funktioniert auch in der StackBlitz-Vorschau,
@@ -372,9 +380,11 @@ export default async (req: Request) => {
 
   // ---------- Reiter „Events“ ----------
   if (url.searchParams.get("tab") === "events") {
+    if (req.method === "POST" && action?.startsWith("video-")) return handleVideoAction(req, action, url);
     let result: { flash?: string; error?: string; editId?: string } = {};
     if (req.method === "POST" && action === "event-save") result = await handleEventSave(store, await req.formData());
     else if (req.method === "POST" && action === "event-delete") result = await handleEventDelete(store, await req.formData());
+    else if (req.method === "POST" && action === "event-reset") result = await handleEventReset(store, await req.formData());
     const editId = result.error ? result.editId : (url.searchParams.get("edit") ?? undefined);
     const body = await eventsAdminBody(store, { ...result, editId });
     return page(
