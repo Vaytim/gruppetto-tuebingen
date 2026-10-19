@@ -12,7 +12,10 @@ let lastY = 0;
 /** Weiches Scrollen für die ganze Seite. Bei "Bewegung reduzieren" bleibt das normale Scrollen. */
 export function initSmoothScroll(): Lenis | null {
   if (lenis || reduced()) return lenis;
-  lenis = new Lenis({ autoRaf: true, lerp: 0.09, anchors: true });
+  // Tempo des weichen Scrollens:
+  //  lerp            → wie stark die Seite "nachgleitet" (kleiner = langsamer/weicher, vorher 0.09)
+  //  wheelMultiplier → wie weit ein Mausrad-/Trackpad-Schritt scrollt (1 = normal)
+  lenis = new Lenis({ autoRaf: true, lerp: 0.05, wheelMultiplier: 0.75, touchMultiplier: 0.9, anchors: { duration: 1.6 } });
   lenis.on("scroll", (l: Lenis) => (velocity = l.velocity));
   // Menü offen → Seite darunter nicht scrollen
   new MutationObserver(() => {
