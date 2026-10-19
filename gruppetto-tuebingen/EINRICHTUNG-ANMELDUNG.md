@@ -72,15 +72,21 @@ Danach einmal neu deployen.
 
 ## Events ohne Code planen
 
-In der Verwaltung (`/api/teilnehmer`) gibt es den Reiter **Events**. Dort Titel, Datum, Uhrzeit,
-Treffpunkt, Beschreibung, Strava-Link und ein Bild eintragen → **Event anlegen**. Das Event erscheint
-sofort auf der Events-Seite und im Events-Slider der Startseite – ohne neuen Deploy.
+In der Verwaltung (`/api/teilnehmer`) gibt es den Reiter **Events** – ein Dashboard mit allen Events,
+aufgeteilt in *Heute*, *Kommend* und *Vergangen* (mit Filter und Suche).
 
-- Bilder werden im Browser auf max. 1600 px verkleinert und in Netlify Blobs (`event-images`) gespeichert.
-- Angezeigt werden alle kommenden Events (beginnend beim nächsten) und darunter die **letzten 4 vergangenen**.
-- Events aus `src/data/events.ts` erscheinen weiter, sind in der Verwaltung aber nur lesbar
-  („im Code“). Events **mit Anmeldung/Bezahlung** werden weiterhin dort angelegt.
-- Im Testmodus (StackBlitz) liegen angelegte Events nur im Arbeitsspeicher und sind nach einem Neustart weg.
+- **Neues Event anlegen**: Titel, Datum, Uhrzeit, Treffpunkt, Beschreibung, Bild, Strava-Link,
+  Instagram-Reel-Link und Reel-Video. Erscheint sofort auf der Website – ohne neuen Deploy.
+- **Bearbeiten** geht bei allen Events, auch bei denen aus `src/data/events.ts`. Dort bleiben Datum,
+  Uhrzeit und Anmeldung im Code; Texte, Bild und Links lassen sich ändern („Zurücksetzen“ verwirft das).
+- **Reel-Video** (MP4/MOV, max. 150 MB): Auf der Website wird die Karte beim Hovern größer und das
+  Video spielt stumm ab (auf dem Handy, sobald die Karte im Bild ist). Instagram selbst erlaubt kein
+  automatisches Abspielen eingebetteter Reels – deshalb das Video zusätzlich hochladen. Tipp: in
+  1080p exportieren, dann bleibt die Datei klein und lädt schnell.
+- Alles wird dauerhaft gespeichert (Netlify Blobs: `event-registrations`, `event-images`, `event-videos`).
+- Im Testmodus (StackBlitz) liegen Events, Bilder und Videos im Ordner `.testdaten/` und überstehen
+  damit auch einen Neustart. (Wird nicht committet.)
+- Angezeigt werden auf der Events-Seite alle kommenden Events und die **letzten 4 vergangenen**.
 
 ## Noch zu erledigen (rechtlich)
 - `/rechtliches`: Teilnahmebedingungen (Haftung, Storno) und Datenschutzhinweise für die Anmeldung ergänzen (Name, E-Mail, Zahlungsabwicklung durch Stripe, Speicherung bei Netlify, Löschfrist).
