@@ -45,24 +45,24 @@ export const events: GruppettoEvent[] = [
     title: "Kaffeeröstung bei den Roastbears",
     dateISO: "2026-06-10",
     dateLabel: "10. Juni 2026",
-    time: "",
-    location: "",
+    time: "17:30 Uhr",
+    location: "Treffpunkt: Finanzamt Tübingen",
     level: "",
     description:
       "Schau den Roastbears beim Rösten über die Schulter: Wir sind live dabei, wenn die Bohnen in die Trommel kommen – danach gibt's eine offene Fragerunde zu allem rund um Kaffee, von der Bohne bis in die Tasse.",
-    image: "", // Bild folgt
+    image: "/images/events/kaffeeroestung-roastbears.jpg",
   },
   {
     id: "2026-franztrail-faeschd",
     title: "Franztrail Fäschd",
     dateISO: "2026-06-13",
     dateLabel: "13. Juni 2026",
-    time: "",
+    time: "11:00–18:00 Uhr",
     location: "",
     level: "",
     description:
       "Geführte Gravel- und Rennradtouren vom Gruppetto Tübingen beim Franztrail Fäschd.",
-    image: "", // Bild folgt
+    image: "/images/events/franztrail-faeschd.jpg",
   },
   {
     id: "2026-no-time-triathlon",
@@ -74,7 +74,7 @@ export const events: GruppettoEvent[] = [
     level: "",
     description:
       "Noch nie einen Triathlon gemacht? Swim, Bike, Run – ohne Zeitmessung, einfach zum Reinschnuppern!",
-    image: "", // Bild folgt
+    image: "/images/events/no-time-triathlon.jpg",
   },
   {
     id: "2026-everesting",
@@ -86,7 +86,7 @@ export const events: GruppettoEvent[] = [
     level: "",
     description:
       "Unser bekanntestes Format geht in Runde 2 – wie viele Höhenmeter schaffst du diesmal?",
-    image: "", // Bild folgt
+    image: "/images/events/everesting.jpg",
   },
   {
     id: "2026-triathlon-stimmungsnest",
@@ -98,7 +98,7 @@ export const events: GruppettoEvent[] = [
     level: "",
     description:
       "Zusammen mit dem OneMoreMile Runclub feuern wir euch beim Mey Generalbau Triathlon Tübingen an.",
-    image: "", // Bild folgt
+    image: "/images/events/triathlon-stimmungsnest.jpg",
   },
   {
     id: "2026-girls-ride",
@@ -110,7 +110,7 @@ export const events: GruppettoEvent[] = [
     level: "",
     description:
       "More to come!",
-    image: "", // Bild folgt
+    image: "/images/events/girls-ride.jpg",
   },
   {
     id: "2026-christmas-ride",
