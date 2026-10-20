@@ -69,7 +69,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
 
 <script>
   import { fetchEvents, slideHTML, splitEvents } from "../lib/public-events";
-  import { danceCards, getLenis, initReelHover, initWipe } from "../lib/motion";
+  import { getLenis, initReelHover, initWipe } from "../lib/motion";
 
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
   const form = document.getElementById("register-form") as HTMLFormElement;
@@ -212,8 +212,6 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
   document.querySelectorAll<HTMLButtonElement>(".events-slider .slider-nav button").forEach((b) =>
     b.addEventListener("click", () => wipe.step(Number(b.dataset.dir))),
   );
-  danceCards(document.getElementById("events-upcoming")!);
-  danceCards(document.getElementById("events-past")!);
   initReelHover();
   init();
 </script>
