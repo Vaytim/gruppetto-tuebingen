@@ -17,9 +17,8 @@ const path = Astro.url.pathname.replace(/\/$/, "") || "/";
 // Welche Nachricht erscheint, hängt am Off-Season-Schalter in der Verwaltung.
 const infoBar = {
   href: "/rides",
-  // Saison läuft (Off-Season aus) – lang für große Bildschirme, kurz fürs Handy
-  rides: "Weekly Rides: Mittwoch 18:15 Uhr Afterwork Road Ride · Donnerstag 18:30 Uhr Gravel Ride",
-  ridesShort: "Mi 18:15 Road Ride · Do 18:30 Gravel Ride",
+  // Saison läuft (Off-Season aus)
+  rides: "Mi 18:15 Road Ride · Do 18:30 Gravel Ride",
   // Off-Season an
   offseason: "Season Closed! We’ll be back 2027.",
 };
@@ -86,9 +85,7 @@ const footerColumns = [
 
     <!-- Info-Leiste -->
     <a class="info-bar" href={infoBar.href}>
-      <span class="info-bar-text ib-rides">
-        <span class="ib-long">{infoBar.rides}</span><span class="ib-short">{infoBar.ridesShort}</span>
-      </span>
+      <span class="info-bar-text ib-rides">{infoBar.rides}</span>
       <span class="info-bar-text ib-off">{infoBar.offseason}</span>
       <span aria-hidden="true">→</span>
     </a>
@@ -245,7 +242,6 @@ const footerColumns = [
       .info-bar:hover .info-bar-text { text-decoration-thickness: 2px; }
       /* Off-Season an → "Season Closed", sonst die Ride-Zeiten */
       html.offseason .ib-rides, html:not(.offseason) .ib-off { display: none; }
-      .ib-short { display: none; }
 
       /* ---------- Kopf ---------- */
       .site-header {
@@ -348,8 +344,6 @@ const footerColumns = [
         .footer-top { margin-left: 0; padding-left: 0; }
         .footer-columns { grid-template-columns: 1fr 1fr; }
         .info-bar { font-size: 0.8rem; }
-        .ib-long { display: none; }
-        .ib-short { display: inline; }
       }
     </style>
   </body>
