@@ -19,10 +19,6 @@
 
 .slide {
   scroll-snap-align: start; display: flex; flex-direction: column;
-  /* leicht schräg + "Tanzen" beim Scrollen (Werte setzt src/lib/motion.ts) */
-  transform: rotate(var(--tilt, 0deg)) translateY(var(--dance-y, 0px));
-  rotate: var(--dance-rot, 0deg);
-  transform-origin: 50% 40%;
 }
 .slide-media { display: block; overflow: hidden; aspect-ratio: 1; margin-bottom: 1.4rem; }
 .slide-media img, .slide-noimg {
