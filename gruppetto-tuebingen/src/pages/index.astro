@@ -35,11 +35,14 @@ const banner = {
   cta: { label: "Mehr erfahren", href: "/rides" },
 };
 
+// Trikot & Bib werden bei Spatzwear verkauft
+const SPATZWEAR = "https://www.spatzwear-custom.com/collections/gruppetto-tu";
+
 const shopBand = {
   title: "Gruppetto-Shop",
   items: [
-    { title: "Season 2026 Kit – Trikot", note: "Bei Spatzwear erhältlich", image: "/images/kit/trikot-vorne.jpg", href: "/shop" },
-    { title: "Season 2026 Kit – Bib", note: "Bei Spatzwear erhältlich", image: "/images/kit/bib.jpg", href: "/shop" },
+    { title: "Season 2026 Kit – Trikot", note: "Bei Spatzwear erhältlich", image: "/images/kit/trikot-vorne.jpg", href: SPATZWEAR },
+    { title: "Season 2026 Kit – Bib", note: "Bei Spatzwear erhältlich", image: "/images/kit/bib.jpg", href: SPATZWEAR },
     { title: "Gruppetto Sticker Set", note: "Bald verfügbar", image: "" /* noch kein Foto – weiße Fläche */, href: "/shop" },
     { title: "Trinkflasche", note: "Bald verfügbar", image: "" /* noch kein Foto – weiße Fläche */, href: "/shop" },
   ],
@@ -112,7 +115,7 @@ const slides = slidesFor(upcoming, past);
     <h2 class="band-title">{shopBand.title}</h2>
     <div class="band-grid">
       {shopBand.items.map((item) => (
-        <a class="band-card" href={item.href}>
+        <a class="band-card" href={item.href} {...(item.href.startsWith("http") ? { target: "_blank", rel: "noopener" } : {})}>
           {item.image ? <img src={item.image} alt="" loading="lazy" /> : <div class="band-blank" aria-hidden="true" />}
           <h3>{item.title}</h3>
           <p>{item.note}</p>
