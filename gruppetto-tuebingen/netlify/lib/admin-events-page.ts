@@ -379,7 +379,7 @@ ${editorForm(editing)}
 </div>
 ${section("Heute", heute, "heute")}
 ${section("Kommend", kommend, "kommend")}
-${section("Vergangen", vergangen, "vergangen", " · auf der Website erscheinen die letzten 4")}
+${section("Vergangen", vergangen, "vergangen", " · Startseite zeigt die letzten 4, Events-Seite alle")}
 ${rows.length ? "" : '<p class="ev-empty">Noch keine Events.</p>'}
 ${SCRIPT}`;
 }
