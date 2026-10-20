@@ -81,7 +81,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
     (video ? `<video class="slide-reel" muted loop playsinline preload="none" data-src="${esc(video)}" aria-hidden="true"></video><span class="reel-badge">▶ Reel</span>` : "");
   const reel = safeUrl(e.reelUrl);
   const cls = `slide${past ? " is-past" : ""}${video ? " has-reel" : ""}`;
-  const meta = `${past ? "Vergangen · " : ""}${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}`;
+  const meta = `${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}`;
 
   if (mode === "home") {
     return `<article class="${cls}" data-past="${past ? 1 : 0}">
