@@ -134,7 +134,7 @@ const routes = [
               </a>
             </div>
 {route.gpx ? (
-              <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden;"></div>
+              <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden; background: #f2efe9;"></div>
             ) : (
               <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
                 Streckenbild folgt
@@ -209,20 +209,15 @@ const routes = [
         document.querySelectorAll("[data-gpx]").forEach(function (el) {
           var gpxUrl = encodeURI("/" + el.dataset.gpx);
           var map = L.map(el, { scrollWheelZoom: false });
-          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", {
+          // Helle Karte im Komoot-Stil (CARTO Voyager: Wald/Wiesen grün, Straßen hell, Beschriftung dezent)
+          L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
             attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-            maxZoom: 19,
-          }).addTo(map);
-          map.createPane("labelsPane");
-          map.getPane("labelsPane").style.zIndex = 650;
-          map.getPane("labelsPane").style.pointerEvents = "none";
-          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
-            pane: "labelsPane",
+            subdomains: "abcd",
             maxZoom: 19,
           }).addTo(map);
           new L.GPX(gpxUrl, {
             async: true,
-            polyline_options: { color: "#f2f2f2", weight: 4 },
+            polyline_options: { color: "#0f4abf", weight: 4, opacity: 0.95, lineCap: "round", lineJoin: "round" },
           })
             .on("loaded", function (e) {
               map.fitBounds(e.target.getBounds());
