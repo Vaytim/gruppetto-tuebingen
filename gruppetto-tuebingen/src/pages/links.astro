@@ -4,7 +4,6 @@ import Layout from "../layouts/Layout.astro";
 // Passt die Links unten einfach mit euren echten URLs an.
 const links = [
   { label: "Instagram", url: "https://www.instagram.com/gruppetto.tuebingen/", note: "Route-Reels & Ausfahrten" },
-  { label: "WhatsApp Community", url: "https://chat.whatsapp.com/HnfrRkc8hAv4IeibmHCujV", note: "Zur Absprache Untereinander und Ankündigung unserer Events" },
   { label: "Strava Club", url: "https://www.strava.com/clubs/gruppetto-tuebingen", note: "Aktivitäten, Events & Kudos" },
   { label: "Season 2026 Kit", url: "shop", note: "Direkt auf der Website von Spatzwear erhältlich" },
 
@@ -15,7 +14,7 @@ const links = [
   <section style="padding: 3rem 0;">
     <h1>Links</h1>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
-      Alles an einem Ort – Social Media, WhatsApp-Gruppen und mehr.
+      Alles an einem Ort – Social Media, Strava und mehr.
     </p>
 
     {
@@ -26,7 +25,7 @@ const links = [
               <h3 style="margin: 0 0 0.25rem;">{link.label}</h3>
               <p style="margin: 0; color: var(--color-text-muted);">{link.note}</p>
             </div>
-            <span style="color: var(--color-accent); font-weight: 700;">→</span>
+            <span style="color: var(--color-highlight); font-weight: 700;">→</span>
           </div>
         </a>
       ))

@@ -22,12 +22,12 @@ export default async (req: Request) => {
   const html = `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Test-Postfach</title>
 <style>
-  body{margin:0;font-family:system-ui,sans-serif;background:#0f1210;color:#f2f4f1}
+  body{margin:0;font-family:system-ui,sans-serif;background:#0d1e40;color:#f2f2f2}
   .banner{background:#ffb020;color:#3d2600;text-align:center;padding:.6rem 1rem;font-weight:600;font-size:.9rem}
-  main{max-width:680px;margin:2rem auto;padding:0 16px}a{color:#d7f542}
-  section{background:#1a1f1b;border-radius:14px;padding:1rem;margin-bottom:1.5rem}
-  dl{display:grid;grid-template-columns:auto 1fr;gap:.3rem 1rem;margin:0 0 1rem;font-size:.95rem}dt{color:#a9b0aa}dd{margin:0}
-  iframe{width:100%;height:640px;border:0;border-radius:10px;background:#f2f4f1}
+  main{max-width:680px;margin:2rem auto;padding:0 16px}a{color:#f2f2f2}
+  section{background:#021859;border-radius:14px;padding:1rem;margin-bottom:1.5rem}
+  dl{display:grid;grid-template-columns:auto 1fr;gap:.3rem 1rem;margin:0 0 1rem;font-size:.95rem}dt{color:rgba(242,242,242,.72)}dd{margin:0}
+  iframe{width:100%;height:640px;border:0;border-radius:10px;background:#f2f2f2}
 </style>
 <div class="banner">TESTMODUS – diese Mails wurden nicht wirklich verschickt</div>
 <main>

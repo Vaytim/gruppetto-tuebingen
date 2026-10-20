@@ -60,14 +60,33 @@ Danach einmal neu deployen.
 
 - **Neues Event:** in `src/data/events.ts` eintragen, `id` eindeutig wählen und später **nicht mehr ändern**.
 - **Anmeldegebühr pro Event:** im jeweiligen Event `registration: { price: 15, capacity: 60 }` setzen – jedes Event hat seinen eigenen Preis (Cent-Beträge wie `12.5` gehen, Minimum 0,50 €). Preisänderung = Datei ändern + pushen; gilt für alle neuen Anmeldungen, bereits Bezahlte behalten ihren Betrag. Ein Tippfehler (z. B. Preis 0) lässt den Build absichtlich fehlschlagen.
-- **Verwaltung:** `https://gruppetto-tuebingen.de/api/teilnehmer` öffnen → Passwort = `ADMIN_PASSWORD` (Benutzername egal).
+- **Verwaltung:** `https://gruppetto-tuebingen.de/api/teilnehmer` öffnen → im Anmeldeformular das Passwort = `ADMIN_PASSWORD` eingeben (bleibt 12 Stunden angemeldet, „Abmelden“ oben).
   - Übersicht: Brutto, Gebühren, Erstattungen, Netto, was schon aufs Konto überwiesen wurde, und jede Stripe-Auszahlung mit Aufschlüsselung pro Event (Abgleich „stimmt").
   - Pro Event: jede:r Teilnehmer:in mit Startnummer, Zahlung, Gebühr, Netto, Status (bezahlt/erstattet) und mit welcher Auszahlung das Geld aufs Konto kam. Als CSV herunterladbar.
   - **Kassenbuch-CSV** pro Jahr: je Auszahlung die Zeilen Einnahmen (brutto), Erstattungen und Stripe-Gebühren mit Belegnummer `ST-Datum-…` – die Summe entspricht dem Betrag auf dem Kontoauszug.
   - „Mit Stripe abgleichen" holt fehlende Gebühren/Auszahlungen nach, falls ein Webhook mal nicht ankam.
+- **Off-Season:** In der Verwaltung unter „Website“ → „Off-Season aktivieren“. Die Rides-Seite zeigt dann „season closed.“ mit Animation über den Weekly Rides – sofort, ohne neuen Deploy. Gleicher Knopf zum Beenden.
 - **Storno/Erstattung:** im Stripe-Dashboard bei der Zahlung „Erstatten". Bei voller Erstattung wird der Platz automatisch wieder frei (die Startnummer wird nicht neu vergeben).
 - **Anmeldeschluss:** standardmäßig um 0:00 Uhr am Event-Tag, anpassbar per `registration.closesAt: "2027-05-06T23:59"`.
 - **Buchhaltung:** Kassenbuch-CSV aus der Verwaltung übernehmen; als Beleg je Auszahlung zusätzlich den Auszahlungsbericht aus dem Stripe-Dashboard (Auszahlungen → Auszahlung → Exportieren) mit derselben Belegnummer ablegen. Die monatliche Gebührenübersicht findet ihr in Stripe unter Dokumente.
+
+## Events ohne Code planen
+
+In der Verwaltung (`/api/teilnehmer`) gibt es den Reiter **Events** – ein Dashboard mit allen Events,
+aufgeteilt in *Heute*, *Kommend* und *Vergangen* (mit Filter und Suche).
+
+- **Neues Event anlegen**: Titel, Datum, Uhrzeit, Treffpunkt, Beschreibung, Bild, Strava-Link,
+  Instagram-Reel-Link und Reel-Video. Erscheint sofort auf der Website – ohne neuen Deploy.
+- **Bearbeiten** geht bei allen Events, auch bei denen aus `src/data/events.ts`. Dort bleiben Datum,
+  Uhrzeit und Anmeldung im Code; Texte, Bild und Links lassen sich ändern („Zurücksetzen“ verwirft das).
+- **Reel-Video** (MP4/MOV, max. 150 MB): Auf der Website wird die Karte beim Hovern größer und das
+  Video spielt stumm ab (auf dem Handy, sobald die Karte im Bild ist). Instagram selbst erlaubt kein
+  automatisches Abspielen eingebetteter Reels – deshalb das Video zusätzlich hochladen. Tipp: in
+  1080p exportieren, dann bleibt die Datei klein und lädt schnell.
+- Alles wird dauerhaft gespeichert (Netlify Blobs: `event-registrations`, `event-images`, `event-videos`).
+- Im Testmodus (StackBlitz) liegen Events, Bilder und Videos im Ordner `.testdaten/` und überstehen
+  damit auch einen Neustart. (Wird nicht committet.)
+- Die Events-Seite zeigt alle kommenden und **alle vergangenen** Events, die Startseite nur die **letzten 4 vergangenen**.
 
 ## Noch zu erledigen (rechtlich)
 - `/rechtliches`: Teilnahmebedingungen (Haftung, Storno) und Datenschutzhinweise für die Anmeldung ergänzen (Name, E-Mail, Zahlungsabwicklung durch Stripe, Speicherung bei Netlify, Löschfrist).

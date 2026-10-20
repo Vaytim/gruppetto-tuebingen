@@ -1,4 +1,4 @@
-// Passwortgeschützte Vereinsübersicht (Benutzer beliebig, Passwort = ADMIN_PASSWORD)
+// Passwortgeschützte Vereinsübersicht (Anmeldeformular, Passwort = ADMIN_PASSWORD)
 //
 // GET  /api/teilnehmer                          → Übersicht: Events, Summen, Auszahlungen
 // GET  /api/teilnehmer?event=X                  → Teilnehmer eines Events mit Zahlungsstatus
@@ -12,18 +12,91 @@ import { type Participant, type PayoutRecord, isActive, readLedger, seatsTaken }
 import { env, escapeHtml as h, ledgerStore } from "../lib/services";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
+import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
+import {
+  ADMIN_EVENTS_CSS,
+  eventsAdminBody,
+  handleEventDelete,
+  handleEventReset,
+  handleEventSave,
+  handleVideoAction,
+  tabNav,
+} from "../lib/admin-events-page";
 
-// ---------- Hilfen ----------
-function authorized(req: Request): boolean {
-  const header = req.headers.get("authorization") ?? "";
-  if (!header.startsWith("Basic ")) return false;
-  const [, password = ""] = atob(header.slice(6)).split(/:(.*)/s);
+// ---------- Anmeldung ----------
+// Login über ein normales Formular (funktioniert auch in der StackBlitz-Vorschau,
+// wo Browser keine Passwort-Abfrage anzeigen). Danach merkt sich ein signiertes
+// Cookie die Anmeldung für 12 Stunden. Basic-Auth (z. B. per curl) geht weiterhin.
+const COOKIE = "gt_admin";
+const SESSION_HOURS = 12;
+
+function adminPassword(): string {
   // Im Testmodus (StackBlitz) ohne gesetztes Passwort: "test"
-  const expected = isTestMode() ? process.env.ADMIN_PASSWORD || "test" : env("ADMIN_PASSWORD");
-  if (password.length !== expected.length) return false;
+  return isTestMode() ? process.env.ADMIN_PASSWORD || "test" : env("ADMIN_PASSWORD");
+}
+
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
   let diff = 0;
-  for (let i = 0; i < expected.length; i++) diff |= password.charCodeAt(i) ^ expected.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+async function sign(value: string): Promise<string> {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(adminPassword()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`gruppetto-admin:${value}`));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sessionCookie(): Promise<string> {
+  const exp = Date.now() + SESSION_HOURS * 3_600_000;
+  // SameSite=None + Secure, damit es auch in der eingebetteten StackBlitz-Vorschau klappt
+  return `${COOKIE}=${exp}.${await sign(String(exp))}; Path=/api/teilnehmer; Max-Age=${SESSION_HOURS * 3600}; HttpOnly; Secure; SameSite=None`;
+}
+
+async function authorized(req: Request): Promise<boolean> {
+  const header = req.headers.get("authorization") ?? "";
+  if (header.startsWith("Basic ")) {
+    const [, password = ""] = atob(header.slice(6)).split(/:(.*)/s);
+    if (safeEqual(password, adminPassword())) return true;
+  }
+  const cookie = (req.headers.get("cookie") ?? "").split(/;\s*/).find((c) => c.startsWith(`${COOKIE}=`));
+  if (!cookie) return false;
+  const [exp, sig = ""] = cookie.slice(COOKIE.length + 1).split(".");
+  if (!exp || Number(exp) < Date.now()) return false;
+  return safeEqual(sig, await sign(exp));
+}
+
+/** POST nur von der eigenen Seite annehmen (Schutz vor fremden Formularen). */
+function sameOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin || origin === "null") return true; // manche Browser senden keinen Origin
+  return origin === new URL(req.url).origin;
+}
+
+function loginPage(error?: string, status = 401) {
+  return new Response(
+    `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Anmelden · Gruppetto Verwaltung</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d1e40;color:#f2f2f2;font:16px/1.45 Inter,system-ui,sans-serif;padding:16px}
+form{width:min(360px,100%);background:#021859;padding:2rem 1.5rem;display:grid;gap:1rem}
+h1{margin:0;font-size:1.5rem}p{margin:0;color:rgba(242,242,242,.72);font-size:.9rem}
+label{display:grid;gap:.4rem;font-size:.9rem}
+input{padding:.75rem .9rem;border:1px solid #04328c;background:#0d1e40;color:#f2f2f2;font:inherit}
+input:focus{outline:2px solid #f2f2f2;outline-offset:1px}
+button{padding:.85rem;border:0;background:#0f4abf;color:#f2f2f2;font:600 1rem Inter,system-ui,sans-serif;cursor:pointer}
+.err{color:#ffb3a7}
+</style>
+<form method="post" action="?action=login">
+  <h1>Verwaltung</h1>
+  <p>Gruppetto Tübingen · Anmeldungen, Zahlungen, Website</p>
+  ${error ? `<p class="err" role="alert">${h(error)}</p>` : ""}
+  <label>Passwort<input type="password" name="password" autocomplete="current-password" required autofocus></label>
+  <button>Anmelden</button>
+</form></html>`,
+    { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
+  );
 }
 
 const eur = (cents: number) => (cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
@@ -102,7 +175,7 @@ const page = (title: string, body: string) =>
     `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>${h(title)} · Gruppetto Verwaltung</title>
 <style>
-:root{--bg:#0f1210;--alt:#171b18;--line:#2a302b;--text:#f2f4f1;--muted:#a9b0aa;--acc:#d7f542;--warn:#ffb3a7}
+:root{--bg:#0d1e40;--alt:#021859;--line:#04328c;--text:#f2f2f2;--muted:rgba(242,242,242,.72);--acc:#f2f2f2;--blue:#0f4abf;--warn:#ffb3a7}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,system-ui,sans-serif}
 main{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}a{color:var(--acc)}h1{margin:.2rem 0 1.5rem;font-size:1.8rem}h2{margin:2.5rem 0 .8rem;font-size:1.2rem}
 .muted{color:var(--muted)}.kicker{color:var(--acc);font-weight:600;margin:0}
@@ -112,18 +185,20 @@ main{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}a{color:var(--acc)}h1
 table{border-collapse:collapse;width:100%;font-size:.92rem}th,td{padding:.6rem .8rem;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{color:var(--muted);font-weight:500}td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}tr:last-child td{border-bottom:0}
 tfoot td{font-weight:700;border-top:1px solid var(--line)}
-.tag{display:inline-block;padding:.1rem .55rem;border-radius:99px;font-size:.8rem;background:#253017;color:var(--acc)}
-.tag.ref{background:#3a2420;color:var(--warn)}.tag.wait{background:#2a2f2b;color:var(--muted)}
+.tag{display:inline-block;padding:.1rem .55rem;border-radius:99px;font-size:.8rem;background:var(--blue);color:var(--text)}
+.tag.ref{background:#3a2420;color:var(--warn)}.tag.wait{background:var(--line);color:var(--text)}
 .actions{display:flex;flex-wrap:wrap;gap:.6rem;margin:0 0 1rem}
-.btn{display:inline-block;border:0;border-radius:99px;padding:.55rem 1rem;background:var(--acc);color:#0f1210;font:600 .9rem Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}
+.btn{display:inline-block;border:0;border-radius:99px;padding:.55rem 1rem;background:var(--blue);color:var(--text);font:600 .9rem Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}
 .btn.sec{background:var(--alt);color:var(--text);border:1px solid var(--line)}
-.note{background:var(--alt);border-left:3px solid var(--acc);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
+.note{background:var(--alt);border-left:3px solid var(--blue);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
 .warn{border-left-color:var(--warn)}
+${ADMIN_EVENTS_CSS}
+.setting{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;background:var(--alt);border-radius:14px;padding:1rem}
 </style><main>${body}</main></html>`,
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
   );
 
-function overviewPage(all: EventTotals[], payouts: PayoutRecord[], flash?: string) {
+function overviewPage(all: EventTotals[], payouts: PayoutRecord[], settings: SiteSettings, flash?: string) {
   const sum = all.reduce((s, t) => ({ gross: s.gross + t.gross, fees: s.fees + t.fees, refunds: s.refunds + t.refunds, net: s.net + t.net }), { gross: 0, fees: 0, refunds: 0, net: 0 });
   // Tatsächlich überwiesen = Summe der Stripe-Auszahlungen (Erstattungen sind dort schon abgezogen)
   const onAccount = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
@@ -157,7 +232,8 @@ function overviewPage(all: EventTotals[], payouts: PayoutRecord[], flash?: strin
 
   return page(
     "Übersicht",
-    `<p class="kicker">Gruppetto Tübingen · Verwaltung</p><h1>Event-Anmeldungen & Zahlungen</h1>
+    `<p class="kicker">Gruppetto Tübingen · Verwaltung · <a href="?action=logout">Abmelden</a></p><h1>Event-Anmeldungen & Zahlungen</h1>
+${tabNav("zahlungen")}
 ${flash ? `<div class="note">${h(flash)}</div>` : ""}
 ${missing ? `<div class="note warn">Bei ${missing} Zahlung(en) fehlen noch die Stripe-Gebühren. Klick auf „Mit Stripe abgleichen“.</div>` : ""}
 <div class="cards">
@@ -171,6 +247,14 @@ ${missing ? `<div class="note warn">Bei ${missing} Zahlung(en) fehlen noch die S
   <form method="post" action="?action=sync"><button class="btn">${isTestMode() ? "🧪 Test-Auszahlung simulieren" : "Mit Stripe abgleichen"}</button></form>
   <a class="btn sec" href="?export=kassenbuch&jahr=${year}">Kassenbuch ${year} (CSV)</a>
   <a class="btn sec" href="?export=kassenbuch&jahr=${year - 1}">Kassenbuch ${year - 1} (CSV)</a>
+</div>
+
+<h2>Website</h2>
+<div class="setting">
+  <div><b>Off-Season</b> <span class="tag ${settings.offseason ? "" : "wait"}">${settings.offseason ? "aktiv" : "aus"}</span>
+  <p class="muted" style="margin:.3rem 0 0">Zeigt auf der Rides-Seite „Season Closed“ über den Weekly Rides. Wirkt sofort, ohne neuen Deploy.</p></div>
+  <form method="post" action="?action=offseason"><input type="hidden" name="value" value="${settings.offseason ? "off" : "on"}">
+  <button class="btn ${settings.offseason ? "sec" : ""}">${settings.offseason ? "Off-Season beenden" : "Off-Season aktivieren"}</button></form>
 </div>
 
 <h2>Events</h2>
@@ -264,14 +348,50 @@ function kassenbuchCsv(payouts: PayoutRecord[], year?: string) {
 
 // ---------- Handler ----------
 export default async (req: Request) => {
-  if (!authorized(req)) {
-    return new Response("Anmeldung erforderlich", {
-      status: 401,
-      headers: { "www-authenticate": 'Basic realm="Gruppetto Verwaltung", charset="UTF-8"' },
+  const url = new URL(req.url);
+  const action = url.searchParams.get("action");
+
+  if (req.method === "POST" && !sameOrigin(req)) return new Response("Nicht erlaubt", { status: 403 });
+
+  if (req.method === "POST" && action === "login") {
+    const password = String((await req.formData()).get("password") ?? "");
+    if (!safeEqual(password, adminPassword())) {
+      await new Promise((r) => setTimeout(r, 800)); // Raten bremsen
+      return loginPage("Falsches Passwort.");
+    }
+    return new Response(null, { status: 303, headers: { location: url.pathname, "set-cookie": await sessionCookie() } });
+  }
+  if (action === "logout") {
+    return new Response(null, {
+      status: 303,
+      headers: { location: url.pathname, "set-cookie": `${COOKIE}=; Path=/api/teilnehmer; Max-Age=0; HttpOnly; Secure; SameSite=None` },
     });
   }
-  const url = new URL(req.url);
+  if (!(await authorized(req))) return loginPage();
+
   const store = ledgerStore();
+
+  if (req.method === "POST" && url.searchParams.get("action") === "offseason") {
+    const value = (await req.formData()).get("value");
+    const s = await updateSettings(store, { offseason: value === "on" });
+    return overviewPage(await loadAll(), await listPayouts(store), s, s.offseason ? "Off-Season ist jetzt aktiv." : "Off-Season ist beendet – die Rides sind wieder sichtbar.");
+  }
+  const settings = await readSettings(store);
+
+  // ---------- Reiter „Events“ ----------
+  if (url.searchParams.get("tab") === "events") {
+    if (req.method === "POST" && action?.startsWith("video-")) return handleVideoAction(req, action, url);
+    let result: { flash?: string; error?: string; editId?: string } = {};
+    if (req.method === "POST" && action === "event-save") result = await handleEventSave(store, await req.formData());
+    else if (req.method === "POST" && action === "event-delete") result = await handleEventDelete(store, await req.formData());
+    else if (req.method === "POST" && action === "event-reset") result = await handleEventReset(store, await req.formData());
+    const editId = result.error ? result.editId : (url.searchParams.get("edit") ?? undefined);
+    const body = await eventsAdminBody(store, { ...result, editId });
+    return page(
+      "Events",
+      `<p class="kicker">Gruppetto Tübingen · Verwaltung · <a href="?action=logout">Abmelden</a></p><h1>Events</h1>${tabNav("events")}${body}`,
+    );
+  }
 
   if (req.method === "POST" && url.searchParams.get("action") === "sync") {
     let flash: string;
@@ -281,6 +401,7 @@ export default async (req: Request) => {
         return overviewPage(
           await loadAll(),
           await listPayouts(store),
+          settings,
           r.payouts
             ? `Testmodus: Auszahlung über ${(r.amount / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })} simuliert.`
             : "Testmodus: Nichts auszuzahlen – erst eine Testanmeldung bezahlen.",
@@ -292,7 +413,7 @@ export default async (req: Request) => {
       console.error("Abgleich fehlgeschlagen", err);
       flash = "Abgleich fehlgeschlagen – bitte später erneut versuchen (Details im Netlify-Log).";
     }
-    return overviewPage(await loadAll(), await listPayouts(store), flash);
+    return overviewPage(await loadAll(), await listPayouts(store), settings, flash);
   }
 
   if (url.searchParams.get("export") === "kassenbuch") {
@@ -307,7 +428,7 @@ export default async (req: Request) => {
     return url.searchParams.get("format") === "csv" ? eventCsv(t) : eventPage(t);
   }
 
-  return overviewPage(await loadAll(), await listPayouts(store));
+  return overviewPage(await loadAll(), await listPayouts(store), settings);
 };
 
 export const config: Config = { path: "/api/teilnehmer" };

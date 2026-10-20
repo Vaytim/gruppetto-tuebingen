@@ -11,3 +11,6 @@ dist/
 
 # System
 .DS_Store
+
+# Testmodus: lokal gespeicherte Events, Bilder & Videos
+.testdaten/

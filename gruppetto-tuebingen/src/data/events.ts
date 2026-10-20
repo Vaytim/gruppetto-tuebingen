@@ -26,70 +26,102 @@ export interface GruppettoEvent {
   image: string;
   /** Weglassen = Event ohne Anmeldung (wird nur angezeigt) */
   registration?: Registration;
+  /** Link zum Strava-Event / zur Route (optional) */
+  strava?: string;
+  /** "code" = hier in der Datei, "admin" = in der Verwaltung angelegt */
+  source?: "code" | "admin";
+}
+
+/** Datum als "12. Dezember 2026" */
+export function germanDateLabel(dateISO: string): string {
+  return new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${dateISO}T12:00:00Z`),
+  );
 }
 
 export const events: GruppettoEvent[] = [
   {
-    id: "2026-grillfahrt-neckar",
-    title: "Sommer-Grillfahrt an den Neckar",
-    dateISO: "2026-08-15",
-    dateLabel: "15. August 2026",
+    id: "2026-kaffeeroestung-roastbears",
+    title: "Kaffeeröstung bei den Roastbears",
+    dateISO: "2026-06-10",
+    dateLabel: "10. Juni 2026",
     time: "17:30 Uhr",
-    location: "Treffpunkt: Neckarbrücke Tübingen",
-    level: "Locker · alle Levels",
-    description:
-      "Entspannte Ausfahrt entlang des Neckars mit anschließendem Grillen am Fluss. Bringt gute Laune und etwas für den Grill mit - Getränke sind organisiert.",
-    image: "https://picsum.photos/seed/gruppetto-grill/640/420",
-  },
-  {
-    id: "2026-nachtfahrt",
-    title: "Nachtfahrt mit Lichterkette",
-    dateISO: "2026-08-29",
-    dateLabel: "29. August 2026",
-    time: "20:30 Uhr",
     location: "Treffpunkt: Finanzamt Tübingen",
-    level: "Mittel · Beleuchtung Pflicht",
+    level: "",
     description:
-      "Wenn es dunkel wird, drehen wir eine ruhige Runde durchs Umland - mit Lichtern an den Rädern und guter Stimmung. Helm und Licht sind Pflicht.",
-    image: "https://picsum.photos/seed/gruppetto-night/640/420",
+      "Schau den Roastbears beim Rösten über die Schulter: Wir sind live dabei, wenn die Bohnen in die Trommel kommen – danach gibt's eine offene Fragerunde zu allem rund um Kaffee, von der Bohne bis in die Tasse.",
+    image: "/images/events/kaffeeroestung-roastbears.jpg",
   },
   {
-    id: "2026-rookie-workshop",
-    title: "Rookie-Workshop: Erste Gruppenfahrt",
-    dateISO: "2026-09-12",
-    dateLabel: "12. September 2026",
-    time: "10:00 Uhr",
-    location: "Treffpunkt: Technisches Rathaus",
-    level: "Einsteiger · geführt",
+    id: "2026-franztrail-faeschd",
+    title: "Franztrail Fäschd",
+    dateISO: "2026-06-13",
+    dateLabel: "13. Juni 2026",
+    time: "11:00–18:00 Uhr",
+    location: "",
+    level: "",
     description:
-      "Für alle, die noch nie in der Gruppe gefahren sind: Wir erklären Handzeichen, Windschattenfahren und Verhalten im Verkehr, bevor es auf eine kurze Übungsrunde geht.",
-    image: "https://picsum.photos/seed/gruppetto-rookie/640/420",
+      "Geführte Gravel- und Rennradtouren vom Gruppetto Tübingen beim Franztrail Fäschd.",
+    image: "/images/events/franztrail-faeschd.jpg",
   },
   {
-    id: "2026-alb-ausflug",
-    title: "Gruppetto-Vereinsausflug: Schwäbische Alb",
-    dateISO: "2026-09-27",
-    dateLabel: "27. September 2026",
-    time: "08:00 Uhr",
-    location: "Treffpunkt: Bahnhof Tübingen",
-    level: "Anspruchsvoll · Höhenmeter",
+    id: "2026-no-time-triathlon",
+    title: "No Time Triathlon",
+    dateISO: "2026-06-20",
+    dateLabel: "20. Juni 2026",
+    time: "",
+    location: "",
+    level: "",
     description:
-      "Ein ganzer Tag auf der Alb mit ordentlich Höhenmetern, tollen Ausblicken und einer wohlverdienten Einkehr zum Abschluss. Verpflegung für unterwegs nicht vergessen!",
-    image: "https://picsum.photos/seed/gruppetto-alb/640/420",
-    registration: { price: 20, capacity: 100 },
+      "Noch nie einen Triathlon gemacht? Swim, Bike, Run – ohne Zeitmessung, einfach zum Reinschnuppern!",
+    image: "/images/events/no-time-triathlon.jpg",
   },
   {
-    id: "2026-saisonabschluss",
-    title: "Herbst-Ausfahrt & Saisonabschluss",
-    dateISO: "2026-10-17",
-    dateLabel: "17. Oktober 2026",
-    time: "13:00 Uhr",
-    location: "Treffpunkt: Finanzamt Tübingen",
-    level: "Locker · alle Levels",
+    id: "2026-everesting",
+    title: "Everesting",
+    dateISO: "2026-07-11",
+    dateLabel: "11. Juli 2026",
+    time: "",
+    location: "",
+    level: "",
     description:
-      "Wir lassen die Saison gemeinsam ausklingen: eine entspannte Fahrt durchs bunte Herbstlaub, danach Punsch und Rückblick auf ein tolles Jahr.",
-    image: "https://picsum.photos/seed/gruppetto-herbst/640/420",
-    registration: { price: 20, capacity: 100, closesAt: "2026-10-17T23:59" },
+      "Unser bekanntestes Format geht in Runde 2 – wie viele Höhenmeter schaffst du diesmal?",
+    image: "/images/events/everesting.jpg",
+  },
+  {
+    id: "2026-triathlon-stimmungsnest",
+    title: "Tübingen Triathlon Stimmungsnest",
+    dateISO: "2026-07-19",
+    dateLabel: "19. Juli 2026",
+    time: "",
+    location: "",
+    level: "",
+    description:
+      "Zusammen mit dem OneMoreMile Runclub feuern wir euch beim Mey Generalbau Triathlon Tübingen an.",
+    image: "/images/events/triathlon-stimmungsnest.jpg",
+  },
+  {
+    id: "2026-girls-ride",
+    title: "Girls Ride",
+    dateISO: "2026-08-08",
+    dateLabel: "8. August 2026",
+    time: "",
+    location: "",
+    level: "",
+    description:
+      "More to come!",
+    image: "/images/events/girls-ride.jpg",
+  },
+  {
+    id: "2026-christmas-ride",
+    title: "Christmas Ride",
+    dateISO: "2026-12-12",
+    dateLabel: "12. Dezember 2026",
+    time: "12:00 Uhr",
+    location: "Treffpunkt: Gartenstraße 235, Tübingen",
+    level: "Infos folgen",
+    description: "Unser Christmas Ride zum Jahresende. Die Route wird noch veröffentlicht.",
+    image: "/images/christmas-ride.jpg",
   },
 ];
 

@@ -1,69 +1,44 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { events, formatEuro, registrationClosesAt } from "../data/events";
+import { codeEventsPublic, slideHTML, splitEvents } from "../lib/public-events";
+import "../styles/event-slider.css";
 
-const today = new Date(new Date().toDateString());
-
-const upcomingEvents = events
-  .filter((event) => new Date(event.dateISO) >= today)
-  .sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime());
+// Vorab gerendert (Fallback ohne JavaScript/Backend). Im Browser wird die Liste
+// mit /api/events ersetzt – dort sind auch die Events aus der Verwaltung dabei.
+const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle vergangenen
 ---
 
-<Layout title="Events">
-  <section class="events-hero">
-    <h1>Events</h1>
-    <p>Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
-  </section>
-
-  <p class="notice" id="cancel-notice" hidden>
-    Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
-  </p>
-
-  <section class="events-section">
-    {upcomingEvents.length > 0 ? (
-      <div class="events-grid">
-        {upcomingEvents.map((event) => (
-          <article class="event-card" tabindex="0">
-            <div class="event-card-front">
-              <p class="event-date">{event.dateLabel} &middot; {event.time}</p>
-              <h3>{event.title}</h3>
-              <p class="event-location">{event.location}</p>
-              <p class="event-level">{event.level}</p>
-            </div>
-
-            <div class="event-card-reveal">
-              <img src={event.image} alt={event.title} loading="lazy" />
-              <div class="event-card-reveal-text">
-                <p>{event.description}</p>
-              </div>
-            </div>
-
-            {event.registration && (
-              <div class="event-card-actions">
-                <button
-                  type="button"
-                  class="btn-register"
-                  data-event-id={event.id}
-                  data-event-title={event.title}
-                  data-event-date={`${event.dateLabel} · ${event.time}`}
-                  data-event-price={formatEuro(event.registration.price)}
-                  data-closes-at={registrationClosesAt(event).toISOString()}
-                  disabled
-                >
-                  Anmelden · {formatEuro(event.registration.price)}
-                </button>
-                <p class="seats" data-seats-for={event.id}>Plätze werden geladen …</p>
-              </div>
-            )}
-          </article>
-        ))}
+<Layout title="Events" fullBleed>
+  <!-- Kommende Events: gleiche Slider-Blöcke wie auf der Startseite -->
+  <section class="slider events-slider" aria-labelledby="events-title">
+    <div class="slider-head">
+      <h1 id="events-title">Events</h1>
+      <div class="slider-nav">
+        <button type="button" data-dir="-1" aria-label="Zurück">←</button>
+        <button type="button" data-dir="1" aria-label="Weiter">→</button>
       </div>
-    ) : (
-      <p class="no-events">Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
-    )}
+    </div>
+    <p class="events-intro">Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
+    <p class="notice" id="cancel-notice" hidden>
+      Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
+    </p>
+    <!-- Wipe: beim Runterscrollen wandern alle kommenden Events nach links durch -->
+    <div class="wipe-runway" id="wipe">
+      <div class="wipe-viewport">
+        <div class="wipe-strip" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("")} />
+        <div class="wipe-progress" aria-hidden="true"></div>
+      </div>
+    </div>
+    <p class="no-events" id="events-none" hidden={upcoming.length > 0}>Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
   </section>
 
-  <dialog id="register-dialog" aria-labelledby="register-title">
+  <!-- Vergangene Events: separat darunter, kleiner -->
+  <section class="past-section" id="past-section" hidden={past.length === 0} aria-labelledby="past-title">
+    <h2 class="past-title" id="past-title">Vergangene Events</h2>
+    <div class="past-grid" id="events-past" set:html={past.map((e) => slideHTML(e, { past: true, mode: "detail" })).join("")} />
+  </section>
+
+  <dialog id="register-dialog" aria-labelledby="register-title" data-lenis-prevent>
     <form id="register-form" novalidate>
       <button type="button" class="dialog-close" aria-label="Schließen" data-close>×</button>
       <p class="event-date" id="register-date"></p>
@@ -93,6 +68,9 @@ const upcomingEvents = events
 </Layout>
 
 <script>
+  import { fetchEvents, slideHTML, splitEvents } from "../lib/public-events";
+  import { getLenis, initReelHover, initWipe } from "../lib/motion";
+
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
   const form = document.getElementById("register-form") as HTMLFormElement;
   const errorBox = form.querySelector(".form-error") as HTMLElement;
@@ -140,18 +118,21 @@ const upcomingEvents = events
     });
   }
 
-  document.querySelectorAll<HTMLButtonElement>(".btn-register").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentEventId = btn.dataset.eventId!;
-      document.getElementById("register-title")!.textContent = btn.dataset.eventTitle!;
-      document.getElementById("register-date")!.textContent = btn.dataset.eventDate!;
-      document.getElementById("register-price")!.textContent = btn.dataset.eventPrice!;
-      errorBox.hidden = true;
-      dialog.showModal();
-      (form.elements.namedItem("name") as HTMLInputElement).focus();
-    });
+  // Event-Delegation: funktioniert auch, nachdem die Liste neu gerendert wurde
+  document.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".btn-register");
+    if (!btn || btn.disabled) return;
+    currentEventId = btn.dataset.eventId!;
+    document.getElementById("register-title")!.textContent = btn.dataset.eventTitle!;
+    document.getElementById("register-date")!.textContent = btn.dataset.eventDate!;
+    document.getElementById("register-price")!.textContent = btn.dataset.eventPrice!;
+    errorBox.hidden = true;
+    dialog.showModal();
+    getLenis()?.stop(); // Seite dahinter nicht mitscrollen
+    (form.elements.namedItem("name") as HTMLInputElement).focus();
   });
 
+  dialog.addEventListener("close", () => getLenis()?.start());
   dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) dialog.close(); // Klick auf den Hintergrund
@@ -197,47 +178,79 @@ const upcomingEvents = events
     document.getElementById("cancel-notice")!.hidden = false;
   }
 
-  loadStatus();
+  async function init() {
+    const all = await fetchEvents();
+    if (all) {
+      const { upcoming, past } = splitEvents(all, Infinity);
+      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("");
+      document.getElementById("events-none")!.hidden = upcoming.length > 0;
+      document.getElementById("events-past")!.innerHTML = past.map((ev) => slideHTML(ev, { past: true, mode: "detail" })).join("");
+      document.getElementById("past-section")!.hidden = past.length === 0;
+    }
+    loadStatus();
+    focusHashTarget();
+  }
+
+  // Von der Startseite kommend (/events#event-…): Event ins Bild holen und kurz hervorheben
+  function focusHashTarget() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const el = id ? document.getElementById(id) : null;
+    if (!el) return;
+    const go = () => {
+      if (el.closest(".wipe-strip")) wipe.scrollToCard(el, true);
+      else el.scrollIntoView({ block: "center" });
+    };
+    go();
+    // Bilder/Schriften verändern das Layout noch → nach dem Laden nachjustieren
+    if (document.readyState !== "complete") addEventListener("load", go, { once: true });
+    setTimeout(go, 400);
+    el.classList.add("is-target");
+    setTimeout(() => el.classList.remove("is-target"), 2200);
+  }
+
+  const wipe = initWipe(document.getElementById("wipe")!);
+  document.querySelectorAll<HTMLButtonElement>(".events-slider .slider-nav button").forEach((b) =>
+    b.addEventListener("click", () => wipe.step(Number(b.dataset.dir))),
+  );
+  initReelHover();
+  init();
 </script>
 
-<style>
-  .events-hero {
-    padding: 4rem 0 2rem;
-  }
-  .events-hero p {
-    max-width: 42rem;
-    color: var(--color-text-muted);
-    font-size: 1.1rem;
-    margin-top: 1rem;
-  }
-  .events-section {
-    padding-bottom: 4rem;
-  }
-  .events-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.75rem;
-  }
-  .event-card { position: relative; display: flex; flex-direction: column; background: var(--color-bg-alt); border-radius: 16px; padding: 1.5rem; overflow: hidden; cursor: default; transition: transform 0.35s ease, box-shadow 0.35s ease; will-change: transform; outline: none; }
-  .event-card:hover, .event-card:focus-within { transform: scale(1.08); box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45); z-index: 5; }
-  .event-card-front { position: relative; flex: 1; transition: opacity 0.3s ease; }
-  .event-card:hover .event-card-front, .event-card:focus-within .event-card-front { opacity: 0; }
-  .event-date { margin: 0 0 0.5rem; color: var(--color-accent); font-weight: 600; }
-  .event-card h3 { margin: 0 0 0.5rem; }
-  .event-location, .event-level { margin: 0; color: var(--color-text-muted); }
-  .event-level { margin-top: 0.5rem; }
-  .event-card-reveal { position: absolute; inset: 0; z-index: 1; border-radius: 16px; opacity: 0; visibility: hidden; transition: opacity 0.35s ease; pointer-events: none; overflow: hidden; }
-  .event-card:hover .event-card-reveal, .event-card:focus-within .event-card-reveal { opacity: 1; visibility: visible; }
-  .event-card-reveal img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .event-card-reveal-text { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.25rem 1.25rem 6.5rem; background: linear-gradient(180deg, rgba(23, 27, 24, 0.15) 0%, rgba(23, 27, 24, 0.75) 45%, rgba(23, 27, 24, 0.97) 75%); }
-  .event-card-reveal-text p { margin: 0; color: var(--color-text); font-size: 0.95rem; line-height: 1.4; }
-  .no-events { color: var(--color-text-muted); }
+<style is:global>
+  .events-slider { padding-top: calc(var(--gutter) * 2 + 8rem); padding-bottom: 3rem; }
+  .events-slider:not(:has(.is-wiping)) .slider-nav { visibility: hidden; }
+  .events-intro { max-width: 42rem; margin: 0 0 2.5rem; padding: 0 var(--gutter); color: var(--color-text-muted); font-size: 1.1rem; }
+  .no-events { padding: 0 var(--gutter); color: var(--color-text-muted); }
+  .events-slider .notice { margin: 0 var(--gutter) 1.5rem; }
 
-  /* Anmeldung – bleibt auch beim Hover-Bild sichtbar */
+  .slide-actions { margin-top: auto; padding-top: 1.25rem; }
+  .slide.is-target .slide-media { outline: 3px solid var(--color-highlight); outline-offset: 4px; }
+
+  .btn-strava {
+    display: block; margin-top: 0.6rem; text-align: center; border-radius: 999px; padding: 0.7rem 1.2rem;
+    border: 1px solid var(--color-text); color: var(--color-text); text-decoration: none; font-weight: 700; font-size: 0.95rem;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .btn-strava:hover { background: var(--color-text); color: var(--navy-800, #021859); }
+  .btn-strava:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
+
+  /* Vergangene Events – kleiner, 4 nebeneinander */
+  .past-section { padding: 1rem var(--gutter) 6rem; border-top: 1px solid var(--color-line); }
+  .past-title { margin: 2.5rem 0 1.6rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
+  .past-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .past-grid .slide-media { aspect-ratio: 4 / 3; margin-bottom: 0.9rem; }
+  .past-grid .slide h3 { font-size: 1.05rem; margin-bottom: 0.4rem; }
+  .past-grid .slide-meta { font-size: 0.85rem; margin-bottom: 0.5rem; }
+  .past-grid .slide p { font-size: 0.9rem; }
+  .past-grid .slide .slide-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .past-grid .btn-strava { padding: 0.5rem 0.9rem; font-size: 0.85rem; }
+  @media (max-width: 900px) { .past-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Anmeldung */
   .event-card-actions { position: relative; z-index: 2; margin-top: 1.25rem; }
   .btn-register, .btn-pay {
     width: 100%; border: 0; border-radius: 999px; padding: 0.8rem 1.2rem;
-    background: var(--color-accent); color: #0f1210; font: 700 1rem var(--font-body); cursor: pointer;
+    background: var(--color-accent); color: var(--color-on-accent); font: 700 1rem var(--font-body); cursor: pointer;
     transition: filter 0.2s ease, opacity 0.2s ease;
   }
   .btn-register:hover:not(:disabled), .btn-pay:hover:not(:disabled) { filter: brightness(1.1); }
@@ -246,13 +259,13 @@ const upcomingEvents = events
   .seats { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--color-text-muted); text-align: center; min-height: 1.2em; }
   .seats.sold-out { color: #ff8a7a; }
 
-  .notice { margin: 0 0 1.5rem; padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--color-bg-alt); border-left: 4px solid var(--color-accent); }
+  .notice { padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--color-bg-alt); border-left: 4px solid var(--color-accent); }
 
   dialog {
     width: min(460px, calc(100vw - 2rem)); padding: 0; border: 0; border-radius: 20px;
-    background: var(--color-bg-alt); color: var(--color-text); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    background: var(--color-bg-alt); color: var(--color-text); box-shadow: 0 30px 80px rgba(2, 24, 89, 0.7);
   }
-  dialog::backdrop { background: rgba(5, 7, 6, 0.7); backdrop-filter: blur(3px); }
+  dialog::backdrop { background: rgba(13, 30, 64, 0.75); backdrop-filter: blur(3px); }
   #register-form { position: relative; display: grid; gap: 1rem; padding: 2rem 1.5rem 1.5rem; }
   #register-form h2 { margin: 0 0 0.25rem; font-family: var(--font-title); }
   #register-form .event-date { margin: 0; }
@@ -260,16 +273,16 @@ const upcomingEvents = events
     position: absolute; top: 0.75rem; right: 0.75rem; width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%;
     background: transparent; color: var(--color-text-muted); font-size: 1.6rem; line-height: 1; cursor: pointer;
   }
-  .dialog-close:hover { background: rgba(255, 255, 255, 0.08); color: var(--color-text); }
+  .dialog-close:hover { background: var(--color-bg-raised); color: var(--color-text); }
   #register-form label { display: grid; gap: 0.4rem; font-size: 0.9rem; color: var(--color-text-muted); }
   #register-form input:not([type="checkbox"]) {
-    padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px solid #2f3630; background: var(--color-bg);
+    padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px solid var(--color-line); background: var(--color-bg);
     color: var(--color-text); font: 1rem var(--font-body);
   }
-  #register-form input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  #register-form input:focus { outline: 2px solid var(--color-highlight); outline-offset: 1px; }
   #register-form label.checkbox { grid-template-columns: auto 1fr; align-items: start; gap: 0.6rem; }
   #register-form label.checkbox input { margin-top: 0.2rem; accent-color: var(--color-accent); width: 1.1rem; height: 1.1rem; }
-  #register-form a { color: var(--color-accent); }
+  #register-form a { color: var(--color-highlight); }
   .form-error { margin: 0; padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(255, 110, 90, 0.12); color: #ffb3a7; font-size: 0.9rem; }
   .form-hint { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; }
 </style>
