@@ -51,7 +51,7 @@ const shopBand = {
 
 // Events: vorab aus src/data/events.ts gerendert, im Browser durch /api/events
 // ersetzt (dann auch mit den Events aus der Verwaltung).
-const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle vergangenen
+const { upcoming, past } = splitEvents(codeEventsPublic(), 4); // die letzten 4 vergangenen
 const next = upcoming[0];
 // Vergangene Events links vom nächsten Event (älteste ganz links), kommende rechts
 const slidesFor = (u: typeof upcoming, p: typeof past) =>
@@ -133,7 +133,7 @@ const slides = slidesFor(upcoming, past);
   // Events inkl. der in der Verwaltung angelegten nachladen
   fetchEvents().then((all) => {
     if (!all) return;
-    const { upcoming, past } = splitEvents(all, Infinity);
+    const { upcoming, past } = splitEvents(all, 4);
     const track = document.querySelector<HTMLElement>(".slider-track");
     if (track) {
       track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("");

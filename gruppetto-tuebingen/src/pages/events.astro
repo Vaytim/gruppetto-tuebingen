@@ -5,7 +5,7 @@ import "../styles/event-slider.css";
 
 // Vorab gerendert (Fallback ohne JavaScript/Backend). Im Browser wird die Liste
 // mit /api/events ersetzt – dort sind auch die Events aus der Verwaltung dabei.
-const { upcoming, past } = splitEvents(codeEventsPublic());
+const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle vergangenen
 ---
 
 <Layout title="Events" fullBleed>
@@ -181,7 +181,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic());
   async function init() {
     const all = await fetchEvents();
     if (all) {
-      const { upcoming, past } = splitEvents(all);
+      const { upcoming, past } = splitEvents(all, Infinity);
       document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("");
       document.getElementById("events-none")!.hidden = upcoming.length > 0;
       document.getElementById("events-past")!.innerHTML = past.map((ev) => slideHTML(ev, { past: true, mode: "detail" })).join("");
