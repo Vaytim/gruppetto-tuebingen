@@ -86,7 +86,7 @@ aufgeteilt in *Heute*, *Kommend* und *Vergangen* (mit Filter und Suche).
 - Alles wird dauerhaft gespeichert (Netlify Blobs: `event-registrations`, `event-images`, `event-videos`).
 - Im Testmodus (StackBlitz) liegen Events, Bilder und Videos im Ordner `.testdaten/` und überstehen
   damit auch einen Neustart. (Wird nicht committet.)
-- Angezeigt werden auf der Events-Seite alle kommenden Events und die **letzten 4 vergangenen**.
+- Die Events-Seite zeigt alle kommenden und **alle vergangenen** Events, die Startseite nur die **letzten 4 vergangenen**.
 
 ## Noch zu erledigen (rechtlich)
 - `/rechtliches`: Teilnahmebedingungen (Haftung, Storno) und Datenschutzhinweise für die Anmeldung ergänzen (Name, E-Mail, Zahlungsabwicklung durch Stripe, Speicherung bei Netlify, Löschfrist).
