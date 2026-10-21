@@ -87,13 +87,15 @@ const timeline = [
     </div>
   </section>
 
-  <img class="uu-image" src="/images/truppe-banner-2.png" alt="Die Gruppetto Tübingen Truppe" />
-
-  <section class="uu-claim" aria-label="Unser Versprechen">
-    <p><span>Mitfahren ist und bleibt kostenlos.</span></p>
-    <p class="uu-claim-sub">
-      Komm rum. Bring dein Rad. Und deinen Helm. Wir sehen uns beim nächsten <a href="/events">Event</a> oder bei der nächsten <a href="/rides">Ausfahrt</a>.
-    </p>
+  <!-- Hochformat-Foto neben dem blauen Versprechen-Block -->
+  <section class="uu-feature">
+    <div class="uu-claim" aria-label="Unser Versprechen">
+      <p><span>Mitfahren ist und bleibt kostenlos.</span></p>
+      <p class="uu-claim-sub">
+        Komm rum. Bring dein Rad. Und deinen Helm. Wir sehen uns beim nächsten <a href="/events">Event</a> oder bei der nächsten <a href="/rides">Ausfahrt</a>.
+      </p>
+    </div>
+    <img class="uu-image" src="/images/gruppe-ausfahrt.jpg" alt="Das Gruppetto in langer Reihe auf einer Ausfahrt rund um Tübingen" loading="lazy" />
   </section>
 
   <section class="uu-guide" aria-labelledby="uu-guide-title">
@@ -146,9 +148,10 @@ const timeline = [
   .uu-intro p { margin: 0 0 1rem; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
   .uu-intro .uu-lead { margin: 0; color: var(--color-text); font-size: clamp(1.2rem, 1.8vw, 1.5rem); line-height: 1.45; }
 
-  .uu-image { display: block; width: 100%; height: clamp(280px, 55vh, 620px); object-fit: cover; object-position: top; }
+  .uu-feature { display: grid; grid-template-columns: 1fr 1fr; }
+  .uu-image { display: block; width: 100%; height: 100%; max-height: 90vh; aspect-ratio: 2 / 3; object-fit: cover; object-position: center 60%; }
 
-  .uu-claim { background: color-mix(in srgb, var(--color-accent) 55%, transparent); color: var(--color-on-accent); padding: 3.5rem var(--gutter); }
+  .uu-claim { background: color-mix(in srgb, var(--color-accent) 55%, transparent); color: var(--color-on-accent); padding: 3.5rem var(--gutter); display: flex; flex-direction: column; justify-content: flex-end; }
   .uu-claim > p:first-child {
     margin: 0 0 1.5rem; font-family: var(--font-title); font-weight: 500; line-height: 1.05;
     font-size: clamp(2rem, 4.6vw, 4.4rem); letter-spacing: -0.02em;
@@ -183,6 +186,7 @@ const timeline = [
 
   @media (max-width: 760px) {
     .uu-hero { padding-top: calc(var(--gutter) + 7rem); }
-    .uu-intro, .uu-list, .uu-timeline { grid-template-columns: 1fr; }
+    .uu-intro, .uu-list, .uu-timeline, .uu-feature { grid-template-columns: 1fr; }
+    .uu-image { max-height: none; aspect-ratio: 4 / 5; }
   }
 </style>
