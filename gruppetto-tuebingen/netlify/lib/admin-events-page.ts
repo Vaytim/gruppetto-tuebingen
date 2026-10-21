@@ -96,10 +96,11 @@ details.ev-editor[open]>summary::before{content:"– "}
 @media (max-width:800px){.ev-stats{grid-template-columns:repeat(2,1fr)}.ev-form,.ev-form fieldset{grid-template-columns:1fr}}
 `;
 
-export function tabNav(active: "zahlungen" | "events") {
+export function tabNav(active: "zahlungen" | "events" | "rookies") {
   return `<nav class="tabs" aria-label="Bereiche">
   <a href="?" ${active === "zahlungen" ? 'aria-current="page"' : ""}>Anmeldungen &amp; Zahlungen</a>
   <a href="?tab=events" ${active === "events" ? 'aria-current="page"' : ""}>Events</a>
+  <a href="?tab=rookies" ${active === "rookies" ? 'aria-current="page"' : ""}>Rookies</a>
 </nav>`;
 }
 
