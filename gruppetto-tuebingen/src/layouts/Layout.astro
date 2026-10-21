@@ -311,6 +311,11 @@ const footerColumns = [
       }
       .btn:hover { background: var(--color-accent); color: var(--color-on-accent); }
       .btn-accent { background: var(--color-accent); color: var(--color-on-accent); }
+      /* Rookie-Status: "Noch Plätze frei" / "Ausgebucht" */
+      .rookie-status { display: inline-flex; align-items: center; gap: 0.45rem; width: fit-content; padding: 0.25rem 0.75rem; border-radius: 99px; background: rgba(46, 204, 113, 0.16); color: #7ee2a8; font-weight: 600; font-size: 0.9rem; }
+      .rookie-status::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; }
+      .rookie-status.is-full { background: rgba(255, 107, 107, 0.16); color: #ff9b9b; }
+      .rookie-status[hidden] { display: none; }
       .btn-accent:hover { background: var(--navy-700); }
 
       .card { background: var(--color-bg-alt); padding: 1.5rem; margin-bottom: 1rem; }
