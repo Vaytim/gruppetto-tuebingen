@@ -5,6 +5,7 @@
 // GET  /api/teilnehmer?event=X&format=csv       → dasselbe als CSV (Excel/Numbers)
 // GET  /api/teilnehmer?export=kassenbuch[&jahr=2027] → Kassenbuch-CSV, eine Zeilengruppe pro Auszahlung
 // POST /api/teilnehmer?action=sync              → Abgleich mit Stripe (Gebühren + Auszahlungen nachholen)
+// GET  /api/teilnehmer?tab=rookies              → Rookies: nächster Rookie Ride + Schalter „ausgebucht“
 import type { Config } from "@netlify/functions";
 import { events, findEvent, type GruppettoEvent } from "../../src/data/events";
 import { listPayouts, syncRecent } from "../lib/accounting";
@@ -12,6 +13,7 @@ import { type Participant, type PayoutRecord, isActive, readLedger, seatsTaken }
 import { env, escapeHtml as h, ledgerStore } from "../lib/services";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
+import { allEvents } from "../lib/event-store";
 import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
 import {
   ADMIN_EVENTS_CSS,
@@ -346,6 +348,37 @@ function kassenbuchCsv(payouts: PayoutRecord[], year?: string) {
   return csv(rows, `kassenbuch-stripe-${year ?? "alle"}.csv`);
 }
 
+// ---------- Reiter „Rookies“ ----------
+function rookiesPage(settings: SiteSettings, all: GruppettoEvent[], flash?: string) {
+  const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+  const next = all
+    .filter((e) => e.dateISO >= today && /rookie/i.test(`${e.title} ${e.id}`))
+    .sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time))[0];
+  const full = settings.rookieFull;
+  return page(
+    "Rookies",
+    `<p class="kicker">Gruppetto Tübingen · Verwaltung · <a href="?action=logout">Abmelden</a></p><h1>Rookies</h1>
+${tabNav("rookies")}
+${flash ? `<div class="note">${h(flash)}</div>` : ""}
+<h2>Nächster Rookie Ride</h2>
+${
+  next
+    ? `<div class="setting"><div><b>${h(next.title)}</b><p class="muted" style="margin:.3rem 0 0">${h(next.dateLabel)}${next.time ? ` · ${h(next.time)}` : ""}${next.location ? ` · ${h(next.location)}` : ""}</p></div>
+  <a class="btn sec" href="?tab=events&edit=${encodeURIComponent(next.id)}#editor">Termin bearbeiten</a></div>`
+    : `<div class="note warn">Gerade ist kein Rookie Ride eingetragen. Auf der Website steht dann „Termin folgt“.</div>`
+}
+<p class="muted">Den Termin legst du im Reiter <a href="?tab=events">Events</a> an: Einfach ein Event mit „Rookie“ im Titel erstellen (z. B. „Rookie Ride“) und am besten den Strava-Link eintragen. Das nächste davon erscheint automatisch auf der Rookies-Seite und auf der Startseite.</p>
+
+<h2>Plätze</h2>
+<div class="setting">
+  <div><b>Status</b> <span class="tag ${full ? "ref" : ""}">${full ? "Ausgebucht" : "Noch Plätze frei"}</span>
+  <p class="muted" style="margin:.3rem 0 0">Wird unter dem Datum des nächsten Rookie Rides angezeigt (max. 20 Plätze). Wirkt sofort, ohne neuen Deploy.</p></div>
+  <form method="post" action="?tab=rookies&action=rookie-full"><input type="hidden" name="value" value="${full ? "off" : "on"}">
+  <button class="btn ${full ? "sec" : ""}">${full ? "Wieder freie Plätze anzeigen" : "Als ausgebucht markieren"}</button></form>
+</div>`,
+  );
+}
+
 // ---------- Handler ----------
 export default async (req: Request) => {
   const url = new URL(req.url);
@@ -377,6 +410,18 @@ export default async (req: Request) => {
     return overviewPage(await loadAll(), await listPayouts(store), s, s.offseason ? "Off-Season ist jetzt aktiv." : "Off-Season ist beendet – die Rides sind wieder sichtbar.");
   }
   const settings = await readSettings(store);
+
+  // ---------- Reiter „Rookies“ ----------
+  if (url.searchParams.get("tab") === "rookies") {
+    let s = settings;
+    let flash: string | undefined;
+    if (req.method === "POST" && action === "rookie-full") {
+      const value = (await req.formData()).get("value");
+      s = await updateSettings(store, { rookieFull: value === "on" });
+      flash = s.rookieFull ? "Der nächste Rookie Ride wird jetzt als ausgebucht angezeigt." : "Der nächste Rookie Ride zeigt wieder „Noch Plätze frei“.";
+    }
+    return rookiesPage(s, await allEvents(store), flash);
+  }
 
   // ---------- Reiter „Events“ ----------
   if (url.searchParams.get("tab") === "events") {
