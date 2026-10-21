@@ -186,3 +186,23 @@ export function rookieDateText(e: PublicEvent): string {
   );
   return `${wd.replace(".,", ",")}${e.time ? ` · ${e.time}` : ""}`;
 }
+
+/** Rookie-Status aus der Verwaltung: true = ausgebucht, false = Plätze frei, null = unbekannt */
+export async function fetchRookieFull(): Promise<boolean | null> {
+  try {
+    const res = await fetch("/api/site-settings", { cache: "no-store" });
+    if (!res.ok) return null;
+    const s = await res.json();
+    return typeof s.rookieFull === "boolean" ? s.rookieFull : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Status-Zeile ("Ausgebucht" / "Noch Plätze frei") unter dem Datum setzen */
+export function showRookieStatus(el: HTMLElement | null, hasRide: boolean, full: boolean | null) {
+  if (!el) return;
+  el.hidden = !hasRide || full === null;
+  el.classList.toggle("is-full", !!full);
+  el.textContent = full ? "Ausgebucht" : "Noch Plätze frei";
+}
