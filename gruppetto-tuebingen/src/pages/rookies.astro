@@ -1,0 +1,153 @@
+---
+// Rookie Rides – für alle, die zum ersten Mal in der Gruppe fahren.
+// Texte unten anpassen; die Liste "Gut zu wissen" steht in `facts`.
+import Layout from "../layouts/Layout.astro";
+
+const STRAVA = "https://www.strava.com/clubs/gruppetto-tuebingen";
+
+const keyFacts = [
+  { value: "Ride Leader", label: "zeigen dir unterwegs alles" },
+  { value: "10–20", label: "Leute pro Gruppe" },
+  { value: "~40 km", label: "und rund 350 Höhenmeter" },
+];
+
+// html: erlaubt Links im Text
+const facts = [
+  {
+    title: "Treffpunkt & Zeit",
+    html: `Während der Saison treffen wir uns mittwochs um 18:15 Uhr am Finanzamt Tübingen. Alle Ausfahrten findest du unter <a href="/rides">Weekly Rides</a>, alle Events unter <a href="/events">Events</a>.`,
+  },
+  {
+    title: "Zusagen",
+    html: `Ein kurzes „Ja“ auf Strava reicht – dann wissen wir, mit wie vielen Leuten wir rechnen können. Alle Neuigkeiten bekommst du in unserem <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a>.`,
+  },
+  {
+    title: "Tempo",
+    html: `Bei den Rookie Rides gibt die Gruppe das Tempo vor, nicht die Uhr. Wenn du dich sicherer fühlst, warten unsere anderen Gruppen auf dich: Sie fahren einen Schnitt von rund 24 bis über 30 km/h – gemessen über die ganze Strecke, Anstiege inklusive.`,
+  },
+  {
+    title: "Strecke",
+    html: `Eine Weekly-Ride-Runde hat rund 40 km und etwa 350 Höhenmeter. Bei Events geben wir Distanz und Höhenmeter jeweils vorher bekannt.`,
+  },
+  {
+    title: "Rad",
+    html: `Ideal ist ein sportliches Rad wie ein Rennrad oder Gravelbike.`,
+  },
+  {
+    title: "Ausrüstung",
+    html: `Ohne Helm geht es nicht los. Pack außerdem einen Ersatzschlauch, eine Pumpe oder CO₂-Kartusche, eine Trinkflasche und einen kleinen Snack ein. Sobald es früher dunkel wird, gehören Front- und Rücklicht dazu.`,
+  },
+  {
+    title: "Vor dem Start",
+    html: `Sag kurz Bescheid, dass du zum ersten Mal dabei bist – dann haben dich die Ride Leader gleich im Blick. Unterwegs gilt die StVO, und wir nehmen Rücksicht aufeinander.`,
+  },
+  {
+    title: "Panne unterwegs",
+    html: `Ein Platten ist kein Drama: Wir halten an und packen gemeinsam mit an.`,
+  },
+  {
+    title: "Wetter",
+    html: `Fällt eine Ausfahrt aus oder ändert sich etwas, erfährst du es rechtzeitig im <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a>.`,
+  },
+  {
+    title: "Nach der Runde",
+    html: `Oft sitzen wir danach noch zusammen – wo genau, ergibt sich spontan. Komm gerne mit!`,
+  },
+];
+---
+
+<Layout title="Rookies" description="Rookie Rides von Gruppetto Tübingen – Gruppe fahren lernen, ohne Tempovorgabe und ohne Stress." fullBleed>
+  <section class="rk-hero">
+    <p class="rk-kicker">Rookie Rides · seit 2026</p>
+    <h1 class="rk-title"><span>Gruppetto</span><span>Rookies</span></h1>
+    <div class="rk-intro">
+      <p class="rk-lead">
+        Du bist ganz neu in der Rad-Bubble, hast gerade ein neues Rad, bist aber noch nie wirklich in einer Gruppe gefahren? Genau dafür bauen dir die Rookie Rides die Brücke.
+      </p>
+      <p>
+        Wir zeigen dir, welche Handzeichen man braucht, was die Do’s and Don’ts sind und worauf man in der Gruppe achten sollte. Bei diesen Touren gibt es feste Ride Leader, die dir alles erklären – und du bist nicht allein: Meist sind wir 10 bis 20 Leute.
+      </p>
+    </div>
+  </section>
+
+  <section class="rk-claim" aria-label="Unser Versprechen">
+    <p><span>Keine Tempovorgabe.</span> <span>Kein Stress.</span> <span>Gruppe fahren lernen.</span></p>
+  </section>
+
+  <section class="rk-facts-top" aria-label="Auf einen Blick">
+    {keyFacts.map((f) => (
+      <div class="rk-stat">
+        <strong>{f.value}</strong>
+        <span>{f.label}</span>
+      </div>
+    ))}
+  </section>
+
+  <section class="rk-guide" aria-labelledby="rk-guide-title">
+    <h2 id="rk-guide-title">Gut zu wissen für deinen ersten Ride</h2>
+    <ol class="rk-list">
+      {facts.map((f, i) => (
+        <li>
+          <span class="rk-num">{String(i + 1).padStart(2, "0")}</span>
+          <div>
+            <h3>{f.title}</h3>
+            <p set:html={f.html} />
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="rk-cta">
+    <h2>Bereit für deinen ersten Ride?</h2>
+    <div class="rk-cta-buttons">
+      <a class="btn" href="/rides">Zu den Weekly Rides</a>
+      <a class="btn rk-btn-outline" href={STRAVA} target="_blank" rel="noopener">Strava Club ↗</a>
+    </div>
+    <p class="rk-note">Bei allen Ausfahrten und Events fährst du auf eigene Verantwortung mit.</p>
+  </section>
+</Layout>
+
+<style>
+  .rk-hero { padding: calc(var(--gutter) * 2 + 8rem) var(--gutter) 3rem; }
+  .rk-kicker { margin: 0 0 1rem; font-weight: 600; color: var(--color-highlight); letter-spacing: 0.02em; }
+  /* gleiche Größe & Art wie die Headline "Gruppetto Rookies" auf der Startseite */
+  .rk-title { margin: 0 0 2.5rem; display: grid; font-size: clamp(2.8rem, 6vw, 6.5rem); line-height: 1; }
+  .rk-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem 3rem; max-width: 1100px; }
+  .rk-intro p { margin: 0; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
+  .rk-intro .rk-lead { color: var(--color-text); font-size: clamp(1.2rem, 1.8vw, 1.5rem); line-height: 1.45; }
+
+  .rk-claim { background: var(--color-accent); color: var(--color-on-accent); padding: 3.5rem var(--gutter); }
+  .rk-claim p {
+    margin: 0; font-family: var(--font-title); font-weight: 500; line-height: 1.05;
+    font-size: clamp(2rem, 4.6vw, 4.4rem); letter-spacing: -0.02em;
+  }
+  .rk-claim span { display: inline-block; margin-right: 0.35em; }
+
+  .rk-facts-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 4rem var(--gutter) 1rem; }
+  .rk-stat { background: var(--color-bg-alt); padding: 1.6rem 1.4rem; display: grid; gap: 0.4rem; }
+  .rk-stat strong { font-family: var(--font-title); font-weight: 500; font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1; }
+  .rk-stat span { color: var(--color-text-muted); }
+
+  .rk-guide { padding: 4rem var(--gutter) 2rem; }
+  .rk-guide > h2 { margin: 0 0 2rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
+  .rk-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+  .rk-list li { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.4rem 0; border-top: 1px solid var(--color-line); }
+  .rk-num { font-family: var(--font-title); font-size: 1.3rem; color: var(--color-text-muted); line-height: 1.4; }
+  .rk-list h3 { margin: 0 0 0.5rem; font-family: var(--font-body); font-weight: 600; font-size: 1.15rem; line-height: 1.3; }
+  .rk-list p { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
+  .rk-list p :global(a) { color: var(--color-text); text-underline-offset: 3px; }
+  .rk-list p :global(a:hover) { text-decoration-thickness: 2px; }
+
+  .rk-cta { padding: 3rem var(--gutter) 6rem; }
+  .rk-cta h2 { margin: 0 0 1.5rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); }
+  .rk-cta-buttons { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+  .rk-btn-outline { background: transparent; border: 1.5px solid var(--color-text); color: var(--color-text); }
+  .rk-btn-outline:hover { background: var(--color-text); color: var(--navy-800); }
+  .rk-note { margin: 2rem 0 0; font-size: 0.9rem; color: var(--color-text-muted); }
+
+  @media (max-width: 760px) {
+    .rk-hero { padding-top: calc(var(--gutter) + 7rem); }
+    .rk-intro, .rk-list, .rk-facts-top { grid-template-columns: 1fr; }
+  }
+</style>
