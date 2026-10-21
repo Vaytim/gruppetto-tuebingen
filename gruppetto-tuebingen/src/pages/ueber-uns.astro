@@ -52,15 +52,18 @@ const faq = [
 const timeline = [
   {
     year: "2024",
-    text: "Es beginnt im März: Simon will nicht mehr alleine auf dem Rennrad sitzen und gründet einen Strava Club. Max tritt bei, und schnell geht es aufs Rad. Die erste gemeinsame Tour fahren wir zu viert, die nächste schon zu neunt. Plötzlich ist da eine Community – und die Idee für etwas Regelmäßiges. Tim, Felix und Leon sind von Anfang an dabei und bringen sich ein. Schon im Sommer ist das Gruppetto über 100 Leute stark.",
+    title: "Aus einem wird ein Gruppetto",
+    text: "Im März hat Simon keine Lust mehr, alleine auf dem Rennrad zu sitzen – und gründet kurzerhand einen Strava Club. Max ist sofort dabei. Zur ersten Ausfahrt kommen vier Leute, zur zweiten schon neun. Mit Tim, Felix und Leon wird aus der Idee etwas Regelmäßiges, und im Sommer ist das Gruppetto bereits über 100 Leute stark.",
   },
   {
     year: "2025",
-    text: "Im Frühjahr sind wir 300, im Sommer 500 – und wir trauen uns an die ersten Events. Zu den Weekly Rides kommen auf einmal 70 Leute. Wir schließen das Jahr mit über 700 Mitgliedern ab, etwas, das wir uns nie erträumt hätten.",
+    title: "Die ersten Events",
+    text: "Im Frühjahr sind wir 300, im Sommer 500 – und wir wagen uns an die ersten eigenen Events. Zu den Weekly Rides kommen plötzlich 70 Leute. Am Ende des Jahres zählt das Gruppetto über 700 Mitglieder. Davon hätten wir am Anfang nicht zu träumen gewagt.",
   },
   {
     year: "2026",
-    text: "Im Frühjahr knacken wir die 1000. Wir strukturieren uns um und fahren seitdem mehrere Gruppen parallel, damit es für alle sicher und entspannt bleibt. Das Konzept geht auf: Heute sind wir weit über 1000 Mitglieder.",
+    title: "Über 1000 und mehrere Gruppen",
+    text: "Im Frühjahr knacken wir die 1000. Damit es für alle sicher und entspannt bleibt, stellen wir uns neu auf: Seitdem fahren mehrere Tempo-Gruppen parallel, und mit den Rookie Rides gibt es einen eigenen Einstieg fürs Gruppenfahren. Das Konzept geht auf – heute sind wir weit über 1000 Mitglieder.",
   },
 ];
 ---
@@ -91,7 +94,6 @@ const timeline = [
     <p class="uu-claim-sub">
       Komm rum. Bring dein Rad. Und deinen Helm. Wir sehen uns beim nächsten <a href="/events">Event</a> oder bei der nächsten <a href="/rides">Ausfahrt</a>.
     </p>
-    <p class="uu-sign">Simon, Max, Leon und Tim</p>
   </section>
 
   <section class="uu-guide" aria-labelledby="uu-guide-title">
@@ -112,11 +114,12 @@ const timeline = [
 
   <section class="uu-story" aria-labelledby="uu-story-title">
     <h2 id="uu-story-title">Wie alles begann</h2>
-    <p class="uu-story-lead">Wer sind wir eigentlich – und wie ist daraus das Gruppetto entstanden?</p>
+    <p class="uu-story-lead">Wer sind wir eigentlich – und wie wurde aus ein paar Leuten auf dem Rad das Gruppetto?</p>
     <div class="uu-timeline">
       {timeline.map((t) => (
         <div class="uu-step">
           <strong>{t.year}</strong>
+          <h3>{t.title}</h3>
           <p>{t.text}</p>
         </div>
       ))}
@@ -152,7 +155,6 @@ const timeline = [
   }
   .uu-claim-sub { margin: 0; max-width: 42rem; font-size: clamp(1.1rem, 1.6vw, 1.35rem); line-height: 1.5; }
   .uu-claim-sub a { color: inherit; text-underline-offset: 4px; }
-  .uu-sign { margin: 1.5rem 0 0; font-weight: 600; }
 
   .uu-guide { padding: 5rem var(--gutter) 2rem; }
   .uu-guide > h2, .uu-story > h2 { margin: 0 0 2rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
@@ -169,6 +171,7 @@ const timeline = [
   .uu-timeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .uu-step { background: var(--color-bg-alt); padding: 1.6rem 1.4rem; }
   .uu-step strong { display: block; margin-bottom: 0.8rem; font-family: var(--font-title); font-weight: 500; font-size: clamp(2.2rem, 4vw, 3.4rem); line-height: 1; }
+  .uu-step h3 { margin: 0 0 0.6rem; font-family: var(--font-body); font-weight: 600; font-size: 1.15rem; line-height: 1.3; }
   .uu-step p { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
 
   .uu-cta { padding: 4rem var(--gutter) 6rem; }

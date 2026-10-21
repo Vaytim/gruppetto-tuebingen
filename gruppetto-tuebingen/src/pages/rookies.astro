@@ -77,6 +77,7 @@ const facts = [
     <div>
       <h2 id="rk-next-title">Nächster Rookie Ride</h2>
       <p class="rk-next-date" data-rookie-date>{next ? rookieDateText(next) : "Termin folgt"}</p>
+      <p class="rookie-status" data-rookie-status hidden></p>
       <p class="rk-next-loc" data-rookie-loc>{next ? next.location || "Treffpunkt: Finanzamt Tübingen" : "Den nächsten Termin geben wir im Strava Club bekannt."}</p>
     </div>
     <div class="rk-next-side">
@@ -124,14 +125,16 @@ const facts = [
 </Layout>
 
 <script>
-  import { fetchEvents, nextRookieRide, rookieDateText, safeUrl } from "../lib/public-events";
-  // Termin inkl. der Events aus der Verwaltung aktualisieren
-  fetchEvents().then((all) => {
+  import { codeEventsPublic, fetchEvents, fetchRookieFull, nextRookieRide, rookieDateText, safeUrl, showRookieStatus } from "../lib/public-events";
+  // Termin (inkl. Events aus der Verwaltung) + Status „ausgebucht / Plätze frei“ laden
+  Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
+    const r = nextRookieRide(all ?? codeEventsPublic());
+    showRookieStatus(document.querySelector("[data-rookie-status]"), !!r, full);
+    const link = document.querySelector<HTMLAnchorElement>("[data-rookie-link]");
+    if (link) link.textContent = full && r ? "Auf Strava ansehen ↗" : "Auf Strava zusagen ↗";
     if (!all) return;
-    const r = nextRookieRide(all);
     const date = document.querySelector("[data-rookie-date]");
     const loc = document.querySelector("[data-rookie-loc]");
-    const link = document.querySelector<HTMLAnchorElement>("[data-rookie-link]");
     if (!date || !loc || !link) return;
     date.textContent = r ? rookieDateText(r) : "Termin folgt";
     loc.textContent = r ? r.location || "Treffpunkt: Finanzamt Tübingen" : "Den nächsten Termin geben wir im Strava Club bekannt.";
@@ -156,6 +159,7 @@ const facts = [
   .rk-next h2 { margin: 0 0 0.6rem; font-family: var(--font-body); font-weight: 600; font-size: 1rem; color: var(--color-highlight); }
   .rk-next-date { margin: 0 0 0.3rem; font-family: var(--font-title); font-weight: 500; font-size: clamp(1.8rem, 3.4vw, 3rem); line-height: 1.05; }
   .rk-next-loc { margin: 0; color: var(--color-text-muted); }
+  .rk-next .rookie-status { margin: 0.2rem 0 0.7rem; }
   .rk-next-side { display: grid; gap: 0.7rem; justify-items: end; }
   .rk-next-cap { margin: 0; color: var(--color-text-muted); font-size: 0.95rem; }
   @media (max-width: 760px) { .rk-next-side { justify-items: start; } }

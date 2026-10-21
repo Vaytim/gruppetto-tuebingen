@@ -100,6 +100,7 @@ const slides = slidesFor(upcoming, past);
     <a class="banner-next" href="/rookies#naechster-rookie-ride" data-rookie-next hidden={!rookie}>
       <span>Nächster Rookie Ride</span>
       <strong data-rookie-date>{rookie ? rookieDateText(rookie) : ""}</strong>
+      <em class="rookie-status" data-rookie-status hidden></em>
     </a>
   </section>
 
@@ -133,18 +134,21 @@ const slides = slidesFor(upcoming, past);
 
 <script>
   import { initReelHover } from "../lib/motion";
-  import { fetchEvents, keepAlignedOnResize, nextRookieRide, rookieDateText, scrollToFirstUpcoming, shortDate, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, rookieDateText, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+
+  // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
+  Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
+    const box = document.querySelector<HTMLElement>("[data-rookie-next]");
+    const r = nextRookieRide(all ?? codeEventsPublic());
+    if (!box) return;
+    box.hidden = !r;
+    if (r) box.querySelector("[data-rookie-date]")!.textContent = rookieDateText(r);
+    showRookieStatus(box.querySelector("[data-rookie-status]"), !!r, full);
+  });
 
   // Events inkl. der in der Verwaltung angelegten nachladen
   fetchEvents().then((all) => {
     if (!all) return;
-    // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung)
-    const box = document.querySelector<HTMLElement>("[data-rookie-next]");
-    const r = nextRookieRide(all);
-    if (box) {
-      box.hidden = !r;
-      if (r) box.querySelector("[data-rookie-date]")!.textContent = rookieDateText(r);
-    }
     const { upcoming, past } = splitEvents(all, 4);
     const track = document.querySelector<HTMLElement>(".slider-track");
     if (track) {
@@ -224,6 +228,8 @@ const slides = slidesFor(upcoming, past);
   .banner-next span { font-size: 0.85rem; opacity: 0.8; }
   .banner-next strong { font-family: var(--font-title); font-weight: 500; font-size: clamp(1.2rem, 2vw, 1.6rem); line-height: 1.1; }
   .banner-next:hover { background: var(--blue-500); }
+  .banner-next .rookie-status { justify-self: end; margin-top: 0.3rem; font-style: normal; }
+  @media (max-width: 760px) { .banner-next .rookie-status { justify-self: start; } }
   @media (max-width: 760px) { .banner-next { left: var(--gutter); right: auto; bottom: calc(var(--gutter) + 3.6rem); text-align: left; } }
 
   /* 6. Farbiges Band */
