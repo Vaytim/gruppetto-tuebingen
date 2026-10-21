@@ -2,13 +2,16 @@
 // Rookie Rides – für alle, die zum ersten Mal in der Gruppe fahren.
 // Texte unten anpassen; die Liste "Gut zu wissen" steht in `facts`.
 import Layout from "../layouts/Layout.astro";
+import { codeEventsPublic, nextRookieRide, rookieDateText } from "../lib/public-events";
+
+const next = nextRookieRide(codeEventsPublic());
 
 const STRAVA = "https://www.strava.com/clubs/gruppetto-tuebingen";
 
 const keyFacts = [
   { value: "Ride Leader", label: "zeigen dir unterwegs alles" },
-  { value: "10–20", label: "Leute pro Gruppe" },
-  { value: "~40 km", label: "und rund 350 Höhenmeter" },
+  { value: "max. 20", label: "Leute pro Rookie Ride" },
+  { value: "31 km", label: "und rund 240 Höhenmeter" },
 ];
 
 // html: erlaubt Links im Text
@@ -19,7 +22,7 @@ const facts = [
   },
   {
     title: "Zusagen",
-    html: `Ein kurzes „Ja“ auf Strava reicht – dann wissen wir, mit wie vielen Leuten wir rechnen können. Alle Neuigkeiten bekommst du in unserem <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a>.`,
+    html: `Ein kurzes „Ja“ auf Strava reicht – dann wissen wir, mit wie vielen Leuten wir rechnen können. Pro Rookie Ride ist Platz für maximal 20 Leute. Alle Neuigkeiten bekommst du in unserem <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a>.`,
   },
   {
     title: "Tempo",
@@ -27,7 +30,7 @@ const facts = [
   },
   {
     title: "Strecke",
-    html: `Eine Weekly-Ride-Runde hat rund 40 km und etwa 350 Höhenmeter. Bei Events geben wir Distanz und Höhenmeter jeweils vorher bekannt.`,
+    html: `Ein Rookie Ride hat rund 31 km und etwa 240 Höhenmeter. Die Weekly Rides sind mit rund 40 km und 350 Höhenmetern etwas länger. Bei Events geben wir Distanz und Höhenmeter jeweils vorher bekannt.`,
   },
   {
     title: "Rad",
@@ -65,8 +68,20 @@ const facts = [
         Du bist ganz neu in der Rad-Bubble, hast gerade ein neues Rad, bist aber noch nie wirklich in einer Gruppe gefahren? Genau dafür bauen dir die Rookie Rides die Brücke.
       </p>
       <p>
-        Wir zeigen dir, welche Handzeichen man braucht, was die Do’s and Don’ts sind und worauf man in der Gruppe achten sollte. Bei diesen Touren gibt es feste Ride Leader, die dir alles erklären – und du bist nicht allein: Meist sind wir 10 bis 20 Leute.
+        Wir zeigen dir, welche Handzeichen man braucht, was die Do’s and Don’ts sind und worauf man in der Gruppe achten sollte. Bei diesen Touren gibt es feste Ride Leader, die dir alles erklären – und du bist nicht allein: Pro Rookie Ride fahren bis zu 20 Leute mit.
       </p>
+    </div>
+  </section>
+
+  <section class="rk-next" id="naechster-rookie-ride" aria-labelledby="rk-next-title">
+    <div>
+      <h2 id="rk-next-title">Nächster Rookie Ride</h2>
+      <p class="rk-next-date" data-rookie-date>{next ? rookieDateText(next) : "Termin folgt"}</p>
+      <p class="rk-next-loc" data-rookie-loc>{next ? next.location || "Treffpunkt: Finanzamt Tübingen" : "Den nächsten Termin geben wir im Strava Club bekannt."}</p>
+    </div>
+    <div class="rk-next-side">
+      <p class="rk-next-cap">max. 20 Plätze</p>
+      <a class="btn btn-accent" data-rookie-link href={next?.strava || STRAVA} target="_blank" rel="noopener">Auf Strava zusagen ↗</a>
     </div>
   </section>
 
@@ -108,6 +123,22 @@ const facts = [
   </section>
 </Layout>
 
+<script>
+  import { fetchEvents, nextRookieRide, rookieDateText, safeUrl } from "../lib/public-events";
+  // Termin inkl. der Events aus der Verwaltung aktualisieren
+  fetchEvents().then((all) => {
+    if (!all) return;
+    const r = nextRookieRide(all);
+    const date = document.querySelector("[data-rookie-date]");
+    const loc = document.querySelector("[data-rookie-loc]");
+    const link = document.querySelector<HTMLAnchorElement>("[data-rookie-link]");
+    if (!date || !loc || !link) return;
+    date.textContent = r ? rookieDateText(r) : "Termin folgt";
+    loc.textContent = r ? r.location || "Treffpunkt: Finanzamt Tübingen" : "Den nächsten Termin geben wir im Strava Club bekannt.";
+    link.href = (r && safeUrl(r.strava)) || "https://www.strava.com/clubs/gruppetto-tuebingen";
+  });
+</script>
+
 <style>
   .rk-hero { padding: calc(var(--gutter) * 2 + 8rem) var(--gutter) 3rem; }
   .rk-kicker { margin: 0 0 1rem; font-weight: 600; color: var(--color-highlight); letter-spacing: 0.02em; }
@@ -117,7 +148,20 @@ const facts = [
   .rk-intro p { margin: 0; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
   .rk-intro .rk-lead { color: var(--color-text); font-size: clamp(1.2rem, 1.8vw, 1.5rem); line-height: 1.45; }
 
-  .rk-claim { background: var(--color-accent); color: var(--color-on-accent); padding: 3.5rem var(--gutter); }
+  .rk-next {
+    margin: 0 var(--gutter) 3rem; padding: 1.8rem 1.6rem; background: var(--color-bg-alt);
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1.5rem;
+    border-left: 4px solid var(--blue-500);
+  }
+  .rk-next h2 { margin: 0 0 0.6rem; font-family: var(--font-body); font-weight: 600; font-size: 1rem; color: var(--color-highlight); }
+  .rk-next-date { margin: 0 0 0.3rem; font-family: var(--font-title); font-weight: 500; font-size: clamp(1.8rem, 3.4vw, 3rem); line-height: 1.05; }
+  .rk-next-loc { margin: 0; color: var(--color-text-muted); }
+  .rk-next-side { display: grid; gap: 0.7rem; justify-items: end; }
+  .rk-next-cap { margin: 0; color: var(--color-text-muted); font-size: 0.95rem; }
+  @media (max-width: 760px) { .rk-next-side { justify-items: start; } }
+
+  /* Banner etwas transparenter */
+  .rk-claim { background: color-mix(in srgb, var(--color-accent) 55%, transparent); color: var(--color-on-accent); padding: 3.5rem var(--gutter); }
   .rk-claim p {
     margin: 0; font-family: var(--font-title); font-weight: 500; line-height: 1.05;
     font-size: clamp(2rem, 4.6vw, 4.4rem); letter-spacing: -0.02em;

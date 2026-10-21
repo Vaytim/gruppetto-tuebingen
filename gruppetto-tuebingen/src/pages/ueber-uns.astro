@@ -1,25 +1,185 @@
 ---
+// Über uns – Texte unten anpassen. FAQ steht in `faq`, die Geschichte in `timeline`.
 import Layout from "../layouts/Layout.astro";
+
+const STRAVA = "https://www.strava.com/clubs/gruppetto-tuebingen";
+const INSTAGRAM = "https://www.instagram.com/gruppetto.tuebingen/";
+
+// html: erlaubt Links im Text
+const faq = [
+  {
+    q: "Wann und wo?",
+    html: `In der Saison starten unsere Weekly Rides jeden Mittwoch um 18:15 Uhr am Finanzamt Tübingen. Alle aktuellen Ausfahrten findest du unter <a href="/rides">Weekly Rides</a>, alle Events unter <a href="/events">Events</a>.`,
+  },
+  {
+    q: "Muss ich mich anmelden?",
+    html: `Sag einfach kurz auf Strava zu, damit wir planen können. Tritt am besten unserem <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a> bei – dort erfährst du alles zuerst.`,
+  },
+  {
+    q: "Wie schnell wird gefahren?",
+    html: `Wir bieten regelmäßig <a href="/rookies">Rookie Rides</a> an, bei denen das Tempo überhaupt keine Rolle spielt. Daneben gibt es Gruppen mit einem Schnitt von etwa 24 bis über 30 km/h – gemessen über die ganze Runde, Anstiege inklusive. Wenn du unsicher bist, starte einfach mit einem Rookie Ride.`,
+  },
+  {
+    q: "Wie lang sind die Runden?",
+    html: `Die Weekly Rides sind etwa 40 km lang und haben rund 350 Höhenmeter. Für unsere Events geben wir Strecke und Höhenmeter jeweils vorab bekannt.`,
+  },
+  {
+    q: "Welches Rad?",
+    html: `Wir empfehlen ein sportliches Rad, zum Beispiel ein Rennrad oder Gravelbike.`,
+  },
+  {
+    q: "Was soll ich mitbringen?",
+    html: `Helm (Pflicht), Ersatzschlauch, Pumpe oder CO₂-Kartusche, Trinkflasche und etwas zu essen. In der dunklen Jahreszeit außerdem Licht vorne und hinten.`,
+  },
+  {
+    q: "Ich bin neu im Gruppenfahren – geht das?",
+    html: `Klar. Sag vor dem Start einfach Bescheid, dass du zum ersten Mal dabei bist, und frag nach den Ride Leadern. Sie erklären dir die wichtigsten Handzeichen und wie wir als Gruppe fahren. Wir halten uns an die StVO und fahren rücksichtsvoll.`,
+  },
+  {
+    q: "Und wenn ich einen Platten habe?",
+    html: `Dann warten wir und helfen dir.`,
+  },
+  {
+    q: "Bei schlechtem Wetter?",
+    html: `Absagen oder Änderungen kündigen wir immer im <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a> an.`,
+  },
+  {
+    q: "Und danach?",
+    html: `Oft lassen wir den Abend noch gemeinsam ausklingen, mal hier, mal dort. Bleib gerne dabei!`,
+  },
+];
+
+const timeline = [
+  {
+    year: "2024",
+    text: "Es beginnt im März: Simon will nicht mehr alleine auf dem Rennrad sitzen und gründet einen Strava Club. Max tritt bei, und schnell geht es aufs Rad. Die erste gemeinsame Tour fahren wir zu viert, die nächste schon zu neunt. Plötzlich ist da eine Community – und die Idee für etwas Regelmäßiges. Tim, Felix und Leon sind von Anfang an dabei und bringen sich ein. Schon im Sommer ist das Gruppetto über 100 Leute stark.",
+  },
+  {
+    year: "2025",
+    text: "Im Frühjahr sind wir 300, im Sommer 500 – und wir trauen uns an die ersten Events. Zu den Weekly Rides kommen auf einmal 70 Leute. Wir schließen das Jahr mit über 700 Mitgliedern ab, etwas, das wir uns nie erträumt hätten.",
+  },
+  {
+    year: "2026",
+    text: "Im Frühjahr knacken wir die 1000. Wir strukturieren uns um und fahren seitdem mehrere Gruppen parallel, damit es für alle sicher und entspannt bleibt. Das Konzept geht auf: Heute sind wir weit über 1000 Mitglieder.",
+  },
+];
 ---
 
-<Layout title="Über uns" description="Über Gruppetto Tübingen">
-  <img
-    src="/images/truppe-banner-2.png"
-    alt="Die Gruppetto Tübingen Truppe"
-    style="width: 100%; height: 450px; object-fit: cover; object-position: top; border-radius: 12px; display: block;"
-  />
-  <section style="padding: 3rem 0; max-width: 40rem;">
-    <h1>Über uns</h1>
-    <p style="color: var(--color-text-muted); line-height: 1.6;">
-      Gruppetto Tübingen ist eine lokale Rennrad-Community. Wir fahren
-      gemeinsam durch und um Tübingen, teilen Routen und Eindrücke von
-      unseren Ausfahrten und freuen uns über jede:n, der oder die
-      dazustoßen möchte – egal ob erfahren oder gerade erst am Anfang.
+<Layout title="Über uns" description="Gruppetto Tübingen – die lokale Radcommunity aus Tübingen. Mitfahren ist und bleibt kostenlos." fullBleed>
+  <section class="uu-hero">
+    <p class="uu-kicker">Über uns · est. 2024</p>
+    <h1 class="uu-title"><span>Gruppetto</span><span>Tübingen</span></h1>
+    <div class="uu-intro">
+      <p class="uu-lead">
+        Wir sind eine lokale Radcommunity aus Tübingen – für alle, die gerne Rad fahren und Lust auf Radsport haben.
+      </p>
+      <div>
+        <p>
+          Dabei ist dein Level egal. Uns ist nicht wichtig, wie lange du schon fährst, ob du Rennen fährst oder gerade dein erstes schnelles Rad hast. Wenn du Lust hast, Radsport in einer Gemeinschaft zu erleben, dann komm dazu – wir freuen uns auf dich.
+        </p>
+        <p>
+          Unser Ziel: Radsport wieder unkompliziert machen, für alle ermöglichen und alle einschließen, die das möchten. Wir fahren in und rund um Tübingen die verschiedensten Strecken, in verschiedenen Tempo-Gruppen. Und keine Sorge: Innerhalb deiner Gruppe wird gewartet – wir lassen niemanden zurück.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <img class="uu-image" src="/images/truppe-banner-2.png" alt="Die Gruppetto Tübingen Truppe" />
+
+  <section class="uu-claim" aria-label="Unser Versprechen">
+    <p><span>Mitfahren ist und bleibt kostenlos.</span></p>
+    <p class="uu-claim-sub">
+      Komm rum. Bring dein Rad. Und deinen Helm. Wir sehen uns beim nächsten <a href="/events">Event</a> oder bei der nächsten <a href="/rides">Ausfahrt</a>.
     </p>
-    <p style="color: var(--color-text-muted); line-height: 1.6;">
-      Auf Instagram teilen wir Reels und Impressionen von unseren
-      Rides.
+    <p class="uu-sign">Simon, Max, Leon und Tim</p>
+  </section>
+
+  <section class="uu-guide" aria-labelledby="uu-guide-title">
+    <h2 id="uu-guide-title">Dein erster Ride mit uns</h2>
+    <ol class="uu-list">
+      {faq.map((f, i) => (
+        <li>
+          <span class="uu-num">{String(i + 1).padStart(2, "0")}</span>
+          <div>
+            <h3>{f.q}</h3>
+            <p set:html={f.html} />
+          </div>
+        </li>
+      ))}
+    </ol>
+    <p class="uu-note">Die Teilnahme an unseren Ausfahrten und Events erfolgt auf eigene Verantwortung.</p>
+  </section>
+
+  <section class="uu-story" aria-labelledby="uu-story-title">
+    <h2 id="uu-story-title">Wie alles begann</h2>
+    <p class="uu-story-lead">Wer sind wir eigentlich – und wie ist daraus das Gruppetto entstanden?</p>
+    <div class="uu-timeline">
+      {timeline.map((t) => (
+        <div class="uu-step">
+          <strong>{t.year}</strong>
+          <p>{t.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="uu-cta">
+    <h2>Was kommt jetzt?</h2>
+    <p>
+      Auch 2027 wollen wir uns weiterentwickeln und haben einiges vor. Wenn du mitfahren möchtest, kannst du jederzeit dazukommen. Und wenn du das Gruppetto mitgestalten willst, freuen wir uns sehr über deinen Input – gerne per Nachricht auf Instagram oder persönlich bei der nächsten Ausfahrt.
     </p>
-    <a href="/links" class="btn" style="margin-top: 1rem;">Zu unseren Links</a>
+    <div class="uu-cta-buttons">
+      <a class="btn" href="/rides">Zu den Weekly Rides</a>
+      <a class="btn uu-btn-outline" href={INSTAGRAM} target="_blank" rel="noopener">Schreib uns auf Instagram ↗</a>
+    </div>
   </section>
 </Layout>
+
+<style>
+  .uu-hero { padding: calc(var(--gutter) * 2 + 8rem) var(--gutter) 3rem; }
+  .uu-kicker { margin: 0 0 1rem; font-weight: 600; color: var(--color-highlight); letter-spacing: 0.02em; }
+  .uu-title { margin: 0 0 2.5rem; display: grid; font-size: clamp(2.8rem, 6vw, 6.5rem); line-height: 1; }
+  .uu-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem 3rem; max-width: 1100px; }
+  .uu-intro p { margin: 0 0 1rem; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
+  .uu-intro .uu-lead { margin: 0; color: var(--color-text); font-size: clamp(1.2rem, 1.8vw, 1.5rem); line-height: 1.45; }
+
+  .uu-image { display: block; width: 100%; height: clamp(280px, 55vh, 620px); object-fit: cover; object-position: top; }
+
+  .uu-claim { background: color-mix(in srgb, var(--color-accent) 55%, transparent); color: var(--color-on-accent); padding: 3.5rem var(--gutter); }
+  .uu-claim > p:first-child {
+    margin: 0 0 1.5rem; font-family: var(--font-title); font-weight: 500; line-height: 1.05;
+    font-size: clamp(2rem, 4.6vw, 4.4rem); letter-spacing: -0.02em;
+  }
+  .uu-claim-sub { margin: 0; max-width: 42rem; font-size: clamp(1.1rem, 1.6vw, 1.35rem); line-height: 1.5; }
+  .uu-claim-sub a { color: inherit; text-underline-offset: 4px; }
+  .uu-sign { margin: 1.5rem 0 0; font-weight: 600; }
+
+  .uu-guide { padding: 5rem var(--gutter) 2rem; }
+  .uu-guide > h2, .uu-story > h2 { margin: 0 0 2rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
+  .uu-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+  .uu-list li { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.4rem 0; border-top: 1px solid var(--color-line); }
+  .uu-num { font-family: var(--font-title); font-size: 1.3rem; color: var(--color-text-muted); line-height: 1.4; }
+  .uu-list h3 { margin: 0 0 0.5rem; font-family: var(--font-body); font-weight: 600; font-size: 1.15rem; line-height: 1.3; }
+  .uu-list p { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
+  .uu-list p :global(a) { color: var(--color-text); text-underline-offset: 3px; }
+  .uu-note { margin: 1.5rem 0 0; font-size: 0.9rem; color: var(--color-text-muted); }
+
+  .uu-story { padding: 4rem var(--gutter) 2rem; }
+  .uu-story-lead { margin: -1rem 0 2rem; color: var(--color-text-muted); font-size: 1.1rem; }
+  .uu-timeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .uu-step { background: var(--color-bg-alt); padding: 1.6rem 1.4rem; }
+  .uu-step strong { display: block; margin-bottom: 0.8rem; font-family: var(--font-title); font-weight: 500; font-size: clamp(2.2rem, 4vw, 3.4rem); line-height: 1; }
+  .uu-step p { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
+
+  .uu-cta { padding: 4rem var(--gutter) 6rem; }
+  .uu-cta h2 { margin: 0 0 1rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); }
+  .uu-cta > p { margin: 0 0 1.8rem; max-width: 46rem; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
+  .uu-cta-buttons { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+  .uu-btn-outline { background: transparent; border: 1.5px solid var(--color-text); color: var(--color-text); }
+  .uu-btn-outline:hover { background: var(--color-text); color: var(--navy-800); }
+
+  @media (max-width: 760px) {
+    .uu-hero { padding-top: calc(var(--gutter) + 7rem); }
+    .uu-intro, .uu-list, .uu-timeline { grid-template-columns: 1fr; }
+  }
+</style>
