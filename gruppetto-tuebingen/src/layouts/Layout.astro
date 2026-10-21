@@ -253,6 +253,24 @@ const footerColumns = [
         --info-bar-h: 42px;
       }
 
+      /* ---------- Unterseiten: heller Hauptteil wie die hellen Abschnitte der Startseite ----------
+         Blau bleibt Akzent (Buttons, Bänder, Karten-Highlights); Info-Leiste, Menü und Footer bleiben dunkel. */
+      body.is-subpage main {
+        --color-bg: var(--light-100);
+        --color-bg-alt: #ffffff;           /* Karten/Kacheln heben sich weiß vom hellen Grund ab */
+        --color-bg-raised: #e4e8f1;
+        --color-line: rgba(2, 24, 89, 0.16);
+        --color-text: var(--navy-800);
+        --color-text-muted: rgba(2, 24, 89, 0.72);
+        --color-highlight: var(--blue-500); /* Akzentblau als Text: auf Hell gut lesbar */
+        background: var(--color-bg);
+        color: var(--color-text);
+      }
+      body.is-subpage { background: var(--light-100); } /* auch neben schmalen Seiten (max-width) hell */
+      body.is-subpage:not(.menu-open) .site-header { color: var(--navy-800); }
+      body.is-subpage main .rookie-status { background: rgba(21, 115, 71, 0.12); color: #157347; }
+      body.is-subpage main .rookie-status.is-full { background: rgba(180, 35, 24, 0.1); color: #b42318; }
+
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
       body { overflow-x: hidden; }
@@ -295,9 +313,6 @@ const footerColumns = [
       .menu-toggle:hover span { background: var(--blue-500); }
       /* Geöffnetes Menü (Navy-Hintergrund): X hell, damit es sichtbar bleibt */
       .menu-toggle[aria-expanded="true"] span { background: var(--light-100); }
-      /* Unterseiten: Menü-Button immer im Weiß der Palette (auch beim Hovern) – auf dem dunklen Grund sonst kaum sichtbar */
-      body.is-subpage .menu-toggle span,
-      body.is-subpage .menu-toggle:hover span { background: var(--light-100); }
       .menu-toggle[aria-expanded="true"]:hover span { background: var(--blue-500); }
       .menu-toggle[aria-expanded="true"] span:first-child { transform: translateY(6px) rotate(45deg); }
       .menu-toggle[aria-expanded="true"] span:last-child { transform: translateY(-6px) rotate(-45deg); }
@@ -337,7 +352,7 @@ const footerColumns = [
       /* ---------- Buttons (eckig, wie im Layout-Vorbild) ---------- */
       .btn {
         display: inline-block; padding: 1rem 2.2rem; border: 0; border-radius: 0;
-        background: var(--navy-800); color: var(--color-text); font: 500 0.95rem var(--font-body); letter-spacing: 0.02em;
+        background: var(--navy-800); color: var(--light-100); font: 500 0.95rem var(--font-body); letter-spacing: 0.02em;
         text-decoration: none; cursor: pointer; transition: background 0.2s ease, color 0.2s ease;
       }
       .btn:hover { background: var(--color-accent); color: var(--color-on-accent); }
