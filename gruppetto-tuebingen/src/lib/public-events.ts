@@ -170,3 +170,19 @@ export const shortDate = (iso: string) => {
   const [y, m, d] = iso.split("-");
   return `${Number(d)}.${Number(m)}.${y.slice(2)}`;
 };
+
+/**
+ * Nächster Rookie Ride: das nächste kommende Event, dessen Titel oder ID "Rookie" enthält.
+ * → In der Event-Verwaltung einfach ein Event "Rookie Ride" anlegen, dann erscheint es automatisch.
+ */
+export function nextRookieRide(all: PublicEvent[], today = todayISO()): PublicEvent | null {
+  return splitEvents(all, 0, today).upcoming.find((e) => /rookie/i.test(`${e.title} ${e.id}`)) ?? null;
+}
+
+/** Kurzer Termin-Text, z. B. "Mi, 12. November · 18:15 Uhr" */
+export function rookieDateText(e: PublicEvent): string {
+  const wd = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "long", timeZone: "UTC" }).format(
+    new Date(`${e.dateISO}T12:00:00Z`),
+  );
+  return `${wd.replace(".,", ",")}${e.time ? ` · ${e.time}` : ""}`;
+}
