@@ -8,7 +8,7 @@
 //  6. Farbiges Band mit 4 Karten + Button
 // Alle Texte/Bilder unten in den Konstanten anpassen.
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, nextRookieRide, rookieDateText, shortDate, slideHTML, splitEvents } from "../lib/public-events";
+import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents } from "../lib/public-events";
 import "../styles/event-slider.css";
 
 const hero = {
@@ -97,10 +97,11 @@ const slides = slidesFor(upcoming, past);
     <img src={banner.image} alt="" loading="lazy" />
     <h2 class="banner-headline">{banner.headline.map((l) => <span>{l}</span>)}</h2>
     <a class="btn banner-cta" href={banner.cta.href}>{banner.cta.label}</a>
-    <a class="banner-next" href="/rookies#naechster-rookie-ride" data-rookie-next hidden={!rookie}>
-      <span>Nächster Rookie Ride</span>
-      <strong data-rookie-date>{rookie ? rookieDateText(rookie) : ""}</strong>
-      <em class="rookie-status" data-rookie-status hidden></em>
+    <!-- gleicher Stil wie "Nächstes Event" im Hero -->
+    <a class="hero-date banner-date" href="/rookies#naechster-rookie-ride" data-rookie-next hidden={!rookie}>
+      <span class="hero-date-label">Nächster Rookie Ride<span data-rookie-time>{rookie?.time ? ` · ${rookie.time}` : ""}</span></span>
+      <span class="hero-date-value" data-rookie-date>{rookie ? shortDate(rookie.dateISO) : ""}</span>
+      <span class="rookie-status" data-rookie-status hidden></span>
     </a>
   </section>
 
@@ -134,7 +135,7 @@ const slides = slidesFor(upcoming, past);
 
 <script>
   import { initReelHover } from "../lib/motion";
-  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, rookieDateText, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
   Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
@@ -142,7 +143,10 @@ const slides = slidesFor(upcoming, past);
     const r = nextRookieRide(all ?? codeEventsPublic());
     if (!box) return;
     box.hidden = !r;
-    if (r) box.querySelector("[data-rookie-date]")!.textContent = rookieDateText(r);
+    if (r) {
+      box.querySelector("[data-rookie-date]")!.textContent = shortDate(r.dateISO);
+      box.querySelector("[data-rookie-time]")!.textContent = r.time ? ` · ${r.time}` : "";
+    }
     showRookieStatus(box.querySelector("[data-rookie-status]"), !!r, full);
   });
 
@@ -220,17 +224,10 @@ const slides = slidesFor(upcoming, past);
     font-size: clamp(2.8rem, 6vw, 6.5rem); line-height: 1;
   }
   .banner-cta { position: absolute; z-index: 1; left: var(--gutter); bottom: var(--gutter); }
-  .banner-next {
-    position: absolute; z-index: 1; right: var(--gutter); bottom: var(--gutter); display: grid; gap: 0.2rem; text-align: right;
-    padding: 0.9rem 1.2rem; background: rgba(2, 24, 89, 0.7); color: var(--light-100); text-decoration: none;
-  }
-  .banner-next[hidden] { display: none; }
-  .banner-next span { font-size: 0.85rem; opacity: 0.8; }
-  .banner-next strong { font-family: var(--font-title); font-weight: 500; font-size: clamp(1.2rem, 2vw, 1.6rem); line-height: 1.1; }
-  .banner-next:hover { background: var(--blue-500); }
-  .banner-next .rookie-status { justify-self: end; margin-top: 0.3rem; font-style: normal; }
-  @media (max-width: 760px) { .banner-next .rookie-status { justify-self: start; } }
-  @media (max-width: 760px) { .banner-next { left: var(--gutter); right: auto; bottom: calc(var(--gutter) + 3.6rem); text-align: left; } }
+  /* Rookie-Termin: Stil von .hero-date (Hero), hier im Banner */
+  .banner-date { bottom: var(--gutter); }
+  .banner-date .rookie-status { margin-top: 0.9rem; }
+  @media (max-width: 760px) { .banner-date { bottom: calc(var(--gutter) + 4.2rem); } }
 
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
