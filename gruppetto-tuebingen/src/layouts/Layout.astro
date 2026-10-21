@@ -132,6 +132,37 @@ const footerColumns = [
 
     <!-- Footer -->
     <footer class="site-footer">
+      <!-- Kontaktformular (Versand über /api/kontakt) -->
+      <section class="contact" id="kontakt" aria-labelledby="kontakt-title">
+        <div class="contact-intro">
+          <h2 id="kontakt-title">Schreib uns</h2>
+          <p>Fragen zu den Rides, Ideen für Events oder Lust, das Gruppetto mitzugestalten? Schick uns eine Nachricht – wir melden uns so schnell wie möglich.</p>
+        </div>
+        <form class="contact-form" method="post" action="/api/kontakt" novalidate>
+          <label class="cf-field">
+            <span>Name</span>
+            <input type="text" name="name" autocomplete="name" maxlength="100" required />
+          </label>
+          <label class="cf-field">
+            <span>E-Mail</span>
+            <input type="email" name="email" autocomplete="email" maxlength="200" required />
+          </label>
+          <label class="cf-field cf-wide">
+            <span>Nachricht</span>
+            <textarea name="message" rows="5" maxlength="5000" required></textarea>
+          </label>
+          <!-- Spam-Schutz: für Menschen unsichtbar -->
+          <label class="cf-hp" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+          <input type="hidden" name="t" value="" />
+          <input type="hidden" name="page" value="" />
+          <div class="cf-bottom cf-wide">
+            <p class="cf-privacy">Mit dem Absenden werden deine Angaben genutzt, um deine Anfrage zu beantworten. Mehr dazu unter <a href="/rechtliches">Rechtliches</a>.</p>
+            <button class="btn btn-accent" type="submit">Nachricht senden</button>
+          </div>
+          <p class="cf-status cf-wide" role="status" aria-live="polite" hidden></p>
+        </form>
+      </section>
+
       <div class="footer-top">
         <a class="btn btn-accent" href="https://www.instagram.com/gruppetto.tuebingen/" target="_blank" rel="noopener">Folge uns auf Instagram</a>
         <div class="footer-social">
@@ -327,6 +358,29 @@ const footerColumns = [
 
       /* ---------- Footer ---------- */
       .site-footer { background: var(--color-bg-soft); padding: 6rem var(--gutter) 0; overflow: hidden; }
+
+      /* Kontaktformular */
+      .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem var(--gutter); padding-bottom: 5rem; margin-bottom: 5rem; border-bottom: 1px solid var(--color-line); }
+      .contact-intro h2 { margin: 0 0 1rem; font-size: clamp(2.4rem, 4.6vw, 4.4rem); line-height: 1; }
+      .contact-intro p { margin: 0; max-width: 28rem; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
+      .contact-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-left: var(--gutter); }
+      .cf-field { display: grid; gap: 0.4rem; }
+      .cf-field span { font-size: 0.9rem; font-weight: 600; }
+      .cf-wide { grid-column: 1 / -1; }
+      .contact-form input, .contact-form textarea {
+        width: 100%; box-sizing: border-box; padding: 0.8rem 0.9rem; border: 1.5px solid var(--color-line); border-radius: 0;
+        background: var(--color-bg); color: var(--color-text); font: 400 1rem/1.5 var(--font-body);
+      }
+      .contact-form textarea { resize: vertical; min-height: 8rem; }
+      .contact-form input:focus, .contact-form textarea:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(15, 74, 191, 0.35); }
+      .contact-form [aria-invalid="true"] { border-color: #ff9b9b; }
+      .cf-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+      .cf-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
+      .cf-privacy { margin: 0; max-width: 26rem; font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; }
+      .cf-privacy a { color: var(--color-text); }
+      .contact-form button[disabled] { opacity: 0.6; cursor: progress; }
+      .cf-status { margin: 0; padding: 0.8rem 1rem; background: rgba(46, 204, 113, 0.14); color: #7ee2a8; font-weight: 600; }
+      .cf-status.is-error { background: rgba(255, 107, 107, 0.14); color: #ff9b9b; }
       .footer-top { display: grid; justify-items: start; gap: 2rem; margin-left: 50%; padding-left: var(--gutter); margin-bottom: 5rem; }
       .footer-social { display: flex; gap: 1.6rem; }
       .footer-social a { color: var(--color-text); }
@@ -349,9 +403,60 @@ const footerColumns = [
         .menu-teaser { width: 50%; }
         .main-contained { padding-top: calc(var(--gutter) + 7rem); }
         .footer-top { margin-left: 0; padding-left: 0; }
+        .contact, .contact-form { grid-template-columns: 1fr; }
+        .contact-form { padding-left: 0; }
         .footer-columns { grid-template-columns: 1fr 1fr; }
         .info-bar { font-size: 0.8rem; }
       }
     </style>
+    <script>
+      // Kontaktformular: ohne Neuladen absenden, Antwort direkt im Formular anzeigen
+      const form = document.querySelector<HTMLFormElement>(".contact-form");
+      if (form) {
+        const status = form.querySelector<HTMLElement>(".cf-status")!;
+        const button = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+        (form.elements.namedItem("t") as HTMLInputElement).value = String(Date.now());
+        (form.elements.namedItem("page") as HTMLInputElement).value = location.pathname;
+        const show = (text: string, error = false) => {
+          status.hidden = false;
+          status.textContent = text;
+          status.classList.toggle("is-error", error);
+        };
+        form.addEventListener("submit", async (ev) => {
+          ev.preventDefault();
+          let firstInvalid: HTMLElement | null = null;
+          form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input[required], textarea[required]").forEach((f) => {
+            const ok = f.value.trim() !== "" && f.checkValidity();
+            f.setAttribute("aria-invalid", ok ? "false" : "true");
+            if (!ok && !firstInvalid) firstInvalid = f;
+          });
+          if (firstInvalid) {
+            show("Bitte fülle Name, E-Mail und Nachricht aus (mit gültiger E-Mail-Adresse).", true);
+            (firstInvalid as HTMLElement).focus();
+            return;
+          }
+          button.disabled = true;
+          button.textContent = "Wird gesendet …";
+          try {
+            const res = await fetch(form.action, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify(Object.fromEntries(new FormData(form))),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || "Die Nachricht konnte nicht verschickt werden.");
+            form.reset();
+            (form.elements.namedItem("t") as HTMLInputElement).value = String(Date.now());
+            (form.elements.namedItem("page") as HTMLInputElement).value = location.pathname;
+            show("Danke! Deine Nachricht ist angekommen – wir melden uns bald.");
+          } catch (err) {
+            show((err as Error).message || "Die Nachricht konnte nicht verschickt werden.", true);
+          } finally {
+            button.disabled = false;
+            button.textContent = "Nachricht senden";
+          }
+        });
+      }
+    </script>
   </body>
 </html>
