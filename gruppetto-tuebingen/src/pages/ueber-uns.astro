@@ -151,7 +151,7 @@ const timeline = [
   .uu-feature { display: grid; grid-template-columns: 1fr 1fr; }
   .uu-image { display: block; width: 100%; height: 100%; max-height: 90vh; aspect-ratio: 2 / 3; object-fit: cover; object-position: center 60%; }
 
-  .uu-claim { background: color-mix(in srgb, var(--color-accent) 55%, transparent); color: var(--color-on-accent); padding: 3.5rem var(--gutter); display: flex; flex-direction: column; justify-content: flex-end; }
+  .uu-claim { background: color-mix(in srgb, var(--color-accent) 85%, var(--light-100)); color: var(--color-on-accent); padding: 3.5rem var(--gutter); display: flex; flex-direction: column; justify-content: flex-end; }
   .uu-claim > p:first-child {
     margin: 0 0 1.5rem; font-family: var(--font-title); font-weight: 500; line-height: 1.05;
     font-size: clamp(2rem, 4.6vw, 4.4rem); letter-spacing: -0.02em;
@@ -182,7 +182,7 @@ const timeline = [
   .uu-cta > p { margin: 0 0 1.8rem; max-width: 46rem; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
   .uu-cta-buttons { display: flex; flex-wrap: wrap; gap: 0.8rem; }
   .uu-btn-outline { background: transparent; border: 1.5px solid var(--color-text); color: var(--color-text); }
-  .uu-btn-outline:hover { background: var(--color-text); color: var(--navy-800); }
+  .uu-btn-outline:hover { background: var(--color-text); color: var(--light-100); }
 
   @media (max-width: 760px) {
     .uu-hero { padding-top: calc(var(--gutter) + 7rem); }
