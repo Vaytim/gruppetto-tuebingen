@@ -1,7 +1,8 @@
 // Verwaltung → Reiter „Events“: Dashboard mit allen Events (heute, kommend, vergangen).
 // Events anlegen, bearbeiten, löschen – inkl. Strava-Link, Instagram-Reel-Link und
 // Reel-Video (spielt beim Hovern stumm ab). Alles wird dauerhaft gespeichert.
-import { events as codeEvents, germanDateLabel, type GruppettoEvent } from "../../src/data/events";
+// Dazu die Anmeldung: Preis, max. Teilnehmer, Anmeldeschluss, Pause – und die aktuelle Belegung.
+import { events as codeEvents, germanDateLabel, type GruppettoEvent, type Registration } from "../../src/data/events";
 import {
   type EventOverride,
   type StoredEvent,
@@ -16,10 +17,11 @@ import {
   readStoredEvents,
   saveOverride,
   saveStoredEvent,
+  validateRegistration,
   videoStore,
   videoUrl,
 } from "./event-store";
-import { type LedgerStore, updateJSON } from "./registrations";
+import { type LedgerStore, isActive, readLedger, seatsTaken, updateJSON } from "./registrations";
 import { escapeHtml as h, json } from "./services";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -45,7 +47,7 @@ export const ADMIN_EVENTS_CSS = `
 .btn.danger{background:#3a2420;color:var(--warn)}
 .btn.small{padding:.4rem .8rem;font-size:.82rem}
 /* Kennzahlen */
-.ev-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:0 0 1.2rem}
+.ev-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:.8rem;margin:0 0 1.2rem}
 .ev-stats .card b{font-size:1.8rem}
 /* Werkzeugleiste */
 .ev-toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:0 0 1.2rem}
@@ -93,6 +95,14 @@ details.ev-editor[open]>summary::before{content:"– "}
 .ev-actions form{display:inline}
 .ev-card[data-status=vergangen] .ev-media img{filter:saturate(.75)}
 .ev-empty{color:var(--muted)}
+/* Belegung */
+.ev-seats{display:grid;gap:.3rem;margin:.2rem 0 .1rem;font-size:.85rem}
+.ev-seats .bar{height:6px;border-radius:99px;background:var(--bg);overflow:hidden}
+.ev-seats .bar i{display:block;height:100%;background:var(--blue)}
+.ev-seats.full .bar i{background:var(--warn)}
+.ev-seats .line{display:flex;justify-content:space-between;gap:.5rem}
+.ev-reg-info{grid-column:1/-1;margin:0;padding:.7rem .9rem;border-radius:10px;background:var(--bg);color:var(--text);font-size:.9rem}
+.ev-form fieldset[disabled] label{opacity:.45}
 @media (max-width:800px){.ev-stats{grid-template-columns:repeat(2,1fr)}.ev-form,.ev-form fieldset{grid-template-columns:1fr}}
 `;
 
@@ -121,8 +131,27 @@ interface AdminRow {
   strava?: string;
   reelUrl?: string;
   reelVideoId?: string;
-  registration: boolean;
+  /** Aktuelle Anmelde-Einstellungen (undefined = keine Anmeldung) */
+  registration?: Registration;
+  /** Belegung laut Teilnehmerliste */
+  booking: Booking;
   edited: boolean;
+}
+
+interface Booking {
+  /** bezahlt und nicht erstattet */
+  active: number;
+  /** gerade in Bezahlung (Platz 30 Min. reserviert) */
+  pending: number;
+  /** gibt es schon irgendeine Anmeldung (auch erstattete)? */
+  hasAny: boolean;
+}
+const NO_BOOKING: Booking = { active: 0, pending: 0, hasAny: false };
+
+async function bookingOf(store: LedgerStore, id: string, first?: number): Promise<Booking> {
+  const l = await readLedger(store, id, first);
+  const active = l.paid.filter(isActive).length;
+  return { active, pending: seatsTaken(l) - active, hasAny: l.paid.length > 0 || Object.keys(l.pending).length > 0 };
 }
 
 function codeRow(e: GruppettoEvent, ov?: EventOverride): AdminRow {
@@ -130,8 +159,8 @@ function codeRow(e: GruppettoEvent, ov?: EventOverride): AdminRow {
     id: e.id,
     source: "code",
     title: ov?.title || e.title,
-    dateISO: e.dateISO,
-    time: e.time,
+    dateISO: ov?.dateISO || e.dateISO,
+    time: ov?.time !== undefined ? ov.time : e.time,
     location: ov?.location ?? e.location.replace(/^Treffpunkt:\s*/i, ""),
     description: ov?.description ?? e.description,
     image: ov?.imageId ? imageUrl(ov.imageId) : e.image,
@@ -139,7 +168,8 @@ function codeRow(e: GruppettoEvent, ov?: EventOverride): AdminRow {
     strava: ov?.strava !== undefined ? ov.strava || undefined : e.strava,
     reelUrl: ov?.reelUrl,
     reelVideoId: ov?.reelVideoId,
-    registration: !!e.registration,
+    registration: ov?.registration === null ? undefined : (ov?.registration ?? e.registration),
+    booking: NO_BOOKING,
     edited: !!ov,
   };
 }
@@ -158,21 +188,46 @@ function adminRow(e: StoredEvent): AdminRow {
     strava: e.strava,
     reelUrl: e.reelUrl,
     reelVideoId: e.reelVideoId,
-    registration: false,
+    registration: e.registration,
+    booking: NO_BOOKING,
     edited: false,
   };
 }
 
 async function loadRows(store: LedgerStore): Promise<AdminRow[]> {
   const [stored, overrides] = await Promise.all([readStoredEvents(store), readOverrides(store)]);
-  return [...codeEvents.map((e) => codeRow(e, overrides[e.id])), ...stored.map(adminRow)];
+  const rows = [...codeEvents.map((e) => codeRow(e, overrides[e.id])), ...stored.map(adminRow)];
+  await Promise.all(
+    rows.filter((r) => r.registration).map(async (r) => (r.booking = await bookingOf(store, r.id, r.registration!.firstStartNumber))),
+  );
+  return rows;
+}
+
+const euro = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+
+/** Belegung als Balken + Text */
+function seatsHTML(r: AdminRow) {
+  const reg = r.registration!;
+  const taken = r.booking.active + r.booking.pending;
+  const full = taken >= reg.capacity;
+  const pct = Math.min(100, Math.round((taken / reg.capacity) * 100));
+  return `<div class="ev-seats${full ? " full" : ""}">
+    <div class="line"><span><b>${r.booking.active}</b> / ${reg.capacity} Plätze belegt${r.booking.pending ? ` <span class="muted">(+${r.booking.pending} in Bezahlung)</span>` : ""}</span><span>${euro(reg.price)}</span></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+  </div>`;
 }
 
 function card(r: AdminRow, status: "heute" | "kommend" | "vergangen") {
   const timeLabel = r.source === "admin" ? (r.time ? `${r.time} Uhr` : "") : r.time;
   const badges = [
     `<span class="tag wait">${r.source === "code" ? (r.edited ? "Code · bearbeitet" : "Code") : "Verwaltung"}</span>`,
-    r.registration ? '<span class="tag">Anmeldung</span>' : "",
+    r.registration
+      ? r.registration.paused
+        ? '<span class="tag wait">Anmeldung pausiert</span>'
+        : r.booking.active + r.booking.pending >= r.registration.capacity
+          ? '<span class="tag ref">Ausgebucht</span>'
+          : '<span class="tag">Anmeldung offen</span>'
+      : "",
     r.strava ? '<span class="tag">Strava</span>' : "",
     r.reelUrl ? '<span class="tag">Reel-Link</span>' : "",
     r.reelVideoId ? '<span class="tag">Reel-Video</span>' : "",
@@ -186,11 +241,13 @@ function card(r: AdminRow, status: "heute" | "kommend" | "vergangen") {
     <p class="ev-date">${h(germanDateLabel(r.dateISO))}${timeLabel ? ` · ${h(timeLabel)}` : ""}</p>
     <h3>${h(r.title)}</h3>
     <div class="ev-badges">${badges}</div>
+    ${r.registration ? seatsHTML(r) : ""}
     <div class="ev-actions">
       <a class="btn small" href="?tab=events&edit=${encodeURIComponent(r.id)}#editor">Bearbeiten</a>
+      ${r.registration || r.booking.hasAny ? `<a class="btn small sec" href="?event=${encodeURIComponent(r.id)}">Teilnehmer</a>` : ""}
       ${r.reelUrl ? `<a class="btn small sec" href="${h(r.reelUrl)}" target="_blank" rel="noopener">Reel ↗</a>` : ""}
       ${
-        r.source === "admin"
+        r.source === "admin" && !r.booking.hasAny
           ? `<form method="post" action="?tab=events&action=event-delete" onsubmit="return confirm('Event wirklich löschen? Bild und Video werden mit gelöscht.')">
           <input type="hidden" name="id" value="${h(r.id)}"><button class="btn small danger">Löschen</button></form>`
           : r.edited
@@ -212,11 +269,16 @@ function editorForm(e?: AdminRow) {
   ${e ? `<input type="hidden" name="id" value="${h(e.id)}"><input type="hidden" name="source" value="${e.source}">` : ""}
   <input type="hidden" name="newVideoId" id="ev-new-video">
   <label class="full">Titel *<input name="title" required maxlength="120" value="${h(e?.title ?? "")}"></label>
-  <label>Datum *<input type="date" name="date" ${isCode ? "readonly" : "required"} value="${h(e?.dateISO ?? "")}"></label>
-  <label>Uhrzeit<input ${isCode ? 'readonly value="' + h(timeValue) + '"' : `type="time" name="time" value="${h(timeValue)}"`}></label>
-  ${isCode ? '<p class="full muted" style="margin:-.4rem 0 0">Datum, Uhrzeit und Anmeldung dieses Events stehen im Code (src/data/events.ts).</p>' : ""}
+  <label>Datum *<input type="date" name="date" required value="${h(e?.dateISO ?? "")}"></label>
+  ${
+    isCode
+      ? `<label>Uhrzeit <span class="muted">(Text, z. B. „18:15 Uhr“ oder „11:00–18:00 Uhr“)</span><input name="timeText" maxlength="40" value="${h(timeValue)}"></label>`
+      : `<label>Uhrzeit<input type="time" name="time" value="${h(timeValue)}"></label>`
+  }
   <label class="full">Treffpunkt <span class="muted">(optional)</span><input name="location" maxlength="120" value="${h(e?.location ?? "")}" placeholder="z. B. Finanzamt Tübingen"></label>
   <label class="full">Beschreibung<textarea name="description" maxlength="2000">${h(e?.description ?? "")}</textarea></label>
+
+  ${registrationFieldset(e)}
 
   <fieldset>
     <legend>Links</legend>
@@ -248,8 +310,38 @@ function editorForm(e?: AdminRow) {
 </details>`;
 }
 
+function registrationFieldset(e?: AdminRow) {
+  const reg = e?.registration;
+  const b = e?.booking ?? NO_BOOKING;
+  const closes = reg?.closesAt ?? "";
+  return `<fieldset id="ev-reg">
+    <legend>Anmeldung &amp; Bezahlung</legend>
+    <label class="check full"><input type="checkbox" name="regEnabled" value="1" id="ev-reg-on" ${reg ? "checked" : ""}> Anmeldung mit Bezahlung anbieten <span class="muted">(Button „Anmelden“ auf der Events-Seite, Bezahlung über Stripe, Startnummer per Mail)</span></label>
+    ${
+      e && reg
+        ? `<p class="ev-reg-info">Aktuell: <b>${b.active}</b> von ${reg.capacity} Plätzen belegt${b.pending ? ` · ${b.pending} gerade in Bezahlung` : ""} · <a href="?event=${encodeURIComponent(e.id)}">Teilnehmerliste ansehen</a></p>`
+        : ""
+    }
+    <label>Preis pro Person (€) *<input type="number" name="regPrice" min="0.5" max="1000" step="0.01" inputmode="decimal" value="${reg ? h(String(reg.price)) : ""}" placeholder="z. B. 15"></label>
+    <label>Max. Teilnehmer *<input type="number" name="regCapacity" min="${Math.max(1, b.active + b.pending)}" max="5000" step="1" inputmode="numeric" value="${reg ? h(String(reg.capacity)) : ""}" placeholder="z. B. 20"></label>
+    <label>Anmeldeschluss <span class="muted">(leer = Event-Tag, 0:00 Uhr)</span><input type="datetime-local" name="regClosesAt" value="${h(closes)}"></label>
+    <label>Erste Startnummer <span class="muted">(Standard 1${b.hasAny ? " – nach der ersten Anmeldung nicht mehr änderbar" : ""})</span><input type="number" name="regFirst" min="1" step="1" value="${reg?.firstStartNumber ? h(String(reg.firstStartNumber)) : ""}" placeholder="1" ${b.hasAny ? "readonly" : ""}></label>
+    <label class="check full"><input type="checkbox" name="regPaused" value="1" ${reg?.paused ? "checked" : ""}> Anmeldung pausieren <span class="muted">(keine neuen Anmeldungen, bestehende bleiben gültig)</span></label>
+    <p class="full muted" style="margin:0">Preisänderungen gelten für neue Anmeldungen – wer schon bezahlt hat, behält seinen Betrag. Die Teilnehmerzahl kann nicht unter die Zahl der bereits belegten Plätze gesenkt werden.${b.hasAny ? " Weil es schon Anmeldungen gibt, lässt sich die Anmeldung nur noch pausieren, nicht mehr ganz entfernen." : ""}</p>
+  </fieldset>`;
+}
+
 const SCRIPT = `<script>
 (() => {
+  // Anmelde-Felder nur aktiv, wenn „Anmeldung anbieten“ angehakt ist
+  const regOn = document.getElementById("ev-reg-on");
+  if (regOn) {
+    const sync = () => document.querySelectorAll("#ev-reg input:not(#ev-reg-on)").forEach((i) => {
+      i.disabled = !regOn.checked;
+      if (i.name === "regPrice" || i.name === "regCapacity") i.required = regOn.checked;
+    });
+    regOn.addEventListener("change", sync); sync();
+  }
   const form = document.getElementById("ev-form");
   const img = document.getElementById("ev-image");
   const preview = document.getElementById("ev-preview");
@@ -355,6 +447,7 @@ export async function eventsAdminBody(store: LedgerStore, opts: { editId?: strin
   const kommend = rows.filter((r) => r.dateISO > today).sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
   const vergangen = rows.filter((r) => r.dateISO < today).sort((a, b) => (b.dateISO + b.time).localeCompare(a.dateISO + a.time));
   const withReel = rows.filter((r) => r.reelUrl || r.reelVideoId).length;
+  const upcomingBooked = [...heute, ...kommend].reduce((n, r) => n + (r.registration ? r.booking.active : 0), 0);
 
   const section = (title: string, list: AdminRow[], status: "heute" | "kommend" | "vergangen", hint = "") =>
     list.length
@@ -368,6 +461,7 @@ ${opts.error ? `<div class="note warn">${h(opts.error)}</div>` : ""}
   <div class="card"><span class="muted">Kommend</span><b>${kommend.length}</b></div>
   <div class="card"><span class="muted">Vergangen</span><b>${vergangen.length}</b></div>
   <div class="card"><span class="muted">Mit Reel</span><b>${withReel}</b></div>
+  <div class="card"><span class="muted">Angemeldet (kommend)</span><b>${upcomingBooked}</b></div>
 </div>
 ${editorForm(editing)}
 <div class="ev-toolbar">
@@ -426,6 +520,43 @@ async function takeVideo(form: FormData, current?: string): Promise<{ reelVideoI
   return { reelVideoId: current };
 }
 
+/** Anmelde-Felder aus dem Formular lesen und gegen die aktuelle Belegung prüfen */
+function readRegistration(
+  form: FormData,
+  current: Registration | undefined,
+  booking: Booking,
+): { reg?: Registration; error?: string } {
+  const str = (k: string) => String(form.get(k) ?? "").trim();
+  if (!form.get("regEnabled")) {
+    if (booking.hasAny && current)
+      return { error: "Für dieses Event gibt es schon Anmeldungen – die Anmeldung kann nicht entfernt, nur pausiert werden." };
+    return { reg: undefined };
+  }
+  const price = Number(str("regPrice").replace(",", "."));
+  const capacity = Number(str("regCapacity"));
+  const closesAt = str("regClosesAt").slice(0, 16) || undefined;
+  const firstRaw = str("regFirst");
+  // Startnummern-Beginn nach der ersten Anmeldung festhalten
+  const firstStartNumber = booking.hasAny ? current?.firstStartNumber : firstRaw ? Number(firstRaw) : undefined;
+  const reg: Registration = {
+    price: Math.round(price * 100) / 100,
+    capacity,
+    ...(closesAt && { closesAt }),
+    ...(firstStartNumber !== undefined && firstStartNumber !== 1 && { firstStartNumber }),
+    ...(form.get("regPaused") && { paused: true }),
+  };
+  if (!str("regPrice") || !str("regCapacity")) return { error: "Bitte Preis und maximale Teilnehmerzahl angeben." };
+  const err = validateRegistration(reg);
+  if (err) return { error: err };
+  const taken = booking.active + booking.pending;
+  if (reg.capacity < taken)
+    return { error: `Es sind schon ${taken} Plätze belegt – die maximale Teilnehmerzahl muss mindestens ${taken} sein.` };
+  return { reg };
+}
+
+const sameRegistration = (a?: Registration, b?: Registration) =>
+  JSON.stringify(a ?? null) === JSON.stringify(b ? { price: b.price, capacity: b.capacity, ...(b.closesAt && { closesAt: b.closesAt }), ...(b.firstStartNumber !== undefined && b.firstStartNumber !== 1 && { firstStartNumber: b.firstStartNumber }), ...(b.paused && { paused: true }) } : null);
+
 /** POST ?action=event-save */
 export async function handleEventSave(store: LedgerStore, form: FormData): Promise<Result> {
   const str = (k: string, max: number) => String(form.get(k) ?? "").trim().slice(0, max);
@@ -448,6 +579,13 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
     const base = codeEvents.find((e) => e.id === id);
     if (!base) return { error: "Dieses Event gibt es nicht mehr." };
     const old = (await readOverrides(store))[id];
+    const dateISO = str("date", 10);
+    const timeText = str("timeText", 40);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return { error: "Bitte ein gültiges Datum angeben.", ...back };
+    const currentReg = old?.registration === null ? undefined : (old?.registration ?? base.registration);
+    const booking = currentReg ? await bookingOf(store, id, currentReg.firstStartNumber) : await bookingOf(store, id, base.registration?.firstStartNumber);
+    const regRes = readRegistration(form, currentReg, booking);
+    if (regRes.error) return { error: regRes.error, ...back };
     const img = await takeImage(form, id, old?.imageId);
     if (img.error) return { error: img.error, ...back };
     const vid = await takeVideo(form, old?.reelVideoId);
@@ -460,6 +598,9 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
       strava: strava !== (base.strava ?? "") ? strava : undefined,
       reelUrl: reelUrl || undefined,
       reelVideoId: vid.reelVideoId,
+      dateISO: dateISO !== base.dateISO ? dateISO : undefined,
+      time: timeText !== base.time ? timeText : undefined,
+      registration: sameRegistration(regRes.reg, base.registration) ? undefined : (regRes.reg ?? null),
       updatedAt: new Date().toISOString(),
     });
     return { flash: `„${title}“ gespeichert.` };
@@ -474,6 +615,10 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
   const stored = await readStoredEvents(store);
   const existing = id ? stored.find((e) => e.id === id) : undefined;
   if (id && !existing) return { error: "Dieses Event gibt es nicht mehr." };
+
+  const booking = existing ? await bookingOf(store, existing.id, existing.registration?.firstStartNumber) : NO_BOOKING;
+  const regRes = readRegistration(form, existing?.registration, booking);
+  if (regRes.error) return { error: regRes.error, ...back };
 
   let newId = existing?.id;
   if (!newId) {
@@ -500,6 +645,7 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
     strava: strava || undefined,
     reelUrl: reelUrl || undefined,
     reelVideoId: vid.reelVideoId,
+    registration: regRes.reg,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   });
@@ -508,6 +654,8 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
 
 export async function handleEventDelete(store: LedgerStore, form: FormData): Promise<Result> {
   const id = String(form.get("id") ?? "");
+  if ((await bookingOf(store, id)).hasAny)
+    return { error: "Dieses Event hat schon Anmeldungen und kann nicht gelöscht werden. Du kannst die Anmeldung pausieren." };
   const removed = await deleteStoredEvent(store, id);
   if (!removed) return { error: "Event nicht gefunden." };
   if (removed.imageId) await imageStore().remove(removed.imageId).catch(() => {});
@@ -518,6 +666,9 @@ export async function handleEventDelete(store: LedgerStore, form: FormData): Pro
 /** Änderungen an einem Code-Event verwerfen */
 export async function handleEventReset(store: LedgerStore, form: FormData): Promise<Result> {
   const id = String(form.get("id") ?? "");
+  const ov = (await readOverrides(store))[id];
+  if (ov?.registration !== undefined && (await bookingOf(store, id)).hasAny)
+    return { error: "Die Anmelde-Einstellungen wurden geändert und es gibt schon Anmeldungen – bitte die Werte einzeln im Formular anpassen statt alles zurückzusetzen." };
   const old = await updateJSON<Record<string, EventOverride>, EventOverride | undefined>(
     store,
     "event-overrides",

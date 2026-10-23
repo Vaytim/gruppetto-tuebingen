@@ -1,10 +1,13 @@
 // Events, die in der Verwaltung (/api/teilnehmer?tab=events) angelegt oder bearbeitet werden.
 // Gespeichert in Netlify Blobs (dauerhaft); Bilder und Reel-Videos in eigenen Blob-Speichern.
-// Die Events aus src/data/events.ts ("im Code") gibt es weiterhin – ihre Texte, Bilder und
-// Links lassen sich in der Verwaltung überschreiben ("event-overrides"). Datum und Anmeldung
-// bleiben dort im Code.
+// Die Events aus src/data/events.ts ("im Code") gibt es weiterhin – alles daran (Texte, Bild,
+// Links, Datum, Uhrzeit und die Anmeldung mit Preis/Plätzen) lässt sich in der Verwaltung
+// überschreiben ("event-overrides").
+//
+// WICHTIG: Für Preis, Plätze & Co. immer die Funktionen hier verwenden (findLiveEvent,
+// registeredEvents, allEvents) – nicht findEvent() aus src/data/events.ts, das kennt nur den Code.
 import { getStore } from "@netlify/blobs";
-import { events as codeEvents, germanDateLabel, type GruppettoEvent } from "../../src/data/events";
+import { events as codeEvents, germanDateLabel, type GruppettoEvent, type Registration } from "../../src/data/events";
 import { type LedgerStore, updateJSON } from "./registrations";
 import { isTestMode, testFiles } from "./testmode";
 
@@ -22,6 +25,8 @@ export interface StoredEvent {
   reelUrl?: string;
   /** Hochgeladenes Reel-Video (spielt beim Hovern stumm ab) */
   reelVideoId?: string;
+  /** Anmeldung mit Bezahlung (Preis, Plätze, Anmeldeschluss …) */
+  registration?: Registration;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +40,12 @@ export interface EventOverride {
   strava?: string;
   reelUrl?: string;
   reelVideoId?: string;
+  /** Neues Datum (YYYY-MM-DD) */
+  dateISO?: string;
+  /** Neue Uhrzeit als Text, z. B. "18:15 Uhr" */
+  time?: string;
+  /** Anmeldung: Objekt = ersetzt die aus dem Code, null = Anmeldung aus, undefined = wie im Code */
+  registration?: Registration | null;
   updatedAt: string;
 }
 
@@ -97,6 +108,7 @@ export function toPublicEvent(e: StoredEvent): PublicEventData {
     strava: e.strava || undefined,
     reelUrl: e.reelUrl || undefined,
     reelVideo: e.reelVideoId ? videoUrl(e.reelVideoId) : undefined,
+    registration: e.registration,
     source: "admin",
   };
 }
@@ -113,6 +125,10 @@ export function applyOverride(e: GruppettoEvent, ov?: EventOverride): PublicEven
     strava: ov.strava !== undefined ? ov.strava || undefined : e.strava,
     reelUrl: ov.reelUrl || undefined,
     reelVideo: ov.reelVideoId ? videoUrl(ov.reelVideoId) : undefined,
+    dateISO: ov.dateISO || e.dateISO,
+    dateLabel: ov.dateISO ? germanDateLabel(ov.dateISO) : e.dateLabel,
+    time: ov.time !== undefined ? ov.time : e.time,
+    registration: ov.registration === null ? undefined : (ov.registration ?? e.registration),
   };
 }
 
@@ -121,6 +137,34 @@ export async function allEvents(store: LedgerStore): Promise<PublicEventData[]> 
   const [stored, overrides] = await Promise.all([readStoredEvents(store), readOverrides(store)]);
   const code = codeEvents.map((e) => applyOverride(e, overrides[e.id]));
   return [...code, ...stored.map(toPublicEvent)].sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
+}
+
+export type RegisteredEvent = PublicEventData & { registration: Registration };
+
+/** Ein Event mit aktuellem Stand (Code + Änderungen oder aus der Verwaltung) */
+export async function findLiveEvent(store: LedgerStore, id: string): Promise<PublicEventData | undefined> {
+  if (!id) return undefined;
+  return (await allEvents(store)).find((e) => e.id === id);
+}
+
+/** Alle Events mit Anmeldung (auch pausierte) – für Plätze, Verwaltung und Abrechnung */
+export async function registeredEvents(store: LedgerStore): Promise<RegisteredEvent[]> {
+  return (await allEvents(store)).filter((e): e is RegisteredEvent => !!e.registration);
+}
+
+/**
+ * Anmeldungs-Einstellungen prüfen (Preis ≥ 0,50 €, max. 2 Nachkommastellen, Plätze ≥ 1 …).
+ * Gibt eine Fehlermeldung zurück oder null.
+ */
+export function validateRegistration(r: Registration): string | null {
+  if (!Number.isFinite(r.price) || r.price < 0.5 || Math.abs(r.price * 100 - Math.round(r.price * 100)) > 1e-6)
+    return "Der Preis muss mindestens 0,50 € betragen (max. 2 Nachkommastellen).";
+  if (r.price > 1000) return "Der Preis ist zu hoch (max. 1000 €).";
+  if (!Number.isInteger(r.capacity) || r.capacity < 1 || r.capacity > 5000) return "Die Teilnehmerzahl muss eine ganze Zahl zwischen 1 und 5000 sein.";
+  if (r.firstStartNumber !== undefined && (!Number.isInteger(r.firstStartNumber) || r.firstStartNumber < 1 || r.firstStartNumber > 99999))
+    return "Die erste Startnummer muss eine ganze Zahl ≥ 1 sein.";
+  if (r.closesAt && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(r.closesAt)) return "Bitte einen gültigen Anmeldeschluss angeben.";
+  return null;
 }
 
 // ---------------------------------------------------------------------------
