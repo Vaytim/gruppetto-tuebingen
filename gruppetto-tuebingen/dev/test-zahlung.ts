@@ -1,6 +1,6 @@
 // NUR Dev-Server/StackBlitz: simuliert die Stripe-Bezahlseite.
 // Liegt bewusst NICHT in netlify/functions → wird nie auf Netlify deployt.
-import { findEvent } from "../src/data/events";
+import { findLiveEvent } from "../netlify/lib/event-store";
 import { completeRegistration } from "../netlify/lib/complete-registration";
 import { releaseSeat, updateLedger } from "../netlify/lib/registrations";
 import { escapeHtml, ledgerStore } from "../netlify/lib/services";
@@ -16,7 +16,7 @@ export default async (req: Request) => {
   const id = url.searchParams.get("session") ?? "";
   const checkout = testCheckouts.get(id);
   if (!checkout) return new Response("Test-Bezahlung abgelaufen – bitte neu anmelden.", { status: 404 });
-  const event = findEvent(checkout.eventId)!;
+  const event = (await findLiveEvent(ledgerStore(), checkout.eventId))!;
 
   if (req.method === "POST") {
     const action = (await req.formData()).get("action");
