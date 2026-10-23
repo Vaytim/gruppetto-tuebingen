@@ -5,7 +5,7 @@
 //  payout.paid / payout.failed → Auszahlung aufschlüsseln und Teilnehmern zuordnen
 import type { Config } from "@netlify/functions";
 import type Stripe from "stripe";
-import { findEvent } from "../../src/data/events";
+import { findLiveEvent } from "../lib/event-store";
 import { handleRefund, recordPaymentDetails, syncPayout } from "../lib/accounting";
 import { completeRegistration, MailFailedError } from "../lib/complete-registration";
 import { releaseSeat, updateLedger } from "../lib/registrations";
@@ -47,7 +47,7 @@ async function handleCheckout(evt: Stripe.Event, store: ReturnType<typeof ledger
   const session = evt.data.object as Stripe.Checkout.Session;
   const eventId = session.metadata?.eventId ?? "";
   const reservationId = session.metadata?.reservationId ?? session.client_reference_id ?? "";
-  const event = findEvent(eventId);
+  const event = await findLiveEvent(store, eventId);
   if (!event?.registration || !reservationId) {
     console.warn("Webhook für unbekanntes Event", eventId, reservationId);
     return json({ ignored: "unbekanntes Event" });

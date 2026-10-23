@@ -2,7 +2,8 @@
 // Prüft freie Plätze, reserviert einen Platz für 30 Minuten und gibt die
 // Stripe-Checkout-URL zurück, auf die der Browser weitergeleitet wird.
 import type { Config } from "@netlify/functions";
-import { findEvent, registrationClosesAt } from "../../src/data/events";
+import { registrationClosesAt } from "../../src/data/events";
+import { findLiveEvent } from "../lib/event-store";
 import {
   ConflictError,
   SoldOutError,
@@ -25,9 +26,11 @@ export default async (req: Request) => {
     return json({ error: "Ungültige Anfrage" }, 400);
   }
 
-  const event = findEvent(String(body.eventId ?? ""));
+  const store = ledgerStore();
+  const event = await findLiveEvent(store, String(body.eventId ?? ""));
   const reg = event?.registration;
   if (!event || !reg) return json({ error: "Für dieses Event gibt es keine Anmeldung." }, 404);
+  if (reg.paused) return json({ error: "Die Anmeldung für dieses Event ist gerade pausiert." }, 410);
   if (Date.now() >= registrationClosesAt(event).getTime())
     return json({ error: "Die Anmeldung für dieses Event ist geschlossen." }, 410);
 
@@ -37,7 +40,6 @@ export default async (req: Request) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Bitte gib eine gültige E-Mail-Adresse an." }, 400);
   if (body.acceptTerms !== true) return json({ error: "Bitte bestätige die Teilnahmebedingungen." }, 400);
 
-  const store = ledgerStore();
   const first = reg.firstStartNumber ?? 1;
   const reservationId = `GT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const expiresAt = Date.now() + HOLD_MINUTES * 60_000;

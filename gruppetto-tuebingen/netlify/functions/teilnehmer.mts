@@ -7,13 +7,17 @@
 // POST /api/teilnehmer?action=sync              → Abgleich mit Stripe (Gebühren + Auszahlungen nachholen)
 // GET  /api/teilnehmer?tab=rookies              → Rookies: nächster Rookie Ride + Schalter „ausgebucht“
 import type { Config } from "@netlify/functions";
-import { events, findEvent, type GruppettoEvent } from "../../src/data/events";
+import type { GruppettoEvent } from "../../src/data/events";
 import { listPayouts, syncRecent } from "../lib/accounting";
 import { type Participant, type PayoutRecord, isActive, readLedger, seatsTaken } from "../lib/registrations";
 import { env, escapeHtml as h, ledgerStore } from "../lib/services";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
-import { allEvents } from "../lib/event-store";
+import { type PublicEventData, allEvents, registeredEvents } from "../lib/event-store";
+
+// Aktueller Stand aller Events (Code + Verwaltung) – wird pro Anfrage neu geladen
+let eventIndex = new Map<string, PublicEventData>();
+const findEvent = (id: string) => eventIndex.get(id);
 import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
 import {
   ADMIN_EVENTS_CSS,
@@ -161,8 +165,7 @@ async function loadAll() {
   const store = ledgerStore();
   const now = Date.now();
   const list = await Promise.all(
-    events
-      .filter((e) => e.registration)
+    (await registeredEvents(store))
       .map(async (e) => {
         const l = await readLedger(store, e.id, e.registration!.firstStartNumber);
         return totals(e, l.paid, seatsTaken(l, now) - l.paid.filter(isActive).length);
@@ -209,7 +212,7 @@ function overviewPage(all: EventTotals[], payouts: PayoutRecord[], settings: Sit
 
   const eventRows = all
     .map(
-      (t) => `<tr><td>${h(t.event.dateLabel)}</td><td><a href="?event=${encodeURIComponent(t.event.id)}">${h(t.event.title)}</a></td>
+      (t) => `<tr><td>${h(t.event.dateLabel)}</td><td><a href="?event=${encodeURIComponent(t.event.id)}">${h(t.event.title)}</a>${t.event.registration!.paused ? ' <span class="tag wait">pausiert</span>' : ""}</td>
       <td class="r">${t.active} / ${t.event.registration!.capacity}${t.pending ? ` <span class="muted">(+${t.pending} in Bezahlung)</span>` : ""}</td>
       <td class="r">${t.refundedCount || ""}</td><td class="r">${eur(t.gross)}</td><td class="r">${eur(t.fees)}</td>
       <td class="r">${t.refunds ? eur(t.refunds) : ""}</td><td class="r"><b>${eur(t.net)}</b></td></tr>`,
@@ -294,7 +297,8 @@ function eventPage(t: EventTotals) {
   <div class="card"><span class="muted">Erstattet</span><b>−${eur(t.refunds)}</b></div>
   <div class="card"><span class="muted">Netto</span><b>${eur(t.net)}</b></div>
 </div>
-<div class="actions"><a class="btn" href="?event=${encodeURIComponent(t.event.id)}&format=csv">Als CSV herunterladen</a></div>
+<div class="actions"><a class="btn" href="?event=${encodeURIComponent(t.event.id)}&format=csv">Als CSV herunterladen</a>
+  <a class="btn sec" href="?tab=events&edit=${encodeURIComponent(t.event.id)}#editor">Preis &amp; Plätze bearbeiten</a></div>
 <div class="scroll"><table><thead><tr><th class="r">Nr.</th><th>Name</th><th>E-Mail</th><th>Bezahlt am</th><th class="r">Betrag</th><th class="r">Gebühr</th><th class="r">Netto</th><th>Status</th><th>Auf dem Konto</th><th>Referenz</th></tr></thead>
 <tbody>${rows || '<tr><td colspan="10" class="muted">Noch keine Anmeldungen.</td></tr>'}</tbody>
 <tfoot><tr><td></td><td colspan="3">Summe</td><td class="r">${eur(t.gross)}</td><td class="r">${eur(t.fees)}</td><td class="r">${eur(t.net)}</td><td colspan="3"></td></tr></tfoot></table></div>`,
@@ -403,6 +407,7 @@ export default async (req: Request) => {
   if (!(await authorized(req))) return loginPage();
 
   const store = ledgerStore();
+  eventIndex = new Map((await allEvents(store)).map((e) => [e.id, e]));
 
   if (req.method === "POST" && url.searchParams.get("action") === "offseason") {
     const value = (await req.formData()).get("value");
