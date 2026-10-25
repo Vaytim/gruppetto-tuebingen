@@ -213,11 +213,11 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
         document.querySelectorAll("[data-gpx]").forEach(function (el) {
           var gpxUrl = encodeURI("/" + el.dataset.gpx);
           var map = L.map(el, { scrollWheelZoom: false });
-          // Helle Karte im Komoot-Stil (CARTO Voyager: Wald/Wiesen grün, Straßen hell, Beschriftung dezent)
-          L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-            attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-            subdomains: "abcd",
-            maxZoom: 19,
+          // Helle Karte im Komoot-Stil (Esri World Topo: Wald/Wiesen grün, Straßen hell) – ohne API-Schlüssel.
+          // (CARTO verlangt inzwischen einen API-Schlüssel und zeigt sonst nur "API key required".)
+          L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {
+            attribution: "Kartendaten &copy; Esri, HERE, Garmin, &copy; OpenStreetMap-Mitwirkende",
+            maxZoom: 18,
           }).addTo(map);
           new L.GPX(gpxUrl, {
             async: true,
