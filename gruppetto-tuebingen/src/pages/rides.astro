@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import RouteCard from "../components/RouteCard.astro";
 
 // Trag hier eure kommenden Rides ein – einfach neue Objekte hinzufügen.
 const rides = [
@@ -8,13 +9,14 @@ const rides = [
     when: "Jeden Mittwoch, 18:15 Uhr",
     meet: "Treffpunkt: Finanzamt Tübingen",
     level: "Locker · alle Levels",
-    cta: { label: "Zu den Routen", href: "#unsere-routen" },
+    cta: { label: "Zu den Road-Routen", href: "#unsere-routen" },
   },
   {
     title: "Gravel-Treff",
     when: "Donnerstags, 18:30 Uhr",
     meet: "Treffpunkt: Technisches Rathaus",
     level: "Locker",
+    cta: { label: "Zur Gravel-Route", href: "#gravel-route" },
   },
 ];
 
@@ -62,6 +64,20 @@ const routes = [
     hidden: true
   },
 ];
+
+// Gravel-Route(n) für den Gravel-Treff am Donnerstag – gleiches Format wie oben.
+// TODO: Komoot-Link, Distanz, Höhenmeter und ggf. GPX-Datei (in /public) eintragen.
+const gravelRoutes = [
+  {
+    title: "Gravel-Route",
+    komoot: "",
+    distance: "",
+    elevation: "",
+    gpx: "",
+  },
+];
+
+const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRoutes.map((r) => ({ ...r, kind: "gravel" }))];
 ---
 
 <Layout title="Rides" description="Kommende Ausfahrten von Gruppetto Tübingen">
@@ -116,33 +132,21 @@ const routes = [
 </section>
 
 <section id="unsere-routen" style="padding: 3rem 0;">
-    <h1>Unsere Routen</h1>
+    <h1>Unsere Road-Routen</h1>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
-      Unsere liebsten Strecken rund um Tübingen. Falls ihr bei unseren Afterwork Rides teilnehmen wollt, ist es sinnvol die Strecken vorab herunterzuladen. Es gibt keinen offiziellen Lead mehr!
+      Unsere liebsten Rennrad-Strecken rund um Tübingen – für die Afterwork Rides am Mittwoch. Ladet die Strecke am besten vorab herunter, es gibt keinen offiziellen Lead mehr!
     </p>
 
-    {
-                routes.map((route, i) => (
-        <div class="card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem;">
-            <div style="flex: 1 1 240px;">
-              <h3 style="margin: 0 0 0.75rem;">{route.title}</h3>
-              <p style="margin: 0; color: var(--color-text-muted);">
-                {route.distance} · {route.elevation}
-              </p>
-              <a href={route.komoot} target="_blank" rel="noopener" class="btn" style="margin-top: 1rem;">
-                Zur Route auf Komoot
-              </a>
-            </div>
-{route.gpx ? (
-              <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden; background: #f2efe9;"></div>
-            ) : (
-              <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
-                Streckenbild folgt
-              </div>
-            )}
-          </div>
-      ))
-    }
+    {allRoutes.filter((r) => r.kind === "road").map((route) => <RouteCard route={route} i={allRoutes.indexOf(route)} />)}
+  </section>
+
+<section id="gravel-route" style="padding: 3rem 0;">
+    <h1>Unsere Gravel-Route</h1>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+      Für den Gravel-Treff am Donnerstag: abseits der Straße über Feld- und Waldwege rund um Tübingen. Auch hier gilt: Route vorab aufs Gerät laden.
+    </p>
+
+    {allRoutes.filter((r) => r.kind === "gravel").map((route) => <RouteCard route={route} i={allRoutes.indexOf(route)} />)}
   </section>
 
     <script>
