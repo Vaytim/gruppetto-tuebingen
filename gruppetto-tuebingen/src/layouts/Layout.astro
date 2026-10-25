@@ -4,6 +4,15 @@
 //
 // fullBleed = true  → Seite bestimmt ihre Breiten selbst (z. B. Startseite mit Vollbild-Hero)
 // fullBleed = false → Inhalt läuft in einem Container mit Seitenrand (alle anderen Seiten)
+// Schriften lokal ausgeliefert (kein Google-Fonts-Server → keine IP-Übertragung an Google)
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/league-spartan/400.css";
+import "@fontsource/league-spartan/500.css";
+import "@fontsource/league-spartan/700.css";
+import "@fontsource/league-spartan/800.css";
+
 interface Props {
   title: string;
   description?: string;
@@ -59,7 +68,7 @@ const footerColumns = [
     { label: "Instagram", href: "https://www.instagram.com/gruppetto.tuebingen/", external: true },
     { label: "Strava Club", href: "https://www.strava.com/clubs/gruppetto-tuebingen", external: true },
   ],
-  [{ label: "Rechtliches", href: "/rechtliches" }],
+  [{ label: "Rechtliches", href: "/rechtliches" }, { label: "Datenschutz", href: "/rechtliches#datenschutz" }],
 ];
 ---
 
@@ -71,16 +80,10 @@ const footerColumns = [
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content={description} />
     <title>{title} · Gruppetto Tübingen</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Zuletzt bekannten Off-Season-Stand sofort setzen (kein Aufblitzen der falschen Info-Leiste) -->
     <script is:inline>
       try { if (localStorage.getItem("gt-offseason") === "1") document.documentElement.classList.add("offseason"); } catch (e) {}
     </script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body class:list={[{ "is-full-bleed": fullBleed, "is-subpage": Astro.url.pathname !== "/" }]}>
     <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
@@ -156,7 +159,7 @@ const footerColumns = [
           <input type="hidden" name="t" value="" />
           <input type="hidden" name="page" value="" />
           <div class="cf-bottom cf-wide">
-            <p class="cf-privacy">Mit dem Absenden werden deine Angaben genutzt, um deine Anfrage zu beantworten. Mehr dazu unter <a href="/rechtliches">Rechtliches</a>.</p>
+            <p class="cf-privacy">Mit dem Absenden werden deine Angaben genutzt, um deine Anfrage zu beantworten. Mehr dazu in der <a href="/rechtliches#datenschutz">Datenschutzerklärung</a>.</p>
             <button class="btn btn-accent" type="submit">Nachricht senden</button>
           </div>
           <p class="cf-status cf-wide" role="status" aria-live="polite" hidden></p>
