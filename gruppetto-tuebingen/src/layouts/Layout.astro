@@ -396,7 +396,7 @@ const footerColumns = [
       .contact-form button[disabled] { opacity: 0.6; cursor: progress; }
       .cf-status { margin: 0; padding: 0.8rem 1rem; background: rgba(46, 204, 113, 0.14); color: #7ee2a8; font-weight: 600; }
       .cf-status.is-error { background: rgba(255, 107, 107, 0.14); color: #ff9b9b; }
-      .footer-top { display: grid; justify-items: start; gap: 2rem; margin-left: 50%; padding-left: var(--gutter); margin-bottom: 5rem; }
+      .footer-top { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; margin-bottom: 4rem; } /* links bündig, wie Kontakt und Linkspalten */
       .footer-social { display: flex; gap: 1.6rem; }
       .footer-social a { color: var(--color-text); }
       .footer-social a:hover { color: var(--color-text-muted); }
@@ -417,7 +417,6 @@ const footerColumns = [
         .menu-main { padding-left: 0; }
         .menu-teaser { width: 50%; }
         .main-contained { padding-top: calc(var(--gutter) + 7rem); }
-        .footer-top { margin-left: 0; padding-left: 0; }
         .contact, .contact-form { grid-template-columns: 1fr; }
         .contact-form { padding-left: 0; }
         .footer-columns { grid-template-columns: 1fr 1fr; }
