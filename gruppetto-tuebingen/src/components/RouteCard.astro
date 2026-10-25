@@ -1,0 +1,34 @@
+---
+// Eine Routen-Karte auf der Rides-Seite (Road und Gravel)
+interface Props {
+  route: { title: string; komoot?: string; distance?: string; elevation?: string; gpx?: string };
+  i: number;
+}
+const { route, i } = Astro.props;
+const stats = [route.distance, route.elevation].filter(Boolean).join(" · ");
+---
+
+<div class="card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem;">
+  <div style="flex: 1 1 240px;">
+    <h3 style="margin: 0 0 0.75rem;">{route.title}</h3>
+    <p style="margin: 0; color: var(--color-text-muted);">{stats || "Details folgen"}</p>
+    {
+      route.komoot ? (
+        <a href={route.komoot} target="_blank" rel="noopener" class="btn" style="margin-top: 1rem;">
+          Zur Route auf Komoot
+        </a>
+      ) : (
+        <p style="margin: 1rem 0 0; color: var(--color-text-muted);">Link folgt</p>
+      )
+    }
+  </div>
+  {
+    route.gpx ? (
+      <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden; background: #f2efe9;" />
+    ) : (
+      <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
+        Streckenbild folgt
+      </div>
+    )
+  }
+</div>
