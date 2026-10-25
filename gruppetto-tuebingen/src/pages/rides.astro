@@ -205,11 +205,14 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
       }
     </style>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script is:inline src="https://unpkg.com/leaflet-gpx@2.1.2/gpx.js"></script>
-    <script is:inline>
-      window.addEventListener("DOMContentLoaded", function () {
+    <script>
+      // Leaflet + GPX lokal ausgeliefert (kein Nachladen von fremden Servern wie unpkg)
+      import "leaflet/dist/leaflet.css";
+      import L from "leaflet";
+      (window as unknown as { L: typeof L }).L = L;
+      import("leaflet-gpx").then(() => initMaps());
+
+      function initMaps() {
         document.querySelectorAll("[data-gpx]").forEach(function (el) {
           var gpxUrl = encodeURI("/" + el.dataset.gpx);
           var map = L.map(el, { scrollWheelZoom: false });
@@ -221,6 +224,7 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
           }).addTo(map);
           new L.GPX(gpxUrl, {
             async: true,
+            markers: { startIcon: null, endIcon: null },
             polyline_options: { color: "#0f4abf", weight: 4, opacity: 0.95, lineCap: "round", lineJoin: "round" },
           })
             .on("loaded", function (e) {
@@ -236,6 +240,6 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
             })
             .addTo(map);
         });
-      });
+      }
     </script>
 </Layout>
