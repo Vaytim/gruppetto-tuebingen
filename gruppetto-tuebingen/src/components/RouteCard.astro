@@ -24,7 +24,7 @@ const stats = [route.distance, route.elevation].filter(Boolean).join(" · ");
   </div>
   {
     route.gpx ? (
-      <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden; background: #f2efe9;" />
+      <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden; background: #f2efe9; position: relative; z-index: 0; isolation: isolate;" />
     ) : (
       <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
         Streckenbild folgt
