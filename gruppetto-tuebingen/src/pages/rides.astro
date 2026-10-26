@@ -16,7 +16,7 @@ const rides = [
     when: "Donnerstags, 18:30 Uhr",
     meet: "Treffpunkt: Technisches Rathaus",
     level: "Locker",
-    cta: { label: "Zur Gravel-Route", href: "#gravel-route" },
+    cta: { label: "Zu den Gravel-Routen", href: "#gravel-route" },
   },
 ];
 
@@ -65,15 +65,23 @@ const routes = [
   },
 ];
 
-// Gravel-Route(n) für den Gravel-Treff am Donnerstag – gleiches Format wie oben.
-// TODO: Komoot-Link, Distanz, Höhenmeter und ggf. GPX-Datei (in /public) eintragen.
+// Gravel-Routen für den Gravel-Treff am Donnerstag – gleiches Format wie oben.
+// Distanz/Höhenmeter aus den GPX-Dateien berechnet. Komoot-Link optional – ohne Link
+// gibt es einen Button zum Herunterladen der GPX-Datei.
 const gravelRoutes = [
   {
-    title: "Gravel-Route",
+    title: "Route Schönbuch",
     komoot: "",
-    distance: "",
-    elevation: "",
-    gpx: "",
+    distance: "34,0 km",
+    elevation: "400 hm",
+    gpx: "Gruppetto-Gravel-Schoenbuch.gpx",
+  },
+  {
+    title: "Route Rammert",
+    komoot: "",
+    distance: "40,8 km",
+    elevation: "630 hm",
+    gpx: "Gruppetto-Gravel-Rammert.gpx",
   },
 ];
 
@@ -141,9 +149,9 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
   </section>
 
 <section id="gravel-route" style="padding: 3rem 0;">
-    <h1>Unsere Gravel-Route</h1>
+    <h1>Unsere Gravel-Routen</h1>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
-      Für den Gravel-Treff am Donnerstag: abseits der Straße über Feld- und Waldwege rund um Tübingen. Auch hier gilt: Route vorab aufs Gerät laden.
+      Für den Gravel-Treff am Donnerstag: abseits der Straße über Feld- und Waldwege durch Schönbuch und Rammert. Auch hier gilt: Route vorab aufs Gerät laden.
     </p>
 
     {allRoutes.filter((r) => r.kind === "gravel").map((route) => <RouteCard route={route} i={allRoutes.indexOf(route)} />)}
