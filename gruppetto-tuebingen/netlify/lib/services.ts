@@ -54,6 +54,8 @@ export interface OutgoingMail {
   ref?: string;
   /** Antwort-Adresse (z. B. Absender des Kontaktformulars) */
   replyTo?: string;
+  /** Abweichender Absender (Standard: MAIL_FROM) */
+  from?: string;
   /** false = keine BCC-Kopie an MAIL_BCC */
   bcc?: false;
 }
@@ -65,9 +67,9 @@ export async function sendMail(mail: OutgoingMail): Promise<void> {
     console.log(`[Testmodus] Mail an ${mail.to}: ${mail.subject}`);
     return;
   }
-  const { ref: _ref, replyTo, bcc, ...content } = mail;
+  const { ref: _ref, replyTo, bcc, from, ...content } = mail;
   await mailer().sendMail({
-    from: env("MAIL_FROM"),
+    from: from || env("MAIL_FROM"),
     replyTo: replyTo || process.env.MAIL_REPLY_TO || undefined,
     bcc: bcc === false ? undefined : process.env.MAIL_BCC || undefined,
     ...content,
