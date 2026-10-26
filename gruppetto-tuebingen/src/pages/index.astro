@@ -207,17 +207,26 @@ const slides = slidesFor(upcoming, past);
   .intro p { grid-column: 2; margin: 0; max-width: 40rem; font-size: clamp(1.4rem, 2.3vw, 2.2rem); line-height: 1.25; }
 
   /* 3. Kacheln */
-  .tiles { display: grid; grid-template-columns: 1fr 1fr; }
-  .tile { display: block; text-decoration: none; padding-bottom: 5rem; }
-  /* Bild leicht reinzoomen beim Hovern – wie bei den Event-Kacheln */
+  /* Kacheln: Titel + Text in einer transparenten Box IM Bild; beim Hovern verschwindet die Box und das Bild zoomt */
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+  .tile { position: relative; display: block; overflow: hidden; text-decoration: none; color: var(--light-100); }
   .tile-media { overflow: hidden; }
   .tile img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
   .tile:hover img, .tile:focus-visible img { transform: scale(1.06); }
-  @media (prefers-reduced-motion: reduce) { .tile img { transition: none; } }
-  .tile-body { padding: 2.2rem var(--gutter) 0; }
-  .tile h2 { margin: 0 0 1.2rem; font-size: clamp(1.8rem, 2.6vw, 2.6rem); }
-  .tile p { margin: 0; max-width: 32rem; font-size: 1.15rem; line-height: 1.45; color: var(--navy-700); }
-  .tile:hover h2 { color: var(--blue-500); }
+  .tile-body {
+    position: absolute; left: var(--gutter); right: var(--gutter); bottom: var(--gutter); max-width: 34rem;
+    padding: 1.3rem 1.5rem 1.4rem;
+    background: rgba(2, 24, 89, 0.45); /* stark transparent, Text bleibt auch auf hellen Bildern lesbar */
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .tile h2 { margin: 0 0 0.6rem; font-size: clamp(1.6rem, 2.4vw, 2.4rem); }
+  .tile p { margin: 0; font-size: 1.05rem; line-height: 1.45; color: rgba(242, 242, 242, 0.9); }
+  /* Nur auf Geräten mit Maus: Box ausblenden, Bild freigeben (Touch: Box bleibt sichtbar) */
+  @media (hover: hover) {
+    .tile:hover .tile-body, .tile:focus-visible .tile-body { opacity: 0; transform: translateY(12px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .tile img, .tile-body { transition: none; } }
 
   /* 4. Banner */
   .banner { position: relative; min-height: 70vh; margin-top: 3rem; overflow: hidden; }
@@ -253,7 +262,9 @@ const slides = slidesFor(upcoming, past);
     .intro { grid-template-columns: 1fr; padding: 4rem var(--gutter); }
     .intro p { grid-column: 1; }
     .tiles { grid-template-columns: 1fr; }
-    .tile { padding-bottom: 3.5rem; }
+    .tiles { gap: 8px; padding: 8px; }
+    .tile-body { padding: 1rem 1.1rem; }
+    .tile p { font-size: 0.95rem; }
     .band-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
