@@ -17,6 +17,10 @@ const stats = [route.distance, route.elevation].filter(Boolean).join(" · ");
         <a href={route.komoot} target="_blank" rel="noopener" class="btn" style="margin-top: 1rem;">
           Zur Route auf Komoot
         </a>
+      ) : route.gpx ? (
+        <a href={encodeURI(`/${route.gpx}`)} download class="btn" style="margin-top: 1rem;">
+          GPX herunterladen
+        </a>
       ) : (
         <p style="margin: 1rem 0 0; color: var(--color-text-muted);">Link folgt</p>
       )
