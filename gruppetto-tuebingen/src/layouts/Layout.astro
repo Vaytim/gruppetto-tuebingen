@@ -70,6 +70,19 @@ const footerColumns = [
   ],
   [{ label: "Rechtliches", href: "/rechtliches" }, { label: "Datenschutz", href: "/rechtliches#datenschutz" }],
 ];
+
+// Menü-Button: Rennrad-Laufrad (SVG). 20 Speichen, abwechselnd zur linken/rechten Nabenseite versetzt.
+const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
+  const a = (i / 20) * Math.PI * 2;
+  const off = (i % 2 ? 1 : -1) * 0.18; // leicht tangential wie bei echten Laufrädern
+  const r0 = 2.6, r1 = 16.6;
+  return {
+    x1: (24 + r0 * Math.cos(a + off)).toFixed(2),
+    y1: (24 + r0 * Math.sin(a + off)).toFixed(2),
+    x2: (24 + r1 * Math.cos(a)).toFixed(2),
+    y2: (24 + r1 * Math.sin(a)).toFixed(2),
+  };
+});
 ---
 
 <!doctype html>
@@ -98,7 +111,13 @@ const footerColumns = [
     <!-- Kopf: Menü-Button links (fixiert), Wortmarke rechts -->
     <header class="site-header">
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Menü öffnen">
-        <span></span><span></span>
+        <svg class="menu-wheel" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+          <circle class="tire" cx="24" cy="24" r="21" />
+          <circle class="rim" cx="24" cy="24" r="17.4" />
+          {wheelSpokes.map((sp) => <line class="spoke" x1={sp.x1} y1={sp.y1} x2={sp.x2} y2={sp.y2} />)}
+          <line class="valve" x1="24" y1="6.8" x2="24" y2="10.6" />
+          <circle class="hub" cx="24" cy="24" r="3" />
+        </svg>
       </button>
       <a href="/" class="wordmark" aria-label="Gruppetto Tübingen – Startseite">
         <span>gruppetto</span><span>tübingen</span>
@@ -218,9 +237,19 @@ const footerColumns = [
         document.body.classList.toggle("menu-open", open);
         if (open) menu.querySelector<HTMLAnchorElement>("a")?.focus();
       };
-      toggle.addEventListener("click", () => setOpen(menu.hidden));
+      // Laufrad dreht sich bei jedem Öffnen/Schließen 1,5 Umdrehungen vorwärts
+      let wheelTurn = 0;
+      const spin = () => {
+        wheelTurn += 540;
+        toggle.style.setProperty("--wheel-rot", `${wheelTurn}deg`);
+      };
+      toggle.addEventListener("click", () => {
+        spin();
+        setOpen(menu.hidden);
+      });
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && !menu.hidden) {
+          spin();
           setOpen(false);
           toggle.focus();
         }
@@ -306,19 +335,29 @@ const footerColumns = [
       .site-header > * { pointer-events: auto; }
       .menu-toggle {
         position: fixed; top: calc(var(--info-bar-h) + var(--gutter) * 1.2); left: var(--gutter); z-index: 60;
-        display: grid; gap: 9px; align-content: center; width: 52px; height: 44px; padding: 0 2px;
-        background: transparent; border: 0; cursor: pointer;
-        transition: top 0.2s ease;
+        display: grid; place-items: center; width: 50px; height: 50px; padding: 0;
+        background: transparent; border: 0; cursor: pointer; border-radius: 50%;
+        color: var(--navy-800); /* Farbe wie die klickbaren Kacheln: Navy, beim Drüberfahren Akzentblau */
+        transition: top 0.2s ease, color 0.2s ease;
       }
       body.scrolled .menu-toggle { top: var(--gutter); }
-      /* Farbe wie die klickbaren Kacheln: Navy, beim Drüberfahren Akzentblau */
-      .menu-toggle span { display: block; height: 3px; background: var(--navy-800); transition: transform 0.25s ease, background 0.2s ease; }
-      .menu-toggle:hover span { background: var(--blue-500); }
-      /* Geöffnetes Menü (Navy-Hintergrund): X hell, damit es sichtbar bleibt */
-      .menu-toggle[aria-expanded="true"] span { background: var(--light-100); }
-      .menu-toggle[aria-expanded="true"]:hover span { background: var(--blue-500); }
-      .menu-toggle[aria-expanded="true"] span:first-child { transform: translateY(6px) rotate(45deg); }
-      .menu-toggle[aria-expanded="true"] span:last-child { transform: translateY(-6px) rotate(-45deg); }
+      .menu-toggle:hover { color: var(--blue-500); }
+      /* Geöffnetes Menü (Navy-Hintergrund): Rad hell, damit es sichtbar bleibt */
+      .menu-toggle[aria-expanded="true"] { color: var(--light-100); }
+      .menu-toggle[aria-expanded="true"]:hover { color: var(--blue-500); }
+      /* Rennrad-Laufrad – dreht sich beim Öffnen/Schließen */
+      .menu-wheel {
+        width: 46px; height: 46px; display: block; overflow: visible;
+        transform: rotate(var(--wheel-rot, 0deg));
+        transition: transform 0.9s cubic-bezier(0.22, 0.8, 0.25, 1);
+      }
+      .menu-wheel circle, .menu-wheel line { fill: none; stroke: currentColor; }
+      .menu-wheel .tire { stroke-width: 4.2; }
+      .menu-wheel .rim { stroke-width: 1.6; }
+      .menu-wheel .spoke { stroke-width: 0.7; stroke-linecap: round; }
+      .menu-wheel .valve { stroke-width: 2; stroke-linecap: round; }
+      .menu-wheel .hub { fill: currentColor; stroke: none; }
+      @media (prefers-reduced-motion: reduce) { .menu-wheel { transition: none; } }
       .menu-toggle:focus-visible { outline: 2px solid var(--color-highlight); outline-offset: 4px; }
 
       .wordmark {
