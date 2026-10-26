@@ -229,12 +229,30 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
     <script>
       const toggle = document.querySelector<HTMLButtonElement>(".menu-toggle")!;
       const menu = document.getElementById("site-menu")!;
+      // Menü gleitet von oben herein (und beim Schließen wieder hoch)
+      const SLIDE_MS = 600;
+      let isOpen = false;
+      let closeTimer: ReturnType<typeof setTimeout> | undefined;
       const setOpen = (open: boolean) => {
-        menu.hidden = !open;
+        isOpen = open;
+        clearTimeout(closeTimer);
         toggle.setAttribute("aria-expanded", String(open));
         toggle.setAttribute("aria-label", open ? "Menü schließen" : "Menü öffnen");
-        document.body.classList.toggle("menu-open", open);
-        if (open) menu.querySelector<HTMLAnchorElement>("a")?.focus();
+        if (open) {
+          menu.hidden = false;
+          void menu.offsetHeight; // Startposition (oben) übernehmen, damit die Animation läuft
+          menu.classList.add("is-open");
+          document.body.classList.add("menu-open");
+          menu.querySelector<HTMLAnchorElement>("a")?.focus({ preventScroll: true });
+        } else {
+          menu.classList.remove("is-open");
+          // erst nach dem Hochgleiten ausblenden – solange bleibt das Rad hell
+          closeTimer = setTimeout(() => {
+            if (isOpen) return;
+            menu.hidden = true;
+            document.body.classList.remove("menu-open");
+          }, SLIDE_MS);
+        }
       };
       // Laufrad dreht sich bei jedem Öffnen/Schließen 1,5 Umdrehungen vorwärts
       let wheelTurn = 0;
@@ -244,10 +262,10 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
       };
       toggle.addEventListener("click", () => {
         spin();
-        setOpen(menu.hidden);
+        setOpen(!isOpen);
       });
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !menu.hidden) {
+        if (e.key === "Escape" && isOpen) {
           spin();
           setOpen(false);
           toggle.focus();
@@ -342,8 +360,8 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
       body.scrolled .menu-toggle { top: var(--gutter); }
       .menu-toggle:hover { color: var(--blue-500); }
       /* Geöffnetes Menü (Navy-Hintergrund): Rad hell, damit es sichtbar bleibt */
-      .menu-toggle[aria-expanded="true"] { color: var(--light-100); }
-      .menu-toggle[aria-expanded="true"]:hover { color: var(--blue-500); }
+      body.menu-open .menu-toggle { color: var(--light-100); }
+      body.menu-open .menu-toggle:hover { color: var(--blue-500); }
       /* Rennrad-Laufrad – dreht sich beim Öffnen/Schließen */
       .menu-wheel {
         width: 46px; height: 46px; display: block; overflow: visible;
@@ -366,7 +384,12 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
       body.menu-open .site-header { position: fixed; z-index: 55; }
 
       /* ---------- Vollbild-Menü ---------- */
-      .site-menu { position: fixed; inset: 0; z-index: 50; background: var(--navy-800); overflow-y: auto; }
+      .site-menu {
+        position: fixed; inset: 0; z-index: 50; background: var(--navy-800); overflow-y: auto;
+        transform: translateY(-100%); transition: transform 0.6s cubic-bezier(0.45, 0, 0.55, 1); /* gleichmäßig von oben */
+      }
+      .site-menu.is-open { transform: translateY(0); }
+      @media (prefers-reduced-motion: reduce) { .site-menu { transition: none; } }
       .site-menu-inner {
         min-height: 100%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto;
         gap: 2rem var(--gutter); padding: calc(var(--info-bar-h) + 9rem) var(--gutter) var(--gutter);
