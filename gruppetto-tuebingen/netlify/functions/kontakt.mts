@@ -1,7 +1,9 @@
 // POST /api/kontakt – Kontaktformular im Footer jeder Seite.
 // Die Nachricht geht per Mail an KONTAKT_EMPFAENGER (Netlify-Umgebungsvariable,
 // ersatzweise an die Adresse unten). „Antworten“ geht direkt an die Person, die geschrieben hat.
-// Versand über denselben SMTP-Zugang wie die Anmeldebestätigungen (SMTP_*, MAIL_FROM).
+// Versand über denselben SMTP-Zugang wie die Anmeldebestätigungen (SMTP_*).
+// Absender: KONTAKT_FROM (z. B. "Gruppetto Tübingen Kontaktformular <kontakt@gruppetto-tuebingen.de>"),
+// ersatzweise MAIL_FROM. So bleibt shop@ den Anmeldungen und Shop-Käufen vorbehalten.
 import type { Config } from "@netlify/functions";
 import { escapeHtml as h, json, sendMail } from "../lib/services";
 
@@ -66,6 +68,7 @@ export default async (req: Request) => {
   try {
     await sendMail({
       to,
+      from: process.env.KONTAKT_FROM || undefined,
       replyTo: `"${oneLine(name).replace(/"/g, "")}" <${email}>`,
       bcc: false,
       subject: `Kontaktformular: Nachricht von ${oneLine(name)}`,
