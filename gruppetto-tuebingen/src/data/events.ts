@@ -11,6 +11,8 @@ export interface Registration {
   firstStartNumber?: number;
   /** Anmeldeschluss als ISO-Datum/Zeit, z. B. "2026-09-25T23:59". Standard: Event-Tag 00:00 */
   closesAt?: string;
+  /** In der Verwaltung pausiert: keine neuen Anmeldungen, bestehende bleiben erhalten */
+  paused?: boolean;
 }
 
 export interface GruppettoEvent {

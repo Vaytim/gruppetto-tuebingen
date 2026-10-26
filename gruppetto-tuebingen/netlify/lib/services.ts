@@ -52,6 +52,12 @@ export interface OutgoingMail {
   html: string;
   /** Anmelde-Referenz, nur für die Test-Postfach-Ansicht */
   ref?: string;
+  /** Antwort-Adresse (z. B. Absender des Kontaktformulars) */
+  replyTo?: string;
+  /** Abweichender Absender (Standard: MAIL_FROM) */
+  from?: string;
+  /** false = keine BCC-Kopie an MAIL_BCC */
+  bcc?: false;
 }
 
 /** Verschickt eine Mail – im Testmodus landet sie stattdessen im Test-Postfach. */
@@ -61,11 +67,11 @@ export async function sendMail(mail: OutgoingMail): Promise<void> {
     console.log(`[Testmodus] Mail an ${mail.to}: ${mail.subject}`);
     return;
   }
-  const { ref: _ref, ...content } = mail;
+  const { ref: _ref, replyTo, bcc, from, ...content } = mail;
   await mailer().sendMail({
-    from: env("MAIL_FROM"),
-    replyTo: process.env.MAIL_REPLY_TO || undefined,
-    bcc: process.env.MAIL_BCC || undefined,
+    from: from || env("MAIL_FROM"),
+    replyTo: replyTo || process.env.MAIL_REPLY_TO || undefined,
+    bcc: bcc === false ? undefined : process.env.MAIL_BCC || undefined,
     ...content,
   });
 }

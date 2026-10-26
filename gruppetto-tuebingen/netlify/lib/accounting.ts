@@ -5,7 +5,8 @@
 // Auszahlung → Teilnehmer bekommt payoutId + Datum; die Auszahlung wird pro Event
 //              aufgeschlüsselt gespeichert (Grundlage für den Kassenbuch-Export)
 import type Stripe from "stripe";
-import { events, type GruppettoEvent } from "../../src/data/events";
+import type { GruppettoEvent } from "../../src/data/events";
+import { registeredEvents } from "./event-store";
 import {
   type EventLedger,
   type LedgerStore,
@@ -21,7 +22,6 @@ import {
 } from "./registrations";
 import { stripe } from "./services";
 
-const registered = () => events.filter((e): e is GruppettoEvent & { registration: NonNullable<GruppettoEvent["registration"]> } => !!e.registration);
 const idOf = (x: string | { id: string } | null | undefined) => (typeof x === "string" ? x : x?.id);
 const dateOf = (unix: number) => new Date(unix * 1000).toISOString().slice(0, 10);
 
@@ -51,7 +51,7 @@ export async function recordPaymentDetails(store: LedgerStore, event: GruppettoE
 async function chargeIndex(store: LedgerStore) {
   const ledgers = new Map<string, EventLedger>();
   const byCharge = new Map<string, string>();
-  for (const e of registered()) {
+  for (const e of await registeredEvents(store)) {
     const l = await readLedger(store, e.id, e.registration.firstStartNumber);
     ledgers.set(e.id, l);
     for (const p of l.paid) if (p.chargeId) byCharge.set(p.chargeId, e.id);
@@ -62,7 +62,7 @@ async function chargeIndex(store: LedgerStore) {
 /** charge.refunded → Erstattung beim richtigen Teilnehmer vermerken. */
 export async function handleRefund(store: LedgerStore, charge: Stripe.Charge): Promise<string | null> {
   const at = new Date().toISOString();
-  for (const e of registered()) {
+  for (const e of await registeredEvents(store)) {
     const ledger = await readLedger(store, e.id, e.registration.firstStartNumber);
     if (!ledger.paid.some((p) => p.chargeId === charge.id || idOf(charge.payment_intent) === p.paymentIntent)) continue;
     await updateLedger(store, e.id, e.registration.firstStartNumber ?? 1, (l) => {
@@ -114,7 +114,8 @@ export async function syncPayout(store: LedgerStore, payout: Stripe.Payout): Pro
 
   const arrivalDate = dateOf(payout.arrival_date);
   for (const [eventId, chargeIds] of paidCharges) {
-    const e = registered().find((x) => x.id === eventId)!;
+    const e = (await registeredEvents(store)).find((x) => x.id === eventId);
+    if (!e) continue;
     await updateLedger(store, eventId, e.registration.firstStartNumber ?? 1, (l) => markPaidOut(l, chargeIds, payout.id, arrivalDate));
   }
 
@@ -146,7 +147,7 @@ export async function listPayouts(store: LedgerStore): Promise<PayoutRecord[]> {
  */
 export async function syncRecent(store: LedgerStore) {
   let feesFilled = 0;
-  for (const e of registered()) {
+  for (const e of await registeredEvents(store)) {
     const ledger = await readLedger(store, e.id, e.registration.firstStartNumber);
     for (const p of ledger.paid.filter((x) => x.fee === undefined && x.paymentIntent).slice(0, 40)) {
       try {

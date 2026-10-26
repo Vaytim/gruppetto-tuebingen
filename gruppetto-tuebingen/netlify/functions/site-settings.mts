@@ -5,8 +5,8 @@ import { json, ledgerStore } from "../lib/services";
 import { readSettings } from "../lib/settings";
 
 export default async () => {
-  const { offseason } = await readSettings(ledgerStore());
-  return json({ offseason });
+  const { offseason, rookieFull } = await readSettings(ledgerStore());
+  return json({ offseason, rookieFull });
 };
 
 export const config: Config = { path: "/api/site-settings" };

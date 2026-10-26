@@ -38,6 +38,7 @@ const titles = Object.fromEntries(events.map((e) => [e.id, `${e.title} · ${e.da
         cache: "no-store",
       });
       const data = await res.json();
+      if (data.title) document.getElementById("event-title").textContent = data.title;
       if (data.status === "paid") {
         headline.textContent = "Du bist dabei!";
         document.getElementById("start-number").textContent = data.startNumber;

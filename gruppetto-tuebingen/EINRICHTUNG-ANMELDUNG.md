@@ -6,7 +6,7 @@ So funktioniert's: Anmeldeformular auf `/events` → Platz wird 30 Min. reservie
 
 | Datei | Zweck |
 |---|---|
-| `src/data/events.ts` | **Alle Events.** Für Anmeldung `registration: { price: 20, capacity: 100 }` ergänzen |
+| `src/data/events.ts` | Events „im Code“ (optional). Neue Events, Preis, Plätze usw. am besten in der **Verwaltung → Events** |
 | `src/pages/events.astro` | Event-Karten, Anmelde-Button, Formular |
 | `src/pages/events/danke.astro` | Danke-Seite mit Startnummer |
 | `netlify/functions/checkout.mts` | Platz reservieren, Stripe-Bezahlung starten |
@@ -51,15 +51,20 @@ Netlify → Site → **Site configuration → Environment variables** – alle W
 Danach einmal neu deployen.
 
 ### 4. Testen
-1. Test-Event in `src/data/events.ts` mit Datum in der Zukunft anlegen, pushen.
+1. In der Verwaltung → Events ein Test-Event mit Datum in der Zukunft anlegen, „Anmeldung mit Bezahlung anbieten“ anhaken, Preis (z. B. 1 €) und Plätze eintragen.
 2. Auf `/events` anmelden, bei Stripe mit Testkarte `4242 4242 4242 4242`, beliebiges Datum in der Zukunft, beliebige CVC bezahlen.
 3. Prüfen: Danke-Seite zeigt Startnummer, Mail kommt an, `/api/teilnehmer` zeigt die Anmeldung.
 4. Klappt alles: in Stripe auf **Live** umschalten, Live-Schlüssel + neuen Live-Webhook (`whsec_…`) in Netlify eintragen, neu deployen.
 
 ## Im Alltag
 
-- **Neues Event:** in `src/data/events.ts` eintragen, `id` eindeutig wählen und später **nicht mehr ändern**.
-- **Anmeldegebühr pro Event:** im jeweiligen Event `registration: { price: 15, capacity: 60 }` setzen – jedes Event hat seinen eigenen Preis (Cent-Beträge wie `12.5` gehen, Minimum 0,50 €). Preisänderung = Datei ändern + pushen; gilt für alle neuen Anmeldungen, bereits Bezahlte behalten ihren Betrag. Ein Tippfehler (z. B. Preis 0) lässt den Build absichtlich fehlschlagen.
+- **Neues Event:** in der Verwaltung → **Events** → „Neues Event anlegen“ – ohne Code und ohne Deploy.
+- **Anmeldung, Preis & Plätze:** im Event-Formular unter **„Anmeldung & Bezahlung“**: Anmeldung an/aus, Preis pro Person (min. 0,50 €), max. Teilnehmer, Anmeldeschluss, erste Startnummer, „Anmeldung pausieren“. Gilt sofort.
+  - Preisänderungen gelten für neue Anmeldungen, bereits Bezahlte behalten ihren Betrag.
+  - Die Teilnehmerzahl lässt sich nicht unter die bereits belegten Plätze senken.
+  - Sobald es Anmeldungen gibt, kann die Anmeldung nur noch pausiert (nicht entfernt) und das Event nicht mehr gelöscht werden; die erste Startnummer ist dann fest.
+- **Belegung:** Jede Event-Karte in der Verwaltung zeigt „x / y Plätze belegt“ mit Balken, Preis und Status (offen / ausgebucht / pausiert); „Teilnehmer“ öffnet die Liste.
+- Auch Events aus `src/data/events.ts` lassen sich in der Verwaltung komplett anpassen (Datum, Uhrzeit, Anmeldung …). „Zurücksetzen“ stellt den Stand aus dem Code wieder her.
 - **Verwaltung:** `https://gruppetto-tuebingen.de/api/teilnehmer` öffnen → im Anmeldeformular das Passwort = `ADMIN_PASSWORD` eingeben (bleibt 12 Stunden angemeldet, „Abmelden“ oben).
   - Übersicht: Brutto, Gebühren, Erstattungen, Netto, was schon aufs Konto überwiesen wurde, und jede Stripe-Auszahlung mit Aufschlüsselung pro Event (Abgleich „stimmt").
   - Pro Event: jede:r Teilnehmer:in mit Startnummer, Zahlung, Gebühr, Netto, Status (bezahlt/erstattet) und mit welcher Auszahlung das Geld aufs Konto kam. Als CSV herunterladbar.

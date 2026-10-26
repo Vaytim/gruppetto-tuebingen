@@ -170,3 +170,39 @@ export const shortDate = (iso: string) => {
   const [y, m, d] = iso.split("-");
   return `${Number(d)}.${Number(m)}.${y.slice(2)}`;
 };
+
+/**
+ * Nächster Rookie Ride: das nächste kommende Event, dessen Titel oder ID "Rookie" enthält.
+ * → In der Event-Verwaltung einfach ein Event "Rookie Ride" anlegen, dann erscheint es automatisch.
+ */
+export function nextRookieRide(all: PublicEvent[], today = todayISO()): PublicEvent | null {
+  return splitEvents(all, 0, today).upcoming.find((e) => /rookie/i.test(`${e.title} ${e.id}`)) ?? null;
+}
+
+/** Kurzer Termin-Text, z. B. "Mi, 12. November · 18:15 Uhr" */
+export function rookieDateText(e: PublicEvent): string {
+  const wd = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "long", timeZone: "UTC" }).format(
+    new Date(`${e.dateISO}T12:00:00Z`),
+  );
+  return `${wd.replace(".,", ",")}${e.time ? ` · ${e.time}` : ""}`;
+}
+
+/** Rookie-Status aus der Verwaltung: true = ausgebucht, false = Plätze frei, null = unbekannt */
+export async function fetchRookieFull(): Promise<boolean | null> {
+  try {
+    const res = await fetch("/api/site-settings", { cache: "no-store" });
+    if (!res.ok) return null;
+    const s = await res.json();
+    return typeof s.rookieFull === "boolean" ? s.rookieFull : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Status-Zeile ("Ausgebucht" / "Noch Plätze frei") unter dem Datum setzen */
+export function showRookieStatus(el: HTMLElement | null, hasRide: boolean, full: boolean | null) {
+  if (!el) return;
+  el.hidden = !hasRide || full === null;
+  el.classList.toggle("is-full", !!full);
+  el.textContent = full ? "Ausgebucht" : "Noch Plätze frei";
+}

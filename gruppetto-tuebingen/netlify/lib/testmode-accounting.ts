@@ -1,7 +1,7 @@
 // Testmodus (StackBlitz): ahmt Stripe-Gebühren und eine Auszahlung nach,
 // damit Verwaltungsseite und Kassenbuch-Export ohne Stripe ausprobiert werden können.
 // Wird nur aufgerufen, wenn isTestMode() aktiv ist.
-import { events } from "../../src/data/events";
+import { registeredEvents } from "./event-store";
 import {
   type LedgerStore,
   type PayoutLine,
@@ -34,7 +34,7 @@ export async function simulateTestPayout(store: LedgerStore) {
   const arrivalDate = new Date().toISOString().slice(0, 10);
   const lines: PayoutLine[] = [];
 
-  for (const e of events.filter((x) => x.registration)) {
+  for (const e of await registeredEvents(store)) {
     const first = e.registration!.firstStartNumber ?? 1;
     const ledger = await readLedger(store, e.id, first);
     const open = ledger.paid.filter((p) => !p.payoutId && p.chargeId && isActive(p));

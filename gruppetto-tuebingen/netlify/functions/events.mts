@@ -10,7 +10,7 @@ export default async () => {
   return json(
     events.map(({ registration, ...e }) => ({
       ...e,
-      registration: registration
+      registration: registration && !registration.paused
         ? { price: registration.price, closesAt: registrationClosesAt({ ...e, registration }).toISOString() }
         : undefined,
     })),

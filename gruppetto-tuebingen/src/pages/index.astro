@@ -8,7 +8,7 @@
 //  6. Farbiges Band mit 4 Karten + Button
 // Alle Texte/Bilder unten in den Konstanten anpassen.
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, shortDate, slideHTML, splitEvents } from "../lib/public-events";
+import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents } from "../lib/public-events";
 import "../styles/event-slider.css";
 
 const hero = {
@@ -32,7 +32,7 @@ const tiles = [
 const banner = {
   image: "https://picsum.photos/seed/gruppetto-rookies/1800/900",
   headline: ["Gruppetto", "Rookies"],
-  cta: { label: "Mehr erfahren", href: "/rides" },
+  cta: { label: "Mehr erfahren", href: "/rookies" },
 };
 
 // Trikot & Bib werden bei Spatzwear verkauft
@@ -52,6 +52,7 @@ const shopBand = {
 // Events: vorab aus src/data/events.ts gerendert, im Browser durch /api/events
 // ersetzt (dann auch mit den Events aus der Verwaltung).
 const { upcoming, past } = splitEvents(codeEventsPublic(), 4); // die letzten 4 vergangenen
+const rookie = nextRookieRide(codeEventsPublic());
 const next = upcoming[0];
 // Vergangene Events links vom nächsten Event (älteste ganz links), kommende rechts
 const slidesFor = (u: typeof upcoming, p: typeof past) =>
@@ -82,7 +83,7 @@ const slides = slidesFor(upcoming, past);
   <section class="tiles">
     {tiles.map((t) => (
       <a class="tile" href={t.href}>
-        <img src={t.image} alt="" loading="lazy" />
+        <div class="tile-media"><img src={t.image} alt="" loading="lazy" /></div>
         <div class="tile-body">
           <h2 class="arrow-title">{t.title}</h2>
           <p>{t.text}</p>
@@ -96,6 +97,12 @@ const slides = slidesFor(upcoming, past);
     <img src={banner.image} alt="" loading="lazy" />
     <h2 class="banner-headline">{banner.headline.map((l) => <span>{l}</span>)}</h2>
     <a class="btn banner-cta" href={banner.cta.href}>{banner.cta.label}</a>
+    <!-- gleicher Stil wie "Nächstes Event" im Hero -->
+    <a class="hero-date banner-date" href="/rookies#naechster-rookie-ride" data-rookie-next hidden={!rookie}>
+      <span class="hero-date-label">Nächster Rookie Ride<span data-rookie-time>{rookie?.time ? ` · ${rookie.time}` : ""}</span></span>
+      <span class="hero-date-value" data-rookie-date>{rookie ? shortDate(rookie.dateISO) : ""}</span>
+      <span class="rookie-status" data-rookie-status hidden></span>
+    </a>
   </section>
 
   <!-- 5. Slider Events -->
@@ -128,7 +135,20 @@ const slides = slidesFor(upcoming, past);
 
 <script>
   import { initReelHover } from "../lib/motion";
-  import { fetchEvents, keepAlignedOnResize, scrollToFirstUpcoming, shortDate, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+
+  // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
+  Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
+    const box = document.querySelector<HTMLElement>("[data-rookie-next]");
+    const r = nextRookieRide(all ?? codeEventsPublic());
+    if (!box) return;
+    box.hidden = !r;
+    if (r) {
+      box.querySelector("[data-rookie-date]")!.textContent = shortDate(r.dateISO);
+      box.querySelector("[data-rookie-time]")!.textContent = r.time ? ` · ${r.time}` : "";
+    }
+    showRookieStatus(box.querySelector("[data-rookie-status]"), !!r, full);
+  });
 
   // Events inkl. der in der Verwaltung angelegten nachladen
   fetchEvents().then((all) => {
@@ -187,13 +207,26 @@ const slides = slidesFor(upcoming, past);
   .intro p { grid-column: 2; margin: 0; max-width: 40rem; font-size: clamp(1.4rem, 2.3vw, 2.2rem); line-height: 1.25; }
 
   /* 3. Kacheln */
-  .tiles { display: grid; grid-template-columns: 1fr 1fr; }
-  .tile { display: block; text-decoration: none; padding-bottom: 5rem; }
-  .tile img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
-  .tile-body { padding: 2.2rem var(--gutter) 0; }
-  .tile h2 { margin: 0 0 1.2rem; font-size: clamp(1.8rem, 2.6vw, 2.6rem); }
-  .tile p { margin: 0; max-width: 32rem; font-size: 1.15rem; line-height: 1.45; color: var(--navy-700); }
-  .tile:hover h2 { color: var(--blue-500); }
+  /* Kacheln: Titel + Text in einer transparenten Box IM Bild; beim Hovern verschwindet die Box und das Bild zoomt */
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+  .tile { position: relative; display: block; overflow: hidden; text-decoration: none; color: var(--light-100); }
+  .tile-media { overflow: hidden; }
+  .tile img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .tile:hover img, .tile:focus-visible img { transform: scale(1.06); }
+  .tile-body {
+    position: absolute; left: var(--gutter); right: var(--gutter); bottom: var(--gutter); max-width: 34rem;
+    padding: 1.3rem 1.5rem 1.4rem;
+    background: rgba(2, 24, 89, 0.45); /* stark transparent, Text bleibt auch auf hellen Bildern lesbar */
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .tile h2 { margin: 0 0 0.6rem; font-size: clamp(1.6rem, 2.4vw, 2.4rem); }
+  .tile p { margin: 0; font-size: 1.05rem; line-height: 1.45; color: rgba(242, 242, 242, 0.9); }
+  /* Nur auf Geräten mit Maus: Box ausblenden, Bild freigeben (Touch: Box bleibt sichtbar) */
+  @media (hover: hover) {
+    .tile:hover .tile-body, .tile:focus-visible .tile-body { opacity: 0; transform: translateY(12px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .tile img, .tile-body { transition: none; } }
 
   /* 4. Banner */
   .banner { position: relative; min-height: 70vh; margin-top: 3rem; overflow: hidden; }
@@ -204,6 +237,10 @@ const slides = slidesFor(upcoming, past);
     font-size: clamp(2.8rem, 6vw, 6.5rem); line-height: 1;
   }
   .banner-cta { position: absolute; z-index: 1; left: var(--gutter); bottom: var(--gutter); }
+  /* Rookie-Termin: Stil von .hero-date (Hero), hier im Banner */
+  .banner-date { bottom: var(--gutter); }
+  .banner-date .rookie-status { margin-top: 0.9rem; }
+  @media (max-width: 760px) { .banner-date { bottom: calc(var(--gutter) + 4.2rem); } }
 
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
@@ -225,7 +262,9 @@ const slides = slidesFor(upcoming, past);
     .intro { grid-template-columns: 1fr; padding: 4rem var(--gutter); }
     .intro p { grid-column: 1; }
     .tiles { grid-template-columns: 1fr; }
-    .tile { padding-bottom: 3.5rem; }
+    .tiles { gap: 8px; padding: 8px; }
+    .tile-body { padding: 1rem 1.1rem; }
+    .tile p { font-size: 0.95rem; }
     .band-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>

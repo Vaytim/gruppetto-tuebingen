@@ -5,11 +5,13 @@ import { type LedgerStore, updateJSON } from "./registrations";
 export interface SiteSettings {
   /** Off-Season: Rides-Seite zeigt "Season Closed" über dem Rides-Block */
   offseason: boolean;
+  /** Rookie Ride: true = nächster Rookie Ride ist ausgebucht, false = noch Plätze frei */
+  rookieFull: boolean;
   updatedAt?: string;
 }
 
 const KEY = "site-settings";
-const DEFAULTS: SiteSettings = { offseason: false };
+const DEFAULTS: SiteSettings = { offseason: false, rookieFull: false };
 
 export async function readSettings(store: LedgerStore): Promise<SiteSettings> {
   const entry = await store.getWithMetadata(KEY, { type: "json" });

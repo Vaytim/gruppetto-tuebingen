@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import RouteCard from "../components/RouteCard.astro";
 
 // Trag hier eure kommenden Rides ein – einfach neue Objekte hinzufügen.
 const rides = [
@@ -8,13 +9,14 @@ const rides = [
     when: "Jeden Mittwoch, 18:15 Uhr",
     meet: "Treffpunkt: Finanzamt Tübingen",
     level: "Locker · alle Levels",
-    cta: { label: "Zu den Routen", href: "#unsere-routen" },
+    cta: { label: "Zu den Road-Routen", href: "#unsere-routen" },
   },
   {
     title: "Gravel-Treff",
     when: "Donnerstags, 18:30 Uhr",
     meet: "Treffpunkt: Technisches Rathaus",
     level: "Locker",
+    cta: { label: "Zu den Gravel-Routen", href: "#gravel-route" },
   },
 ];
 
@@ -54,14 +56,29 @@ const routes = [
     elevation: "280 hm",
     gpx: "2026-07-29_3152890761_Gruppetto - Hornbach Climb - Ofterdingen.gpx",
   },
+];
+
+// Gravel-Routen für den Gravel-Treff am Donnerstag – gleiches Format wie oben.
+// Distanz/Höhenmeter aus den GPX-Dateien berechnet. Komoot-Link optional – ohne Link
+// gibt es einen Button zum Herunterladen der GPX-Datei.
+const gravelRoutes = [
   {
-    title: "Route Hügellover",
-    komoot: "https://www.komoot.de/tour/3110401484?ref=aso&share_token=aNgXXSah6G1MNCuUdCt9KpsW2ebPFfD4aU6KSmVOLINRJh49W4&t_s=referral&t_cid=route_share",
-    distance: "41,6 km",
-    elevation: "510 hm",
-    hidden: true
+    title: "Route Schönbuch",
+    komoot: "",
+    distance: "34,0 km",
+    elevation: "400 hm",
+    gpx: "Gruppetto-Gravel-Schoenbuch.gpx",
+  },
+  {
+    title: "Route Rammert",
+    komoot: "",
+    distance: "40,8 km",
+    elevation: "630 hm",
+    gpx: "Gruppetto-Gravel-Rammert.gpx",
   },
 ];
+
+const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRoutes.map((r) => ({ ...r, kind: "gravel" }))];
 ---
 
 <Layout title="Rides" description="Kommende Ausfahrten von Gruppetto Tübingen">
@@ -116,33 +133,21 @@ const routes = [
 </section>
 
 <section id="unsere-routen" style="padding: 3rem 0;">
-    <h1>Unsere Routen</h1>
+    <h1>Unsere Road-Routen</h1>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
-      Unsere liebsten Strecken rund um Tübingen. Falls ihr bei unseren Afterwork Rides teilnehmen wollt, ist es sinnvol die Strecken vorab herunterzuladen. Es gibt keinen offiziellen Lead mehr!
+      Unsere liebsten Rennrad-Strecken rund um Tübingen – für die Afterwork Rides am Mittwoch. Ladet die Strecke am besten vorab herunter, es gibt keinen offiziellen Lead mehr!
     </p>
 
-    {
-                routes.map((route, i) => (
-        <div class="card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem;">
-            <div style="flex: 1 1 240px;">
-              <h3 style="margin: 0 0 0.75rem;">{route.title}</h3>
-              <p style="margin: 0; color: var(--color-text-muted);">
-                {route.distance} · {route.elevation}
-              </p>
-              <a href={route.komoot} target="_blank" rel="noopener" class="btn" style="margin-top: 1rem;">
-                Zur Route auf Komoot
-              </a>
-            </div>
-{route.gpx ? (
-              <div id={`gpx-map-${i}`} data-gpx={route.gpx} style="flex: 1 1 280px; height: 180px; border-radius: 12px; overflow: hidden;"></div>
-            ) : (
-              <div style="flex: 1 1 280px; background: var(--color-bg); border: 1px dashed var(--color-text-muted); border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted);">
-                Streckenbild folgt
-              </div>
-            )}
-          </div>
-      ))
-    }
+    {allRoutes.filter((r) => r.kind === "road").map((route) => <RouteCard route={route} i={allRoutes.indexOf(route)} />)}
+  </section>
+
+<section id="gravel-route" style="padding: 3rem 0;">
+    <h1>Unsere Gravel-Routen</h1>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+      Für den Gravel-Treff am Donnerstag: abseits der Straße über Feld- und Waldwege durch Schönbuch und Rammert. Auch hier gilt: Route vorab aufs Gerät laden.
+    </p>
+
+    {allRoutes.filter((r) => r.kind === "gravel").map((route) => <RouteCard route={route} i={allRoutes.indexOf(route)} />)}
   </section>
 
     <script>
@@ -201,28 +206,27 @@ const routes = [
       }
     </style>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script is:inline src="https://unpkg.com/leaflet-gpx@2.1.2/gpx.js"></script>
-    <script is:inline>
-      window.addEventListener("DOMContentLoaded", function () {
+    <script>
+      // Leaflet + GPX lokal ausgeliefert (kein Nachladen von fremden Servern wie unpkg)
+      import "leaflet/dist/leaflet.css";
+      import L from "leaflet";
+      (window as unknown as { L: typeof L }).L = L;
+      import("leaflet-gpx").then(() => initMaps());
+
+      function initMaps() {
         document.querySelectorAll("[data-gpx]").forEach(function (el) {
           var gpxUrl = encodeURI("/" + el.dataset.gpx);
           var map = L.map(el, { scrollWheelZoom: false });
-          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", {
-            attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-            maxZoom: 19,
-          }).addTo(map);
-          map.createPane("labelsPane");
-          map.getPane("labelsPane").style.zIndex = 650;
-          map.getPane("labelsPane").style.pointerEvents = "none";
-          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png", {
-            pane: "labelsPane",
-            maxZoom: 19,
+          // Helle Karte im Komoot-Stil (Esri World Topo: Wald/Wiesen grün, Straßen hell) – ohne API-Schlüssel.
+          // (CARTO verlangt inzwischen einen API-Schlüssel und zeigt sonst nur "API key required".)
+          L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {
+            attribution: "Kartendaten &copy; Esri, HERE, Garmin, &copy; OpenStreetMap-Mitwirkende",
+            maxZoom: 18,
           }).addTo(map);
           new L.GPX(gpxUrl, {
             async: true,
-            polyline_options: { color: "#f2f2f2", weight: 4 },
+            markers: { startIcon: null, endIcon: null },
+            polyline_options: { color: "#0f4abf", weight: 4, opacity: 0.95, lineCap: "round", lineJoin: "round" },
           })
             .on("loaded", function (e) {
               map.fitBounds(e.target.getBounds());
@@ -237,6 +241,6 @@ const routes = [
             })
             .addTo(map);
         });
-      });
+      }
     </script>
 </Layout>

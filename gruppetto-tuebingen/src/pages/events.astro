@@ -55,7 +55,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
       <label class="checkbox">
         <input name="acceptTerms" type="checkbox" required />
         <span>
-          Ich habe die <a href="/rechtliches" target="_blank">Teilnahmebedingungen und die Datenschutzhinweise</a> gelesen und nehme auf eigene Verantwortung teil.
+          Ich habe die <a href="/rechtliches" target="_blank">Teilnahmebedingungen</a> und die <a href="/rechtliches#datenschutz" target="_blank">Datenschutzerklärung</a> gelesen und nehme auf eigene Verantwortung teil.
         </span>
       </label>
 
@@ -231,7 +231,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     border: 1px solid var(--color-text); color: var(--color-text); text-decoration: none; font-weight: 700; font-size: 0.95rem;
     transition: background 0.2s ease, color 0.2s ease;
   }
-  .btn-strava:hover { background: var(--color-text); color: var(--navy-800, #021859); }
+  .btn-strava:hover { background: var(--color-text); color: var(--color-bg); }
   .btn-strava:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
 
   /* Vergangene Events – kleiner, 4 nebeneinander */
@@ -283,6 +283,6 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
   #register-form label.checkbox { grid-template-columns: auto 1fr; align-items: start; gap: 0.6rem; }
   #register-form label.checkbox input { margin-top: 0.2rem; accent-color: var(--color-accent); width: 1.1rem; height: 1.1rem; }
   #register-form a { color: var(--color-highlight); }
-  .form-error { margin: 0; padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(255, 110, 90, 0.12); color: #ffb3a7; font-size: 0.9rem; }
+  .form-error { margin: 0; padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(180, 35, 24, 0.1); color: #b42318; font-size: 0.9rem; }
   .form-hint { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; }
 </style>
