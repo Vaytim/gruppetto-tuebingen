@@ -415,7 +415,7 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
 
       /* ---------- Buttons (eckig, wie im Layout-Vorbild) ---------- */
       .btn {
-        display: inline-block; padding: 1rem 2.2rem; border: 0; border-radius: 0;
+        display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 1rem 2.2rem; border: 0; border-radius: 0;
         background: var(--navy-800); color: var(--light-100); font: 500 0.95rem var(--font-body); letter-spacing: 0.02em;
         text-decoration: none; cursor: pointer; transition: background 0.2s ease, color 0.2s ease;
       }
@@ -427,6 +427,12 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
       .rookie-status.is-full { background: rgba(255, 107, 107, 0.16); color: #ff9b9b; }
       .rookie-status[hidden] { display: none; }
       .btn-accent:hover { background: var(--navy-700); }
+
+      /* ---------- Strava: alle Links und Buttons seitenweit in Strava-Orange ---------- */
+      a[href*="strava.com"]:not(.btn):not(.btn-strava) { color: #fc5200; }
+      body.is-subpage main a[href*="strava.com"]:not(.btn):not(.btn-strava) { color: #c2410c; } /* dunkleres Orange auf hellem Grund, besser lesbar */
+      a.btn[href*="strava.com"], a.btn-strava[href*="strava.com"] { background: #fc4c02; border-color: #fc4c02; color: #fff; }
+      a.btn[href*="strava.com"]:hover, a.btn-strava[href*="strava.com"]:hover { background: #d94102; border-color: #d94102; color: #fff; }
 
       .card { background: var(--color-bg-alt); padding: 1.5rem; margin-bottom: 1rem; }
 
