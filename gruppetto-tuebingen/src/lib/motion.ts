@@ -100,6 +100,9 @@ export function danceCards(container: HTMLElement, selector = ".slide") {
 export function initWipe(runway: HTMLElement) {
   const viewport = runway.querySelector<HTMLElement>(".wipe-viewport")!;
   const strip = runway.querySelector<HTMLElement>(".wipe-strip")!;
+  // Touch-Geräte (Handy, Tablet): kein Umlenken des Scrollens – dort wischt man die
+  // Karten ganz normal seitlich, die Seite scrollt unabhängig davon weiter.
+  if (window.matchMedia("(pointer: coarse)").matches) return initSwipe(runway, strip);
   let distance = 0;
 
   const contentWidth = () => {
@@ -150,6 +153,38 @@ export function initWipe(runway: HTMLElement) {
       const gap = parseFloat(getComputedStyle(strip).columnGap) || 0;
       const w = card ? card.offsetWidth + gap : viewport.clientWidth * 0.8;
       scrollToY(window.scrollY + dir * w);
+    },
+  };
+}
+
+/** Wischen statt Wipe: die Kartenreihe scrollt selbst seitlich (mit Einrasten). */
+function initSwipe(runway: HTMLElement, strip: HTMLElement) {
+  runway.classList.add("is-swipe");
+  const update = () => {
+    const max = strip.scrollWidth - strip.clientWidth;
+    runway.classList.toggle("is-wiping", max > 4);
+    runway.style.setProperty("--wipe-progress", max > 0 ? (strip.scrollLeft / max).toFixed(4) : "0");
+  };
+  strip.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+  new MutationObserver(update).observe(strip, { childList: true });
+  strip.addEventListener("load", update, true);
+  update();
+  const cardStep = () => {
+    const card = strip.firstElementChild as HTMLElement | null;
+    const gap = parseFloat(getComputedStyle(strip).columnGap) || 0;
+    return card ? card.offsetWidth + gap : strip.clientWidth * 0.8;
+  };
+  return {
+    measure: update,
+    scrollToCard(card: HTMLElement, immediate = false) {
+      const pad = parseFloat(getComputedStyle(strip).paddingLeft) || 0;
+      strip.scrollTo({ left: card.offsetLeft - pad, behavior: immediate ? "auto" : "smooth" });
+      const top = runway.getBoundingClientRect().top + window.scrollY - 80;
+      scrollToY(top, immediate);
+    },
+    step(dir: number) {
+      strip.scrollBy({ left: dir * cardStep(), behavior: "smooth" });
     },
   };
 }
