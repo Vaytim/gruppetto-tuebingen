@@ -14,7 +14,7 @@ export interface PublicEvent {
   strava?: string;
   /** Link zum Instagram-Reel */
   reelUrl?: string;
-  /** Reel-Video (spielt beim Hovern stumm ab) */
+  /** Reel-Video (spielt stumm ab, sobald die Karte im Fokus ist) */
   reelVideo?: string;
   registration?: { price: number; closesAt: string };
 }

@@ -155,44 +155,156 @@ export function initWipe(runway: HTMLElement) {
 }
 
 /**
- * Reel-Vorschau: Fährt man über eine Karte mit Reel-Video, wird sie größer und das
- * Video spielt stumm ab. Auf Touch-Geräten (kein Hovern) spielt es, sobald die Karte
- * gut sichtbar ist. Das Video wird erst bei Bedarf geladen.
+ * Hintergrundvideo sicher starten: Manche Browser (z. B. Safari im Stromsparmodus)
+ * blockieren den automatischen Start trotz "muted". Dann startet das Video bei der
+ * ersten Berührung, dem ersten Klick oder Scrollen. Außerhalb des Bildes pausiert es.
  */
-export function initReelHover(root: HTMLElement | Document = document) {
-  const canHover = window.matchMedia("(hover: hover)").matches;
-  const start = (card: HTMLElement) => {
-    const v = card.querySelector<HTMLVideoElement>("video.slide-reel");
-    if (!v) return;
-    if (!v.src && v.dataset.src) v.src = v.dataset.src;
-    card.classList.add("reel-playing");
-    v.play().catch(() => {});
-  };
-  const stop = (card: HTMLElement) => {
-    const v = card.querySelector<HTMLVideoElement>("video.slide-reel");
-    card.classList.remove("reel-playing");
-    v?.pause();
-  };
-
-  if (canHover) {
-    root.addEventListener("mouseover", (e) => {
-      const card = (e.target as HTMLElement).closest<HTMLElement>(".slide.has-reel");
-      if (card && !card.classList.contains("reel-playing")) start(card);
-    });
-    root.addEventListener("mouseout", (e) => {
-      const card = (e.target as HTMLElement).closest<HTMLElement>(".slide.has-reel");
-      const to = (e as MouseEvent).relatedTarget as Node | null;
-      if (card && !(to && card.contains(to))) stop(card);
-    });
+export function ensureAutoplay(v: HTMLVideoElement) {
+  if (reduced()) {
+    v.pause();
     return;
   }
+  v.muted = true;
+  v.defaultMuted = true;
+  v.playsInline = true;
+  let inView = true;
+  const tryPlay = () => {
+    if (inView && !document.hidden && v.paused) v.play().catch(() => {});
+  };
+  const onGesture = () => {
+    tryPlay();
+    if (!v.paused) gestures.forEach((g) => window.removeEventListener(g, onGesture));
+  };
+  const gestures = ["pointerdown", "touchstart", "keydown", "scroll", "wheel"];
+  gestures.forEach((g) => window.addEventListener(g, onGesture, { passive: true }));
+  new IntersectionObserver(([e]) => {
+    inView = e.isIntersecting;
+    if (inView) tryPlay();
+    else v.pause();
+  }).observe(v);
+  document.addEventListener("visibilitychange", () => (document.hidden ? v.pause() : tryPlay()));
+  if (v.readyState >= 2) tryPlay();
+  else v.addEventListener("loadeddata", tryPlay, { once: true });
+  tryPlay();
+}
 
-  // Touch: abspielen, solange die Karte zu mind. 70 % sichtbar ist
+/**
+ * Reel-Vorschau: Von allen Karten mit Reel-Video spielt immer nur eine – die, die am
+ * meisten im Bild ist (bei Gleichstand die mittigere). Sie wird größer, die anderen
+ * treten zurück. Mit der Maus kann man eine andere Karte per Hovern "vorziehen".
+ * Videos werden erst geladen, wenn ihre Karte an der Reihe ist.
+ */
+export function initReelHover(root: HTMLElement | Document = document) {
+  const MIN_RATIO = 0.6; // mind. 60 % der Karte sichtbar
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const autoplay = !reduced();
+  const ratios = new Map<HTMLElement, number>();
+  let auto: HTMLElement | null = null;
+  let hovered: HTMLElement | null = null;
+  let current: HTMLElement | null = null;
+
+  const videoOf = (card: HTMLElement) => card.querySelector<HTMLVideoElement>("video.slide-reel");
+  const play = (card: HTMLElement) => {
+    const v = videoOf(card);
+    if (!v) return;
+    v.muted = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+    if (!v.getAttribute("src") && v.dataset.src) {
+      v.preload = "auto";
+      v.src = v.dataset.src;
+    }
+    card.classList.add("reel-focus");
+    // Video erst einblenden, wenn wirklich Bilder kommen – bis dahin bleibt das Foto stehen
+    const show = () => current === card && card.classList.add("reel-playing");
+    v.addEventListener("playing", show, { once: true });
+    if (!document.hidden) v.play().catch(() => {});
+  };
+  const stop = (card: HTMLElement) => {
+    card.classList.remove("reel-focus", "reel-playing");
+    videoOf(card)?.pause();
+  };
+  const update = () => {
+    if (current && !current.isConnected) current = null;
+    if (hovered && !hovered.isConnected) hovered = null;
+    const next = hovered ?? (autoplay ? auto : null);
+    if (next === current) return;
+    if (current) stop(current);
+    current = next;
+    if (current) play(current);
+  };
+  const pick = () => {
+    let best: HTMLElement | null = null;
+    let bestScore = -Infinity;
+    ratios.forEach((ratio, card) => {
+      if (!card.isConnected) return void ratios.delete(card);
+      if (ratio < MIN_RATIO) return;
+      const b = card.getBoundingClientRect();
+      const offCenter = Math.hypot(
+        (b.left + b.width / 2 - window.innerWidth / 2) / window.innerWidth,
+        (b.top + b.height / 2 - window.innerHeight / 2) / window.innerHeight,
+      );
+      // Die aktuelle Karte bekommt einen kleinen Bonus, damit es nicht hin und her springt
+      const score = ratio - offCenter * 0.5 + (card === auto ? 0.08 : 0);
+      if (score > bestScore) {
+        best = card;
+        bestScore = score;
+      }
+    });
+    auto = best;
+    update();
+  };
+
   const io = new IntersectionObserver(
-    (entries) => entries.forEach((en) => (en.intersectionRatio >= 0.7 ? start : stop)(en.target as HTMLElement)),
-    { threshold: [0, 0.7] },
+    (entries) => {
+      entries.forEach((en) => {
+        const card = en.target as HTMLElement;
+        if (en.isIntersecting) ratios.set(card, en.intersectionRatio);
+        else ratios.delete(card);
+      });
+      pick();
+    },
+    { threshold: [0, 0.2, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] },
   );
-  const scan = () => document.querySelectorAll<HTMLElement>(".slide.has-reel").forEach((c) => io.observe(c));
+  const host = root instanceof Document ? root.body : root;
+  const scan = () => {
+    host.querySelectorAll<HTMLElement>(".slide.has-reel").forEach((c) => io.observe(c));
+    pick();
+  };
   scan();
-  new MutationObserver(scan).observe(root instanceof Document ? root.body : root, { childList: true, subtree: true });
+  new MutationObserver(scan).observe(host, { childList: true, subtree: true });
+
+  // Beim seitlichen Wischen ändert sich die Mitte, ohne dass eine Schwelle überschritten wird
+  let raf = 0;
+  const onMove = () => {
+    if (!raf) raf = requestAnimationFrame(() => ((raf = 0), pick()));
+  };
+  window.addEventListener("scroll", onMove, { passive: true });
+  host.addEventListener("scroll", onMove, { passive: true, capture: true });
+  window.addEventListener("resize", onMove);
+
+  document.addEventListener("visibilitychange", () => {
+    const v = current && videoOf(current);
+    if (!v) return;
+    if (document.hidden) v.pause();
+    else v.play().catch(() => {});
+  });
+
+  if (canHover) {
+    host.addEventListener("mouseover", (e) => {
+      const card = (e.target as HTMLElement).closest<HTMLElement>(".slide.has-reel");
+      if (card && card !== hovered) {
+        hovered = card;
+        update();
+      }
+    });
+    host.addEventListener("mouseout", (e) => {
+      const card = (e.target as HTMLElement).closest<HTMLElement>(".slide.has-reel");
+      const to = (e as MouseEvent).relatedTarget as Node | null;
+      if (card && card === hovered && !(to && card.contains(to))) {
+        hovered = null;
+        update();
+      }
+    });
+  }
 }
