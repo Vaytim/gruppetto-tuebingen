@@ -44,7 +44,6 @@ const shopBand = {
     { title: "Season 2026 Kit – Trikot", note: "Bei Spatzwear erhältlich", image: "/images/kit/trikot-vorne.jpg", href: SPATZWEAR },
     { title: "Season 2026 Kit – Bib", note: "Bei Spatzwear erhältlich", image: "/images/kit/bib.jpg", href: SPATZWEAR },
     { title: "Gruppetto Sticker Set", note: "Bald verfügbar", image: "" /* noch kein Foto – weiße Fläche */, href: "/shop" },
-    { title: "Trinkflasche", note: "Bald verfügbar", image: "" /* noch kein Foto – weiße Fläche */, href: "/shop" },
   ],
   cta: { label: "Zum Shop", href: "/shop" },
 };
@@ -206,7 +205,7 @@ const slides = slidesFor(upcoming, past);
   .intro p { grid-column: 2; margin: 0; max-width: 40rem; font-size: clamp(1.4rem, 2.3vw, 2.2rem); line-height: 1.25; }
 
   /* 3. Kacheln */
-  /* Kacheln: Titel + Text in einer transparenten Box IM Bild; beim Hovern verschwindet die Box und das Bild zoomt */
+  /* Kacheln: Titel + Text in einer transparenten Box IM Bild; beim Hovern tritt die Box leicht zurück und das Bild zoomt */
   .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
   .tile { position: relative; display: block; overflow: hidden; text-decoration: none; color: var(--light-100); }
   .tile-media { overflow: hidden; }
@@ -217,13 +216,14 @@ const slides = slidesFor(upcoming, past);
     padding: 1.3rem 1.5rem 1.4rem;
     background: rgba(2, 24, 89, 0.45); /* stark transparent, Text bleibt auch auf hellen Bildern lesbar */
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition: background 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
   .tile h2 { margin: 0 0 0.6rem; font-size: clamp(1.6rem, 2.4vw, 2.4rem); }
   .tile p { margin: 0; font-size: 1.05rem; line-height: 1.45; color: rgba(242, 242, 242, 0.9); }
-  /* Nur auf Geräten mit Maus: Box ausblenden, Bild freigeben (Touch: Box bleibt sichtbar) */
+  /* Nur auf Geräten mit Maus: Box wird kleiner und durchsichtiger, bleibt aber lesbar */
+  .tile-body { transform-origin: left bottom; }
   @media (hover: hover) {
-    .tile:hover .tile-body, .tile:focus-visible .tile-body { opacity: 0; transform: translateY(12px); }
+    .tile:hover .tile-body, .tile:focus-visible .tile-body { background: rgba(2, 24, 89, 0.3); transform: scale(0.96); }
   }
   @media (prefers-reduced-motion: reduce) { .tile img, .tile-body { transition: none; } }
 
@@ -244,7 +244,7 @@ const slides = slidesFor(upcoming, past);
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
   .band-title { margin: 0 0 4rem; padding-left: 0.5rem; font-size: clamp(2.6rem, 4.6vw, 4.6rem); }
-  .band-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .band-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 22rem)); justify-content: center; gap: 18px; }
   .band-card { display: block; background: var(--light-100); color: var(--navy-800); padding: 1.2rem 1.2rem 1.6rem; text-decoration: none; }
   .band-card img, .band-blank { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; margin-bottom: 1.2rem; }
   .band-blank { background: #fff; }
@@ -265,5 +265,8 @@ const slides = slidesFor(upcoming, past);
     .tile-body { padding: 1rem 1.1rem; }
     .tile p { font-size: 0.95rem; }
     .band-grid { grid-template-columns: 1fr 1fr; }
+    /* ungerade Anzahl: letzte Karte über die volle Breite statt allein in der Ecke */
+    .band-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .band-card:last-child:nth-child(odd) :is(img, .band-blank) { aspect-ratio: 2 / 1; }
   }
 </style>
