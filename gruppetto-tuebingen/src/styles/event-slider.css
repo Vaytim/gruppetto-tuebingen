@@ -66,6 +66,17 @@
 @media (max-width: 760px) {
   .wipe-strip { --card-w: min(78vw, 40dvh); gap: 18px; }
 }
+/* Touch-Geräte: normales seitliches Wischen statt Wipe */
+.wipe-runway.is-swipe .wipe-viewport { position: static; height: auto; overflow: visible; display: block; }
+.wipe-runway.is-swipe .wipe-strip {
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter); padding-block: 1.5rem; transform: none !important;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.wipe-runway.is-swipe .wipe-strip::-webkit-scrollbar { display: none; }
+.wipe-runway.is-swipe .wipe-strip .slide { scroll-snap-align: start; }
+.wipe-runway.is-swipe .wipe-strip::after { content: ""; flex: 0 0 1px; } /* Abstand rechts nach der letzten Karte */
+.wipe-runway.is-swipe:not(.is-wiping) .wipe-progress { display: none; }
 
 /* ---------- Reel-Vorschau: immer nur eine Karte spielt, die anderen treten zurück ---------- */
 .slide-media { position: relative; }
