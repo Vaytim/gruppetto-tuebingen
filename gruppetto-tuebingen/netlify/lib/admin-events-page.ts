@@ -1,6 +1,6 @@
 // Verwaltung → Reiter „Events“: Dashboard mit allen Events (heute, kommend, vergangen).
 // Events anlegen, bearbeiten, löschen – inkl. Strava-Link, Instagram-Reel-Link und
-// Reel-Video (spielt beim Hovern stumm ab). Alles wird dauerhaft gespeichert.
+// Reel-Video (wird im Browser verkleinert und spielt auf der Website stumm ab). Alles wird dauerhaft gespeichert.
 // Dazu die Anmeldung: Preis, max. Teilnehmer, Anmeldeschluss, Pause – und die aktuelle Belegung.
 import { events as codeEvents, germanDateLabel, type GruppettoEvent, type Registration } from "../../src/data/events";
 import {
@@ -293,7 +293,7 @@ function editorForm(e?: AdminRow) {
       ${e?.image ? `<img class="ev-preview" src="${h(e.image)}" alt="Aktuelles Bild" id="ev-preview">` : '<img class="ev-preview" id="ev-preview" alt="" hidden>'}
       ${e?.imageId ? '<span class="check"><input type="checkbox" name="removeImage" value="1"> Bild entfernen</span>' : ""}
     </label>
-    <label>Reel-Video <span class="muted">(MP4/MOV, max. 150 MB – spielt auf der Website beim Hovern stumm ab)</span>
+    <label>Reel-Video <span class="muted">(MP4/MOV, max. 150 MB – wird beim Auswählen automatisch auf 720p und max. 20 Sekunden ohne Ton verkleinert; spielt auf der Website stumm ab)</span>
       <input type="file" accept="video/mp4,video/quicktime,video/webm" id="ev-video">
       ${e?.reelVideoId ? `<video class="ev-preview" src="${h(videoUrl(e.reelVideoId))}" muted loop playsinline controls preload="metadata"></video>
         <span class="check"><input type="checkbox" name="removeVideo" value="1"> Video entfernen</span>` : ""}
@@ -371,8 +371,69 @@ const SCRIPT = `<script>
     btn.disabled = false; status.textContent = "";
   });
 
+  // Reel-Video im Browser verkleinern: 720p, H.264/MP4, ohne Ton, max. 20 Sekunden.
+  // Klappt das nicht (älterer Browser), wird das Original hochgeladen.
+  const REEL_MAX_SEC = 20;
+  const MB = (n) => (n / 1048576).toFixed(1).replace(".", ",") + " MB";
+  let compressing = false;
+  async function compressReel(file, onProgress) {
+    if (!("VideoEncoder" in window)) return null;
+    const M = await import("/vendor/mediabunny-1.61.4.min.js");
+    const input = new M.Input({ source: new M.BlobSource(file), formats: M.ALL_FORMATS });
+    try {
+      const track = await input.getPrimaryVideoTrack();
+      if (!track) return null;
+      const w = await track.getDisplayWidth();
+      const hh = await track.getDisplayHeight();
+      const scale = Math.min(1, 720 / Math.min(w, hh));
+      const width = Math.round((w * scale) / 2) * 2;
+      const height = Math.round((hh * scale) / 2) * 2;
+      if (!(await M.canEncodeVideo("avc", { width, height }))) return null;
+      const dur = await input.computeDuration();
+      const output = new M.Output({ format: new M.Mp4OutputFormat({ fastStart: "in-memory" }), target: new M.BufferTarget() });
+      const conv = await M.Conversion.init({
+        input, output,
+        video: { width, codec: "avc", quality: new M.Quality({ bitrate: 2000000 }) },
+        audio: { discard: true },
+        trim: { start: 0, end: Math.min(dur, REEL_MAX_SEC) },
+        showWarnings: false,
+      });
+      if (!conv.isValid) return null;
+      conv.onProgress = onProgress;
+      await conv.execute();
+      return new File([output.target.buffer], "reel-web.mp4", { type: "video/mp4" });
+    } finally {
+      input.dispose();
+    }
+  }
+  vid.addEventListener("change", async () => {
+    const file = vid.files && vid.files[0];
+    if (!file || file.name === "reel-web.mp4") return;
+    compressing = true; btn.disabled = true; bar.classList.add("on");
+    bar.firstElementChild.style.width = "0%";
+    status.textContent = "Video wird für die Website optimiert …";
+    try {
+      const out = await compressReel(file, (p) => {
+        bar.firstElementChild.style.width = Math.round(p * 100) + "%";
+        status.textContent = "Video wird für die Website optimiert … " + Math.round(p * 100) + " %";
+      });
+      if (out && out.size < file.size) {
+        const dt = new DataTransfer();
+        dt.items.add(out);
+        vid.files = dt.files;
+        status.textContent = "Video optimiert: " + MB(file.size) + " → " + MB(out.size);
+      } else {
+        status.textContent = "Video wird unverändert hochgeladen (" + MB(file.size) + ").";
+      }
+    } catch (e) {
+      status.textContent = "Optimierung nicht möglich – Video wird unverändert hochgeladen (" + MB(file.size) + ").";
+    }
+    compressing = false; btn.disabled = false; bar.classList.remove("on");
+  });
+
   // Reel-Video stückweise hochladen, danach das Formular normal absenden
   form.addEventListener("submit", async (ev) => {
+    if (compressing) { ev.preventDefault(); return; }
     const file = vid.files && vid.files[0];
     if (!file || form.dataset.videoDone) return;
     ev.preventDefault();
