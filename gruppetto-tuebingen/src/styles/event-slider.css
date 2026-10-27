@@ -67,7 +67,7 @@
   .wipe-strip { --card-w: min(78vw, 40dvh); gap: 18px; }
 }
 
-/* ---------- Reel-Vorschau: Karte wird größer, Video spielt stumm ---------- */
+/* ---------- Reel-Vorschau: immer nur eine Karte spielt, die anderen treten zurück ---------- */
 .slide-media { position: relative; }
 .slide-reel {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
@@ -78,10 +78,12 @@
   background: rgba(13, 30, 64, 0.75); color: var(--light-100); font-size: 0.8rem; font-weight: 600;
   transition: opacity 0.3s ease;
 }
-.slide.has-reel { transition: scale 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.3s ease; }
-.slide.has-reel.reel-playing { scale: 1.08; z-index: 4; position: relative; }
+.slide.has-reel { transition: scale 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.35s ease; }
+.slide.has-reel.reel-focus { scale: 1.08; z-index: 4; position: relative; opacity: 1; }
 .slide.reel-playing .slide-reel { opacity: 1; }
 .slide.reel-playing .reel-badge { opacity: 0; }
-.slide.reel-playing .slide-media img { transform: none; }
-@media (prefers-reduced-motion: reduce) { .slide.has-reel.reel-playing { scale: 1; } }
+.slide.reel-focus .slide-media img { transform: none; }
+/* Fokus deutlich machen: Während ein Reel läuft, werden die übrigen Karten blasser */
+:is(.slider-track, .wipe-strip, .past-grid):has(.reel-focus) > .slide:not(.reel-focus) { opacity: 0.45; transition: opacity 0.35s ease; }
+@media (prefers-reduced-motion: reduce) { .slide.has-reel.reel-focus { scale: 1; } }
 .btn-reel { margin-top: 0.5rem; }
