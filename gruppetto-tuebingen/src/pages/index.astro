@@ -134,7 +134,7 @@ const slides = slidesFor(upcoming, past);
 </Layout>
 
 <script>
-  import { initReelHover } from "../lib/motion";
+  import { ensureAutoplay, initReelHover } from "../lib/motion";
   import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
@@ -170,10 +170,9 @@ const slides = slidesFor(upcoming, past);
     }
   });
 
-  // Wer "Bewegung reduzieren" eingestellt hat, sieht nur das Standbild
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    document.querySelector<HTMLVideoElement>(".hero video")?.pause();
-  }
+  // Hero-Video zuverlässig starten (wer "Bewegung reduzieren" eingestellt hat, sieht nur das Standbild)
+  const heroVideo = document.querySelector<HTMLVideoElement>(".hero video");
+  if (heroVideo) ensureAutoplay(heroVideo);
 
   document.querySelectorAll<HTMLElement>(".slider").forEach((slider) => {
     wireSlider(slider);
