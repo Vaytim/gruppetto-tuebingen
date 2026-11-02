@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, slideHTML, splitEvents } from "../lib/public-events";
+import { codeEventsPublic, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
 import "../styles/event-slider.css";
 
 // Vorab gerendert (Fallback ohne JavaScript/Backend). Im Browser wird die Liste
@@ -25,7 +25,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     <!-- Wipe: beim Runterscrollen wandern alle kommenden Events nach links durch -->
     <div class="wipe-runway" id="wipe">
       <div class="wipe-viewport">
-        <div class="wipe-strip" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("")} />
+        <div class="wipe-strip" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("") + tbdSlidesHTML()} />
         <div class="wipe-progress" aria-hidden="true"></div>
       </div>
     </div>
@@ -68,7 +68,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
 </Layout>
 
 <script>
-  import { fetchEvents, slideHTML, splitEvents } from "../lib/public-events";
+  import { fetchEvents, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
   import { getLenis, initReelHover, initWipe } from "../lib/motion";
 
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
@@ -182,7 +182,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     const all = await fetchEvents();
     if (all) {
       const { upcoming, past } = splitEvents(all, Infinity);
-      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("");
+      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("") + tbdSlidesHTML();
       document.getElementById("events-none")!.hidden = upcoming.length > 0;
       document.getElementById("events-past")!.innerHTML = past.map((ev) => slideHTML(ev, { past: true, mode: "detail" })).join("");
       document.getElementById("past-section")!.hidden = past.length === 0;
