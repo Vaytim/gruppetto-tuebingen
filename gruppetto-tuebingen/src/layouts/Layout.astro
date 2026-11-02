@@ -438,7 +438,13 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
 
       /* Pfeil-Überschrift ("Titel  ⟶") */
       .arrow-title { display: inline-flex; align-items: center; gap: 1.2rem; text-decoration: none; }
-      .arrow-title::after { content: "⟶"; font-family: var(--font-body); font-weight: 300; transition: transform 0.2s ease; }
+      /* Statt Pfeil ein kleines Rennrad (Linien-Icon in Textfarbe), fährt beim Hovern ein Stück nach rechts */
+      .arrow-title::after {
+        content: ""; flex: none; width: 1.7em; height: 1.05em; background: currentColor;
+        -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIyMCIgcj0iOCIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iMjAiIHI9IjgiLz48cGF0aCBkPSJNMTAgMjAgTDIyIDIwIEwxOCA4IFogTTIyIDIwIEwzMyA5IEwxOCA5IE0zMyA5IEwzOCAyMCBNMzMgOSBMMzQgNSBMMzggNSBRNDAgNSA0MCA3LjUgUTQwIDkuNSAzOC41IDkuNSBNMTUgNi41IEgyMSIvPjwvc3ZnPgo=") center / contain no-repeat;
+        mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCAzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIyMCIgcj0iOCIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iMjAiIHI9IjgiLz48cGF0aCBkPSJNMTAgMjAgTDIyIDIwIEwxOCA4IFogTTIyIDIwIEwzMyA5IEwxOCA5IE0zMyA5IEwzOCAyMCBNMzMgOSBMMzQgNSBMMzggNSBRNDAgNSA0MCA3LjUgUTQwIDkuNSAzOC41IDkuNSBNMTUgNi41IEgyMSIvPjwvc3ZnPgo=") center / contain no-repeat;
+        transition: transform 0.3s ease;
+      }
       a:hover .arrow-title::after, .arrow-title:hover::after { transform: translateX(6px); }
 
       /* ---------- Footer ---------- */
