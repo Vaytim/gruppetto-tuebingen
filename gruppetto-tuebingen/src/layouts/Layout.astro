@@ -17,10 +17,22 @@ interface Props {
   title: string;
   description?: string;
   fullBleed?: boolean;
+  /** Vorschaubild beim Teilen (WhatsApp, Instagram …), 1200×630 px, Dateien /images/og-*.jpg */
+  image?: string;
 }
 
-const { title, description = "Gruppetto Tübingen – lokale Rennrad-Community", fullBleed = false } = Astro.props;
+const {
+  title,
+  description = "Gruppetto Tübingen – die offene Rennrad-Community aus Tübingen. Gemeinsame Ausfahrten, Rookie Rides und eigene Events.",
+  fullBleed = false,
+  image = "/images/og-ueber-uns.jpg",
+} = Astro.props;
 const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+// Link-Vorschau (Open Graph): braucht vollständige Adressen
+const SITE = "https://gruppetto-tuebingen.de";
+const fullTitle = title === "Startseite" ? "Gruppetto Tübingen · Rennrad-Community aus Tübingen" : `${title} · Gruppetto Tübingen`;
+const pageUrl = SITE + (path === "/" ? "/" : path);
+const imageUrl = SITE + image;
 
 // Info-Leiste ganz oben – Texte und Ziel hier anpassen.
 // Welche Nachricht erscheint, hängt am Off-Season-Schalter in der Verwaltung.
@@ -92,7 +104,19 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content={description} />
-    <title>{title} · Gruppetto Tübingen</title>
+    <title>{fullTitle}</title>
+    <!-- Vorschau beim Teilen von Links (WhatsApp, Instagram, Signal, iMessage …) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Gruppetto Tübingen" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Gruppetto Tübingen auf dem Rennrad" />
+    <meta name="twitter:card" content="summary_large_image" />
     <!-- Zuletzt bekannten Off-Season-Stand sofort setzen (kein Aufblitzen der falschen Info-Leiste) -->
     <script is:inline>
       try { if (localStorage.getItem("gt-offseason") === "1") document.documentElement.classList.add("offseason"); } catch (e) {}
