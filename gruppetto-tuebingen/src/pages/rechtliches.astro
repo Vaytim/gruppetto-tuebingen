@@ -1,24 +1,18 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
-// ---------------------------------------------------------------------------
-// Angaben zum Verantwortlichen – bitte vervollständigen (erscheinen in der Datenschutzerklärung)
-// TODO: Anschrift und E-Mail-Adresse des Vereins eintragen
-const verein = {
-  name: "Gruppetto Tübingen e.V. i.G.", // "i.G." = in Gründung – nach der Eintragung ins Vereinsregister entfernen
-  vertreten: "den Vorstand",
-  anschrift: "[Straße und Hausnummer, PLZ Tübingen]",
-  email: "[E-Mail-Adresse des Vereins]",
-};
-const stand = "Oktober 2026";
+import { verein } from "../data/verein"; // Vereinsdaten zentral
+const stand = "November 2026";
 ---
 
-<Layout title="Rechtliches" description="Haftungsausschluss und Datenschutzerklärung von Gruppetto Tübingen">
+<Layout title="Rechtliches" description="Haftungsausschluss, Teilnahmebedingungen und Datenschutzerklärung von Gruppetto Tübingen">
 <section class="legal">
 <h1>Rechtliches</h1>
 <nav class="legal-toc" aria-label="Inhalt">
   <a href="#haftungsausschluss">Haftungsausschluss</a>
+  <a href="#teilnahmebedingungen">Teilnahmebedingungen</a>
   <a href="#datenschutz">Datenschutzerklärung</a>
+  <a href="/impressum">Impressum</a>
 </nav>
 
 <h2 id="haftungsausschluss">Haftungsausschluss</h2>
@@ -32,6 +26,51 @@ Die Teilnahme an gemeinsamen Ausfahrten (Rides) ist auch für Nicht-Mitglieder m
 Für Inhalte externer Links, auf die von dieser Website verwiesen wird, sind ausschließlich deren Betreiber verantwortlich. Wir machen uns diese Inhalte nicht zu eigen und haben keinen Einfluss auf deren Gestaltung und Inhalte.
 </p>
 
+<h2 id="teilnahmebedingungen">Teilnahmebedingungen</h2>
+<p>
+Diese Bedingungen gelten für alle Ausfahrten (Rides) und Events von {verein.name} – für kostenlose Ausfahrten genauso wie für Events mit Anmeldung und Teilnahmegebühr.
+</p>
+
+<h3>1. Teilnahme</h3>
+<p>
+Mitfahren kann jede:r, auch ohne Vereinsmitgliedschaft. Unsere Ausfahrten sind keine Rennen, sondern gemeinsame Fahrten im öffentlichen Straßenverkehr. Es gilt die Straßenverkehrsordnung, Straßen werden nicht gesperrt. Wer unter 18 Jahre alt ist, braucht das Einverständnis der Erziehungsberechtigten.
+</p>
+
+<h3>2. Ausrüstung und Gesundheit</h3>
+<p>
+Helm ist Pflicht. Dein Rad muss technisch in Ordnung und verkehrssicher sein, in der dunklen Jahreszeit mit Licht vorne und hinten. Du fährst nur mit, wenn du dich gesund und der Strecke gewachsen fühlst. Folge den Hinweisen der Ride Leader bzw. der Event-Leitung.
+</p>
+
+<h3>3. Anmeldung und Bezahlung</h3>
+<p>
+Bei Events mit Anmeldung ist deine Teilnahme erst mit der vollständigen Bezahlung bestätigt. Du bekommst dann eine Startnummer und eine Bestätigung per E-Mail. Die Plätze werden in der Reihenfolge der Zahlungseingänge vergeben. Während der Bezahlung halten wir deinen Platz bis zu 30 Minuten frei.
+</p>
+
+<h3>4. Absage durch dich</h3>
+<p>
+Kannst du nicht teilnehmen, sag uns bitte so früh wie möglich Bescheid. Die Teilnahmegebühr erstatten wir grundsätzlich nicht. Du kannst deinen Platz aber nach Absprache mit uns an eine andere Person weitergeben.
+</p>
+
+<h3>5. Absage oder Änderung durch uns</h3>
+<p>
+Wir können Ausfahrten und Events verschieben, die Strecke ändern oder absagen, etwa bei Unwetter, Glätte oder zu wenigen Anmeldungen. Sagen wir ein Event mit Teilnahmegebühr ganz ab, bekommst du die Gebühr vollständig zurück. Wird es verschoben, gilt deine Anmeldung für den neuen Termin; passt dir der neue Termin nicht, erstatten wir die Gebühr. Weitere Ansprüche bestehen nicht.
+</p>
+
+<h3>6. Kein Widerrufsrecht</h3>
+<p>
+Bei der Anmeldung zu einem Event an einem festen Termin besteht kein gesetzliches Widerrufsrecht (§ 312g Abs. 2 Nr. 9 BGB). Es gelten die Regeln unter Punkt 4.
+</p>
+
+<h3>7. Haftung</h3>
+<p>
+Die Teilnahme erfolgt auf eigene Gefahr und Verantwortung. Wir haften nur für Vorsatz und grobe Fahrlässigkeit. Das gilt nicht für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit; dafür haften wir nach den gesetzlichen Vorschriften. Für mitgebrachte Sachen, insbesondere Räder, übernehmen wir keine Haftung.
+</p>
+
+<h3>8. Fotos und Videos</h3>
+<p>
+Bei Ausfahrten und Events wird fotografiert und gefilmt. Was das bedeutet und wie du widersprechen kannst, steht unter <a href="#foto-video">Datenschutz, Abschnitt 7</a>.
+</p>
+
 <h2 id="datenschutz">Datenschutzerklärung</h2>
 <p>
 Der Schutz deiner Daten ist uns wichtig. Hier erklären wir, welche personenbezogenen Daten wir erheben, wenn du unsere Website nutzt, dich zu einem Event anmeldest, uns schreibst oder an unseren Ausfahrten und Events teilnimmst – und welche Rechte du hast.
@@ -39,9 +78,10 @@ Der Schutz deiner Daten ist uns wichtig. Hier erklären wir, welche personenbezo
 
 <h3>1. Verantwortlicher</h3>
 <p>
-{verein.name}, vertreten durch {verein.vertreten}<br />
-{verein.anschrift}<br />
-E-Mail: {verein.email}
+{verein.name}, vertreten durch den Vorstand<br />
+{verein.strasse}, {verein.ort}<br />
+E-Mail: {verein.email}<br />
+Weitere Angaben findest du im <a href="/impressum">Impressum</a>.
 </p>
 
 <h3>2. Hosting und Server-Logfiles</h3>
@@ -61,12 +101,12 @@ Auf der Seite „Weekly Rides“ zeigen wir unsere Routen auf einer Karte. Die K
 
 <h3>5. Kontaktformular</h3>
 <p>
-Wenn du uns über das Kontaktformular schreibst, verarbeiten wir deinen Namen, deine E-Mail-Adresse, deine Nachricht und die Seite, von der aus du geschrieben hast – ausschließlich, um deine Anfrage zu beantworten (Art. 6 Abs. 1 lit. b bzw. f DSGVO). Die Nachricht wird per E-Mail an das Postfach des Vereins weitergeleitet; für den Versand nutzen wir einen E-Mail-Dienstleister. Wir löschen die Nachricht, sobald deine Anfrage erledigt ist und keine Aufbewahrungspflichten entgegenstehen.
+Wenn du uns über das Kontaktformular schreibst, verarbeiten wir deinen Namen, deine E-Mail-Adresse, deine Nachricht und die Seite, von der aus du geschrieben hast – ausschließlich, um deine Anfrage zu beantworten (Art. 6 Abs. 1 lit. b bzw. f DSGVO). Die Nachricht wird per E-Mail an das Postfach des Vereins weitergeleitet; für den Versand nutzen wir den E-Mail-Dienst Brevo (Brevo GmbH, Köpenicker Str. 126, 10179 Berlin), mit dem wir einen Vertrag zur Auftragsverarbeitung geschlossen haben. Wir löschen die Nachricht, sobald deine Anfrage erledigt ist und keine Aufbewahrungspflichten entgegenstehen.
 </p>
 
 <h3>6. Anmeldung und Bezahlung bei Events</h3>
 <p>
-Für die Anmeldung zu Events erheben wir deinen Namen und deine E-Mail-Adresse. Wir vergeben eine Startnummer und schicken dir eine Bestätigung per E-Mail. Rechtsgrundlage ist die Durchführung der Teilnahme (Art. 6 Abs. 1 lit. b DSGVO). Die Teilnehmerliste wird bei unserem Hoster Netlify gespeichert und ist nur für den Vorstand bzw. die Event-Organisator:innen zugänglich.
+Für die Anmeldung zu Events erheben wir deinen Namen und deine E-Mail-Adresse. Wir vergeben eine Startnummer und schicken dir eine Bestätigung per E-Mail (Versand über Brevo, siehe Abschnitt 5). Rechtsgrundlage ist die Durchführung der Teilnahme (Art. 6 Abs. 1 lit. b DSGVO). Die Teilnehmerliste wird bei unserem Hoster Netlify gespeichert und ist nur für den Vorstand bzw. die Event-Organisator:innen zugänglich.
 </p>
 <p>
 Die Bezahlung läuft über Stripe (Stripe Payments Europe, Ltd., 1 Grand Canal Street Lower, Dublin 2, Irland). Deine Zahlungsdaten (z. B. Kartennummer) gibst du direkt bei Stripe ein – wir sehen sie nicht. Wir erhalten von Stripe nur, ob und wann bezahlt wurde, sowie Betrag und Gebühren. Stripe verarbeitet Daten teilweise auch in den USA (EU-Standardvertragsklauseln, EU-US Data Privacy Framework). Näheres findest du in der Datenschutzerklärung von Stripe.
@@ -108,6 +148,7 @@ Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren, zum
   .legal h2 { margin: 3rem 0 1rem; scroll-margin-top: 6rem; }
   .legal h3 { margin: 2rem 0 0.6rem; font-family: var(--font-body); font-weight: 600; font-size: 1.15rem; scroll-margin-top: 6rem; }
   .legal p { color: var(--color-text-muted); line-height: 1.6; margin: 0 0 1rem; }
+  .legal p a { color: var(--color-text); text-underline-offset: 3px; }
   .legal-toc { display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem; margin: 0 0 1rem; }
   .legal-toc a { color: var(--color-text); text-underline-offset: 4px; }
   .legal-highlight { padding: 1rem 1.2rem; background: var(--color-bg-alt); border-left: 4px solid var(--blue-500); color: var(--color-text) !important; }

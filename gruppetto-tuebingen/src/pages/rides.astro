@@ -125,7 +125,7 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
   </div>
 
 <section style="padding: 3rem 0;">
-  <h1>Unser Konzept</h1>
+  <h2 class="rides-h">Unser Konzept</h2>
   <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
     Seit der Saison 2026 bieten wir keinen aktiven Lead mehr an. Bedeutet für euch: Ihr seid selber verantwortlich, die Route parat zu haben. Keine Sorge: 
     Falls ihr keinen Radcomputer oder ähnliches besitzt, hat sicher jemand anderes aus der Gruppe die Route parat!
@@ -133,7 +133,7 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
 </section>
 
 <section id="unsere-routen" style="padding: 3rem 0;">
-    <h1>Unsere Road-Routen</h1>
+    <h2 class="rides-h">Unsere Road-Routen</h2>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
       Unsere liebsten Rennrad-Strecken rund um Tübingen – für die Afterwork Rides am Mittwoch. Ladet die Strecke am besten vorab herunter, es gibt keinen offiziellen Lead mehr!
     </p>
@@ -142,7 +142,7 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
   </section>
 
 <section id="gravel-route" style="padding: 3rem 0;">
-    <h1>Unsere Gravel-Routen</h1>
+    <h2 class="rides-h">Unsere Gravel-Routen</h2>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
       Für den Gravel-Treff am Donnerstag: abseits der Straße über Feld- und Waldwege durch Schönbuch und Rammert. Auch hier gilt: Route vorab aufs Gerät laden.
     </p>
@@ -169,6 +169,8 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
     </script>
 
     <style>
+      /* Abschnittsüberschriften als h2 (nur eine h1 pro Seite), optisch so groß wie vorher */
+      .rides-h { font-size: 2em; margin: 0.67em 0; }
       .rides-block { position: relative; }
       .rides-block.is-offseason { min-height: 30rem; }
       .rides-block.is-offseason .rides-list { filter: blur(7px); opacity: 0.55; user-select: none; pointer-events: none; }
