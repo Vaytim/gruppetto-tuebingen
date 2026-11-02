@@ -168,7 +168,7 @@ export function wireSlider(slider: HTMLElement) {
 
 export const shortDate = (iso: string) => {
   const [y, m, d] = iso.split("-");
-  return `${Number(d)}.${Number(m)}.${y.slice(2)}`;
+  return `${d.padStart(2, "0")}.${m.padStart(2, "0")}.${y.slice(2)}`; // z. B. 07.04.27
 };
 
 /**
