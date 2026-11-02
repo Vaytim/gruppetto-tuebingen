@@ -93,6 +93,7 @@ input{padding:.75rem .9rem;border:1px solid #04328c;background:#0d1e40;color:#f2
 input:focus{outline:2px solid #f2f2f2;outline-offset:1px}
 button{padding:.85rem;border:0;background:#0f4abf;color:#f2f2f2;font:600 1rem Inter,system-ui,sans-serif;cursor:pointer}
 .err{color:#ffb3a7}
+.site{color:rgba(242,242,242,.72);font-size:.9rem;text-align:center;text-underline-offset:3px}.site:hover{color:#f2f2f2}
 </style>
 <form method="post" action="?action=login">
   <h1>Verwaltung</h1>
@@ -100,6 +101,7 @@ button{padding:.85rem;border:0;background:#0f4abf;color:#f2f2f2;font:600 1rem In
   ${error ? `<p class="err" role="alert">${h(error)}</p>` : ""}
   <label>Passwort<input type="password" name="password" autocomplete="current-password" required autofocus></label>
   <button>Anmelden</button>
+  <a class="site" href="/">← Zur Website</a>
 </form></html>`,
     { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
   );
@@ -288,7 +290,7 @@ function eventPage(t: EventTotals) {
     .join("");
   return page(
     t.event.title,
-    `<p class="kicker"><a href="?">← Übersicht</a></p><h1>${h(t.event.title)}</h1>
+    `<p class="kicker"><a href="?">← Übersicht</a> · <a href="/">Zur Website</a></p><h1>${h(t.event.title)}</h1>
 <p class="muted">${h(t.event.dateLabel)}, ${h(t.event.time)} · ${h(t.event.location)}</p>
 <div class="cards">
   <div class="card"><span class="muted">Dabei</span><b>${t.active} / ${t.event.registration!.capacity}</b></div>
