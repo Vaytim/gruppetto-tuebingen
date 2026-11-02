@@ -98,3 +98,12 @@
 :is(.slider-track, .wipe-strip, .past-grid):has(.reel-focus) > .slide:not(.reel-focus) { opacity: 0.45; transition: opacity 0.35s ease; }
 @media (prefers-reduced-motion: reduce) { .slide.has-reel.reel-focus { scale: 1; } }
 .btn-reel { margin-top: 0.5rem; }
+
+/* ---------- Platzhalter „tbd“ für geplante Events ---------- */
+.slide-tbd { display: grid; place-items: center; }
+.slide-tbd span {
+  font-family: var(--font-title); font-weight: 700; font-size: clamp(3rem, 6vw, 5rem); letter-spacing: -0.02em;
+  color: rgba(242, 242, 242, 0.9);
+}
+.slide.is-tbd .slide-meta { color: var(--color-text-muted); }
+.slide.is-tbd { opacity: 0.85; }
