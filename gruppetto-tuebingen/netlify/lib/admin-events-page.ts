@@ -44,6 +44,9 @@ export const ADMIN_EVENTS_CSS = `
 .tabs a{padding:.6rem 1rem;text-decoration:none;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
 .tabs a[aria-current=page]{color:var(--text);border-bottom-color:var(--blue)}
 .tabs a:hover{color:var(--text)}
+.tabs{flex-wrap:wrap;align-items:center}
+.tabs a.tabs-site{margin:0 0 .4rem auto;padding:.5rem 1.1rem;border-bottom:0;color:var(--text)}
+.tabs a.tabs-site:hover{filter:brightness(1.15)}
 .btn.danger{background:#3a2420;color:var(--warn)}
 .btn.small{padding:.4rem .8rem;font-size:.82rem}
 /* Kennzahlen */
@@ -111,6 +114,7 @@ export function tabNav(active: "zahlungen" | "events" | "rookies") {
   <a href="?" ${active === "zahlungen" ? 'aria-current="page"' : ""}>Anmeldungen &amp; Zahlungen</a>
   <a href="?tab=events" ${active === "events" ? 'aria-current="page"' : ""}>Events</a>
   <a href="?tab=rookies" ${active === "rookies" ? 'aria-current="page"' : ""}>Rookies</a>
+  <a class="btn tabs-site" href="/">Zur Website →</a>
 </nav>`;
 }
 
