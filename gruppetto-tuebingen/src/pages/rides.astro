@@ -81,7 +81,7 @@ const gravelRoutes = [
 const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRoutes.map((r) => ({ ...r, kind: "gravel" }))];
 ---
 
-<Layout title="Rides" description="Kommende Ausfahrten von Gruppetto Tübingen">
+<Layout title="Weekly Rides" description="Weekly Rides von Gruppetto Tübingen: mittwochs Road Ride ab Finanzamt, donnerstags Gravel-Treff ab Technischem Rathaus – mit unseren Routen auf Komoot." image="/images/og-rides.jpg">
   <!-- Off-Season: wird in der Verwaltung (/api/teilnehmer → Website) ein-/ausgeschaltet -->
   <div class="rides-block" id="rides-block">
   <section class="rides-list" style="padding: 3rem 0;">
