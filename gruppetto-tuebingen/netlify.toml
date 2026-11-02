@@ -11,3 +11,9 @@
   for = "/events/danke*"
   [headers.values]
     X-Robots-Tag = "noindex"
+
+# security.txt auch unter der alten Adresse /security.txt
+[[redirects]]
+  from = "/security.txt"
+  to = "/.well-known/security.txt"
+  status = 301
