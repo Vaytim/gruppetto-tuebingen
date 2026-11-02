@@ -8,7 +8,7 @@
 //  6. Farbiges Band mit 4 Karten + Button
 // Alle Texte/Bilder unten in den Konstanten anpassen.
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents } from "../lib/public-events";
+import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
 import "../styles/event-slider.css";
 
 const hero = {
@@ -55,7 +55,7 @@ const rookie = nextRookieRide(codeEventsPublic());
 const next = upcoming[0];
 // Vergangene Events links vom nächsten Event (älteste ganz links), kommende rechts
 const slidesFor = (u: typeof upcoming, p: typeof past) =>
-  [...p.slice().reverse().map((e) => slideHTML(e, { past: true })), ...u.map((e) => slideHTML(e))].join("");
+  [...p.slice().reverse().map((e) => slideHTML(e, { past: true })), ...u.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
 const slides = slidesFor(upcoming, past);
 ---
 
@@ -94,7 +94,7 @@ const slides = slidesFor(upcoming, past);
   <!-- 4. Banner -->
   <section class="banner">
     <img src={banner.image} alt="" loading="lazy" />
-    <h2 class="banner-headline">{banner.headline.map((l) => <span>{l}</span>)}</h2>
+    <h2 class="banner-headline"><a class="title-link" href={banner.cta.href}>{banner.headline.map((l) => <span>{l}</span>)}</a></h2>
     <a class="btn banner-cta" href={banner.cta.href}>{banner.cta.label}</a>
     <!-- gleicher Stil wie "Nächstes Event" im Hero -->
     <a class="hero-date banner-date" href="/rookies#naechster-rookie-ride" data-rookie-next hidden={!rookie}>
@@ -107,7 +107,7 @@ const slides = slidesFor(upcoming, past);
   <!-- 5. Slider Events -->
   <section class="slider" aria-labelledby="slider-title">
     <div class="slider-head">
-      <h2 id="slider-title">Events</h2>
+      <h2 id="slider-title"><a class="title-link" href="/events">Events</a></h2>
       <div class="slider-nav">
         <button type="button" data-dir="-1" aria-label="Zurück">←</button>
         <button type="button" data-dir="1" aria-label="Weiter">→</button>
@@ -118,7 +118,7 @@ const slides = slidesFor(upcoming, past);
 
   <!-- 6. Farbiges Band -->
   <section class="band">
-    <h2 class="band-title">{shopBand.title}</h2>
+    <h2 class="band-title"><a class="title-link" href={shopBand.cta.href}>{shopBand.title}</a></h2>
     <div class="band-grid">
       {shopBand.items.map((item) => (
         <a class="band-card" href={item.href} {...(item.href.startsWith("http") ? { target: "_blank", rel: "noopener" } : {})}>
@@ -134,7 +134,7 @@ const slides = slidesFor(upcoming, past);
 
 <script>
   import { ensureAutoplay, initReelHover } from "../lib/motion";
-  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, tbdSlidesHTML, wireSlider } from "../lib/public-events";
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
   Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
@@ -155,7 +155,7 @@ const slides = slidesFor(upcoming, past);
     const { upcoming, past } = splitEvents(all, 4);
     const track = document.querySelector<HTMLElement>(".slider-track");
     if (track) {
-      track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("");
+      track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
       scrollToFirstUpcoming(track);
     }
     const next = upcoming[0];
@@ -243,6 +243,10 @@ const slides = slidesFor(upcoming, past);
 
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
+  /* Abschnitts-Titel sind Links zur jeweiligen Seite */
+  .title-link { color: inherit; text-decoration: none; text-underline-offset: 0.12em; text-decoration-thickness: 0.06em; }
+  .title-link:hover, .title-link:focus-visible { text-decoration-line: underline; }
+  .banner-headline .title-link { display: grid; justify-items: end; }
   .band-title { margin: 0 0 4rem; padding-left: 0.5rem; font-size: clamp(2.6rem, 4.6vw, 4.6rem); }
   .band-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 22rem)); justify-content: center; gap: 18px; }
   .band-card { display: block; background: var(--light-100); color: var(--navy-800); padding: 1.2rem 1.2rem 1.6rem; text-decoration: none; }
