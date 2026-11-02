@@ -1,0 +1,29 @@
+---
+// Eigene Fehlerseite: Netlify zeigt sie automatisch, wenn eine Adresse nicht existiert.
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Seite nicht gefunden" description="Diese Seite gibt es bei Gruppetto Tübingen nicht.">
+  <section class="nf">
+    <p class="nf-code">404</p>
+    <h1>Hier geht's nicht weiter.</h1>
+    <p class="nf-text">
+      Diese Seite gibt es nicht (mehr). Vielleicht falsch abgebogen? Kein Problem – wir bringen dich zurück auf die Strecke.
+    </p>
+    <div class="nf-buttons">
+      <a class="btn" href="/">Zur Startseite</a>
+      <a class="btn nf-outline" href="/rides">Weekly Rides</a>
+      <a class="btn nf-outline" href="/events">Events</a>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .nf { padding: 4rem 0 6rem; max-width: 40rem; }
+  .nf-code { margin: 0 0 0.5rem; font-family: var(--font-title); font-size: clamp(5rem, 14vw, 9rem); line-height: 0.9; color: var(--color-accent); }
+  .nf h1 { margin: 0 0 1.2rem; font-size: clamp(2rem, 4vw, 3rem); }
+  .nf-text { margin: 0 0 2rem; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.6; }
+  .nf-buttons { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+  .nf-outline { background: transparent; border: 1.5px solid var(--color-text); color: var(--color-text); }
+  .nf-outline:hover { background: var(--color-text); color: var(--light-100); }
+</style>
