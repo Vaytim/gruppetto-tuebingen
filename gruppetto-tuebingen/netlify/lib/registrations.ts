@@ -128,6 +128,9 @@ export async function updateJSON<D, T>(
 }
 
 export class SoldOutError extends Error {}
+/** Dieselbe E-Mail hat schon offene (noch nicht bezahlte) Reservierungen */
+export class TooManyPendingError extends Error {}
+const MAX_PENDING_PER_EMAIL = 2;
 
 /** Reserviert einen Platz für die Dauer des Bezahlvorgangs. */
 export function reserveSeat(
@@ -138,6 +141,10 @@ export function reserveSeat(
   reservation: Reservation,
 ) {
   if (seatsTaken(ledger, now) >= capacity) throw new SoldOutError("Ausgebucht");
+  // Schutz gegen das Blockieren von Plätzen: pro E-Mail höchstens 2 offene Reservierungen
+  const email = reservation.email.toLowerCase();
+  const open = Object.values(ledger.pending).filter((r) => r.expiresAt > now && r.email.toLowerCase() === email).length;
+  if (open >= MAX_PENDING_PER_EMAIL) throw new TooManyPendingError("Zu viele offene Anmeldungen");
   ledger.pending[reservationId] = reservation;
 }
 
