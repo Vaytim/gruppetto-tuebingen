@@ -11,6 +11,7 @@ import type { GruppettoEvent } from "../../src/data/events";
 import { listPayouts, syncRecent } from "../lib/accounting";
 import { type Participant, type PayoutRecord, isActive, readLedger, seatsTaken } from "../lib/registrations";
 import { env, escapeHtml as h, ledgerStore } from "../lib/services";
+import { hit, lockedMinutes, reset } from "../lib/ratelimit";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
 import { type PublicEventData, allEvents, registeredEvents } from "../lib/event-store";
@@ -32,7 +33,7 @@ import {
 // ---------- Anmeldung ----------
 // Login über ein normales Formular (funktioniert auch in der StackBlitz-Vorschau,
 // wo Browser keine Passwort-Abfrage anzeigen). Danach merkt sich ein signiertes
-// Cookie die Anmeldung für 12 Stunden. Basic-Auth (z. B. per curl) geht weiterhin.
+// Cookie die Anmeldung für 12 Stunden. Nach 5 Fehlversuchen ist der Anschluss 15 Minuten gesperrt.
 const COOKIE = "gt_admin";
 const SESSION_HOURS = 12;
 
@@ -61,11 +62,6 @@ async function sessionCookie(): Promise<string> {
 }
 
 async function authorized(req: Request): Promise<boolean> {
-  const header = req.headers.get("authorization") ?? "";
-  if (header.startsWith("Basic ")) {
-    const [, password = ""] = atob(header.slice(6)).split(/:(.*)/s);
-    if (safeEqual(password, adminPassword())) return true;
-  }
   const cookie = (req.headers.get("cookie") ?? "").split(/;\s*/).find((c) => c.startsWith(`${COOKIE}=`));
   if (!cookie) return false;
   const [exp, sig = ""] = cookie.slice(COOKIE.length + 1).split(".");
@@ -393,11 +389,18 @@ export default async (req: Request) => {
   if (req.method === "POST" && !sameOrigin(req)) return new Response("Nicht erlaubt", { status: 403 });
 
   if (req.method === "POST" && action === "login") {
+    const store = ledgerStore();
+    const LOGIN_LIMIT = { max: 5, windowMs: 15 * 60_000, lockMs: 15 * 60_000 }; // 5 Fehlversuche → 15 Min. Sperre
+    const locked = await lockedMinutes(store, "login", req);
+    if (locked) return loginPage(`Zu viele Fehlversuche. Bitte in ${locked} Minute${locked === 1 ? "" : "n"} noch einmal versuchen.`, 429);
     const password = String((await req.formData()).get("password") ?? "");
     if (!safeEqual(password, adminPassword())) {
       await new Promise((r) => setTimeout(r, 800)); // Raten bremsen
+      if (await hit(store, "login", req, LOGIN_LIMIT))
+        return loginPage("Zu viele Fehlversuche. Die Anmeldung ist für 15 Minuten gesperrt.", 429);
       return loginPage("Falsches Passwort.");
     }
+    await reset(store, "login", req);
     return new Response(null, { status: 303, headers: { location: url.pathname, "set-cookie": await sessionCookie() } });
   }
   if (action === "logout") {
