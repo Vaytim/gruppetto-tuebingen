@@ -1,0 +1,63 @@
+---
+// Impressum (§ 5 DDG, § 18 Abs. 2 MStV). Vereinsdaten stehen in src/data/verein.ts.
+import Layout from "../layouts/Layout.astro";
+import { verein } from "../data/verein";
+---
+
+<Layout title="Impressum" description="Impressum von Gruppetto Tübingen">
+  <section class="legal">
+    <h1>Impressum</h1>
+
+    <h2>Angaben gemäß § 5 DDG</h2>
+    <p>
+      {verein.name}<br />
+      {verein.strasse}<br />
+      {verein.ort}
+    </p>
+
+    <h3>Vertreten durch den Vorstand</h3>
+    <p>{verein.vorstand}</p>
+
+    <h3>Kontakt</h3>
+    <p>
+      E-Mail: <a href={`mailto:${verein.email}`}>{verein.email}</a><br />
+      oder über unser <a href="#kontakt">Kontaktformular</a>
+    </p>
+
+    <h3>Registereintrag</h3>
+    {
+      verein.registernummer ? (
+        <p>
+          Eingetragen im Vereinsregister<br />
+          Registergericht: {verein.registergericht}<br />
+          Registernummer: {verein.registernummer}
+        </p>
+      ) : (
+        <p>Der Verein befindet sich in Gründung. Die Eintragung ins Vereinsregister ist beantragt.</p>
+      )
+    }
+
+    <h3>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h3>
+    <p>
+      {verein.vorstand}<br />
+      {verein.strasse}<br />
+      {verein.ort}
+    </p>
+
+    <h3>Verbraucherstreitbeilegung</h3>
+    <p>Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+    <p class="legal-more">
+      Haftungsausschluss, Teilnahmebedingungen und Datenschutzerklärung findest du unter <a href="/rechtliches">Rechtliches</a>.
+    </p>
+  </section>
+</Layout>
+
+<style>
+  .legal { padding: 3rem 0; max-width: 44rem; }
+  .legal h2 { margin: 2rem 0 1rem; }
+  .legal h3 { margin: 2rem 0 0.6rem; font-family: var(--font-body); font-weight: 600; font-size: 1.15rem; }
+  .legal p { color: var(--color-text-muted); line-height: 1.6; margin: 0 0 1rem; }
+  .legal a { color: var(--color-text); text-underline-offset: 3px; }
+  .legal-more { margin-top: 2.5rem !important; }
+</style>

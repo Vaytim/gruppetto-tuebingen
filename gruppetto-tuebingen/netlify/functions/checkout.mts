@@ -7,11 +7,13 @@ import { findLiveEvent } from "../lib/event-store";
 import {
   ConflictError,
   SoldOutError,
+  TooManyPendingError,
   releaseSeat,
   reserveSeat,
   updateLedger,
 } from "../lib/registrations";
 import { json, ledgerStore, siteUrl, stripe } from "../lib/services";
+import { hit } from "../lib/ratelimit";
 import { isTestMode, testCheckouts } from "../lib/testmode";
 
 const HOLD_MINUTES = 30; // Minimum bei Stripe Checkout
@@ -40,6 +42,10 @@ export default async (req: Request) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Bitte gib eine gültige E-Mail-Adresse an." }, 400);
   if (body.acceptTerms !== true) return json({ error: "Bitte bestätige die Teilnahmebedingungen." }, 400);
 
+  // Bremse: höchstens 5 Anmeldeversuche pro Anschluss und Stunde (danach 1 Stunde Pause)
+  if (await hit(store, "checkout", req, { max: 6, windowMs: 3600_000, lockMs: 3600_000 }))
+    return json({ error: "Zu viele Anmeldeversuche. Bitte versuch es in einer Stunde noch einmal." }, 429);
+
   const first = reg.firstStartNumber ?? 1;
   const reservationId = `GT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const expiresAt = Date.now() + HOLD_MINUTES * 60_000;
@@ -51,6 +57,8 @@ export default async (req: Request) => {
     );
   } catch (err) {
     if (err instanceof SoldOutError) return json({ error: "Leider ausgebucht.", soldOut: true }, 409);
+    if (err instanceof TooManyPendingError)
+      return json({ error: "Für diese E-Mail-Adresse läuft schon eine Anmeldung. Schließ die Bezahlung ab oder versuch es in 30 Minuten noch einmal." }, 429);
     if (err instanceof ConflictError) return json({ error: err.message }, 503);
     throw err;
   }

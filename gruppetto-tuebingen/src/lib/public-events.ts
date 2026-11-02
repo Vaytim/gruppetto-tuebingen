@@ -14,7 +14,7 @@ export interface PublicEvent {
   strava?: string;
   /** Link zum Instagram-Reel */
   reelUrl?: string;
-  /** Reel-Video (spielt beim Hovern stumm ab) */
+  /** Reel-Video (spielt stumm ab, sobald die Karte im Fokus ist) */
   reelVideo?: string;
   registration?: { price: number; closesAt: string };
 }
@@ -120,6 +120,23 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
 </article>`;
 }
 
+/**
+ * Platzhalter-Kacheln „tbd“ hinter den kommenden Events (Events-Seite), damit die Reihe
+ * auch mit wenigen Events gefüllt wirkt. Anzahl hier ändern.
+ */
+export const TBD_SLIDES = 3;
+export function tbdSlidesHTML(count = TBD_SLIDES): string {
+  return Array.from(
+    { length: count },
+    () => `<article class="slide is-tbd" aria-label="Weiteres Event in Planung">
+  <div class="slide-media"><span class="slide-noimg slide-tbd"><span>tbd</span></span></div>
+  <p class="slide-meta">Termin folgt</p>
+  <h3>Weiteres Event in Planung</h3>
+  <p class="slide-desc">Wir arbeiten schon am nächsten Event. Neuigkeiten gibt's zuerst im Strava Club und auf Instagram.</p>
+</article>`,
+  ).join("");
+}
+
 /** Slider so scrollen, dass das erste kommende Event links steht (vergangene liegen links davon). */
 export function scrollToFirstUpcoming(track: HTMLElement) {
   const slides = Array.from(track.querySelectorAll<HTMLElement>(".slide"));
@@ -168,7 +185,7 @@ export function wireSlider(slider: HTMLElement) {
 
 export const shortDate = (iso: string) => {
   const [y, m, d] = iso.split("-");
-  return `${Number(d)}.${Number(m)}.${y.slice(2)}`;
+  return `${d.padStart(2, "0")}.${m.padStart(2, "0")}.${y.slice(2)}`; // z. B. 07.04.27
 };
 
 /**

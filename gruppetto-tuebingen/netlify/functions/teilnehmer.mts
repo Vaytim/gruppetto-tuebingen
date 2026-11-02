@@ -11,6 +11,7 @@ import type { GruppettoEvent } from "../../src/data/events";
 import { listPayouts, syncRecent } from "../lib/accounting";
 import { type Participant, type PayoutRecord, isActive, readLedger, seatsTaken } from "../lib/registrations";
 import { env, escapeHtml as h, ledgerStore } from "../lib/services";
+import { hit, lockedMinutes, reset } from "../lib/ratelimit";
 import { isTestMode } from "../lib/testmode";
 import { simulateTestPayout } from "../lib/testmode-accounting";
 import { type PublicEventData, allEvents, registeredEvents } from "../lib/event-store";
@@ -32,7 +33,7 @@ import {
 // ---------- Anmeldung ----------
 // Login über ein normales Formular (funktioniert auch in der StackBlitz-Vorschau,
 // wo Browser keine Passwort-Abfrage anzeigen). Danach merkt sich ein signiertes
-// Cookie die Anmeldung für 12 Stunden. Basic-Auth (z. B. per curl) geht weiterhin.
+// Cookie die Anmeldung für 12 Stunden. Nach 5 Fehlversuchen ist der Anschluss 15 Minuten gesperrt.
 const COOKIE = "gt_admin";
 const SESSION_HOURS = 12;
 
@@ -61,11 +62,6 @@ async function sessionCookie(): Promise<string> {
 }
 
 async function authorized(req: Request): Promise<boolean> {
-  const header = req.headers.get("authorization") ?? "";
-  if (header.startsWith("Basic ")) {
-    const [, password = ""] = atob(header.slice(6)).split(/:(.*)/s);
-    if (safeEqual(password, adminPassword())) return true;
-  }
   const cookie = (req.headers.get("cookie") ?? "").split(/;\s*/).find((c) => c.startsWith(`${COOKIE}=`));
   if (!cookie) return false;
   const [exp, sig = ""] = cookie.slice(COOKIE.length + 1).split(".");
@@ -93,6 +89,7 @@ input{padding:.75rem .9rem;border:1px solid #04328c;background:#0d1e40;color:#f2
 input:focus{outline:2px solid #f2f2f2;outline-offset:1px}
 button{padding:.85rem;border:0;background:#0f4abf;color:#f2f2f2;font:600 1rem Inter,system-ui,sans-serif;cursor:pointer}
 .err{color:#ffb3a7}
+.site{color:rgba(242,242,242,.72);font-size:.9rem;text-align:center;text-underline-offset:3px}.site:hover{color:#f2f2f2}
 </style>
 <form method="post" action="?action=login">
   <h1>Verwaltung</h1>
@@ -100,6 +97,7 @@ button{padding:.85rem;border:0;background:#0f4abf;color:#f2f2f2;font:600 1rem In
   ${error ? `<p class="err" role="alert">${h(error)}</p>` : ""}
   <label>Passwort<input type="password" name="password" autocomplete="current-password" required autofocus></label>
   <button>Anmelden</button>
+  <a class="site" href="/">← Zur Website</a>
 </form></html>`,
     { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
   );
@@ -288,7 +286,7 @@ function eventPage(t: EventTotals) {
     .join("");
   return page(
     t.event.title,
-    `<p class="kicker"><a href="?">← Übersicht</a></p><h1>${h(t.event.title)}</h1>
+    `<p class="kicker"><a href="?">← Übersicht</a> · <a href="/">Zur Website</a></p><h1>${h(t.event.title)}</h1>
 <p class="muted">${h(t.event.dateLabel)}, ${h(t.event.time)} · ${h(t.event.location)}</p>
 <div class="cards">
   <div class="card"><span class="muted">Dabei</span><b>${t.active} / ${t.event.registration!.capacity}</b></div>
@@ -391,11 +389,18 @@ export default async (req: Request) => {
   if (req.method === "POST" && !sameOrigin(req)) return new Response("Nicht erlaubt", { status: 403 });
 
   if (req.method === "POST" && action === "login") {
+    const store = ledgerStore();
+    const LOGIN_LIMIT = { max: 5, windowMs: 15 * 60_000, lockMs: 15 * 60_000 }; // 5 Fehlversuche → 15 Min. Sperre
+    const locked = await lockedMinutes(store, "login", req);
+    if (locked) return loginPage(`Zu viele Fehlversuche. Bitte in ${locked} Minute${locked === 1 ? "" : "n"} noch einmal versuchen.`, 429);
     const password = String((await req.formData()).get("password") ?? "");
     if (!safeEqual(password, adminPassword())) {
       await new Promise((r) => setTimeout(r, 800)); // Raten bremsen
+      if (await hit(store, "login", req, LOGIN_LIMIT))
+        return loginPage("Zu viele Fehlversuche. Die Anmeldung ist für 15 Minuten gesperrt.", 429);
       return loginPage("Falsches Passwort.");
     }
+    await reset(store, "login", req);
     return new Response(null, { status: 303, headers: { location: url.pathname, "set-cookie": await sessionCookie() } });
   }
   if (action === "logout") {

@@ -8,7 +8,7 @@
 //  6. Farbiges Band mit 4 Karten + Button
 // Alle Texte/Bilder unten in den Konstanten anpassen.
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents } from "../lib/public-events";
+import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
 import "../styles/event-slider.css";
 
 const hero = {
@@ -20,7 +20,7 @@ const hero = {
 };
 
 const intro =
-  "Gruppetto Tübingen ist eine lokale Rennrad-Community rund um Tübingen – gemeinsame Ausfahrten, eine offene Community für Neueinsteiger:innen und unterschiedlichste Events. Jeder wird hier fündig.";
+  "Gruppetto Tübingen ist eine lokale Rennrad-Community rund um Tübingen – gemeinsame Ausfahrten, eine offene Community für Neueinsteiger:innen und unterschiedlichste Events. Alle werden hier fündig.";
 
 const tiles = [
   { title: "Weekly Rides", href: "/rides", text: "Regelmäßige Rides für alle Levels – vom entspannten Grundlagentraining bis zur zügigen Ausfahrt.", image: "/images/weekly-rides.jpg" },
@@ -30,7 +30,7 @@ const tiles = [
 ];
 
 const banner = {
-  image: "https://picsum.photos/seed/gruppetto-rookies/1800/900",
+  image: "/images/rookies-banner.jpg",
   headline: ["Gruppetto", "Rookies"],
   cta: { label: "Mehr erfahren", href: "/rookies" },
 };
@@ -44,7 +44,6 @@ const shopBand = {
     { title: "Season 2026 Kit – Trikot", note: "Bei Spatzwear erhältlich", image: "/images/kit/trikot-vorne.jpg", href: SPATZWEAR },
     { title: "Season 2026 Kit – Bib", note: "Bei Spatzwear erhältlich", image: "/images/kit/bib.jpg", href: SPATZWEAR },
     { title: "Gruppetto Sticker Set", note: "Bald verfügbar", image: "" /* noch kein Foto – weiße Fläche */, href: "/shop" },
-    { title: "Trinkflasche", note: "Bald verfügbar", image: "" /* noch kein Foto – weiße Fläche */, href: "/shop" },
   ],
   cta: { label: "Zum Shop", href: "/shop" },
 };
@@ -56,11 +55,11 @@ const rookie = nextRookieRide(codeEventsPublic());
 const next = upcoming[0];
 // Vergangene Events links vom nächsten Event (älteste ganz links), kommende rechts
 const slidesFor = (u: typeof upcoming, p: typeof past) =>
-  [...p.slice().reverse().map((e) => slideHTML(e, { past: true })), ...u.map((e) => slideHTML(e))].join("");
+  [...p.slice().reverse().map((e) => slideHTML(e, { past: true })), ...u.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
 const slides = slidesFor(upcoming, past);
 ---
 
-<Layout title="Startseite" fullBleed>
+<Layout title="Startseite" description="Gruppetto Tübingen – die offene Rennrad- und Gravel-Community rund um Tübingen. Weekly Rides mittwochs und donnerstags, Rookie Rides für Einsteiger:innen und eigene Events." image="/images/og-startseite.jpg" fullBleed>
   <!-- 1. Hero -->
   <section class="hero">
     <video class="hero-img" poster={hero.poster} autoplay muted loop playsinline preload="auto" aria-hidden="true">
@@ -95,7 +94,7 @@ const slides = slidesFor(upcoming, past);
   <!-- 4. Banner -->
   <section class="banner">
     <img src={banner.image} alt="" loading="lazy" />
-    <h2 class="banner-headline">{banner.headline.map((l) => <span>{l}</span>)}</h2>
+    <h2 class="banner-headline"><a class="title-link" href={banner.cta.href}>{banner.headline.map((l) => <span>{l}</span>)}</a></h2>
     <a class="btn banner-cta" href={banner.cta.href}>{banner.cta.label}</a>
     <!-- gleicher Stil wie "Nächstes Event" im Hero -->
     <a class="hero-date banner-date" href="/rookies#naechster-rookie-ride" data-rookie-next hidden={!rookie}>
@@ -108,7 +107,7 @@ const slides = slidesFor(upcoming, past);
   <!-- 5. Slider Events -->
   <section class="slider" aria-labelledby="slider-title">
     <div class="slider-head">
-      <h2 id="slider-title">Events</h2>
+      <h2 id="slider-title"><a class="title-link" href="/events">Events</a></h2>
       <div class="slider-nav">
         <button type="button" data-dir="-1" aria-label="Zurück">←</button>
         <button type="button" data-dir="1" aria-label="Weiter">→</button>
@@ -119,7 +118,7 @@ const slides = slidesFor(upcoming, past);
 
   <!-- 6. Farbiges Band -->
   <section class="band">
-    <h2 class="band-title">{shopBand.title}</h2>
+    <h2 class="band-title"><a class="title-link" href={shopBand.cta.href}>{shopBand.title}</a></h2>
     <div class="band-grid">
       {shopBand.items.map((item) => (
         <a class="band-card" href={item.href} {...(item.href.startsWith("http") ? { target: "_blank", rel: "noopener" } : {})}>
@@ -134,8 +133,8 @@ const slides = slidesFor(upcoming, past);
 </Layout>
 
 <script>
-  import { initReelHover } from "../lib/motion";
-  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, wireSlider } from "../lib/public-events";
+  import { ensureAutoplay, initReelHover } from "../lib/motion";
+  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, tbdSlidesHTML, wireSlider } from "../lib/public-events";
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
   Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
@@ -156,7 +155,7 @@ const slides = slidesFor(upcoming, past);
     const { upcoming, past } = splitEvents(all, 4);
     const track = document.querySelector<HTMLElement>(".slider-track");
     if (track) {
-      track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("");
+      track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
       scrollToFirstUpcoming(track);
     }
     const next = upcoming[0];
@@ -170,10 +169,9 @@ const slides = slidesFor(upcoming, past);
     }
   });
 
-  // Wer "Bewegung reduzieren" eingestellt hat, sieht nur das Standbild
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    document.querySelector<HTMLVideoElement>(".hero video")?.pause();
-  }
+  // Hero-Video zuverlässig starten (wer "Bewegung reduzieren" eingestellt hat, sieht nur das Standbild)
+  const heroVideo = document.querySelector<HTMLVideoElement>(".hero video");
+  if (heroVideo) ensureAutoplay(heroVideo);
 
   document.querySelectorAll<HTMLElement>(".slider").forEach((slider) => {
     wireSlider(slider);
@@ -207,7 +205,7 @@ const slides = slidesFor(upcoming, past);
   .intro p { grid-column: 2; margin: 0; max-width: 40rem; font-size: clamp(1.4rem, 2.3vw, 2.2rem); line-height: 1.25; }
 
   /* 3. Kacheln */
-  /* Kacheln: Titel + Text in einer transparenten Box IM Bild; beim Hovern verschwindet die Box und das Bild zoomt */
+  /* Kacheln: Titel + Text in einer transparenten Box IM Bild; beim Hovern tritt die Box leicht zurück und das Bild zoomt */
   .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
   .tile { position: relative; display: block; overflow: hidden; text-decoration: none; color: var(--light-100); }
   .tile-media { overflow: hidden; }
@@ -218,13 +216,14 @@ const slides = slidesFor(upcoming, past);
     padding: 1.3rem 1.5rem 1.4rem;
     background: rgba(2, 24, 89, 0.45); /* stark transparent, Text bleibt auch auf hellen Bildern lesbar */
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition: background 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
   .tile h2 { margin: 0 0 0.6rem; font-size: clamp(1.6rem, 2.4vw, 2.4rem); }
   .tile p { margin: 0; font-size: 1.05rem; line-height: 1.45; color: rgba(242, 242, 242, 0.9); }
-  /* Nur auf Geräten mit Maus: Box ausblenden, Bild freigeben (Touch: Box bleibt sichtbar) */
+  /* Nur auf Geräten mit Maus: Box wird kleiner und durchsichtiger, bleibt aber lesbar */
+  .tile-body { transform-origin: left bottom; }
   @media (hover: hover) {
-    .tile:hover .tile-body, .tile:focus-visible .tile-body { opacity: 0; transform: translateY(12px); }
+    .tile:hover .tile-body, .tile:focus-visible .tile-body { background: rgba(2, 24, 89, 0.3); transform: scale(0.96); }
   }
   @media (prefers-reduced-motion: reduce) { .tile img, .tile-body { transition: none; } }
 
@@ -244,8 +243,12 @@ const slides = slidesFor(upcoming, past);
 
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
+  /* Abschnitts-Titel sind Links zur jeweiligen Seite */
+  .title-link { color: inherit; text-decoration: none; text-underline-offset: 0.12em; text-decoration-thickness: 0.06em; }
+  .title-link:hover, .title-link:focus-visible { text-decoration-line: underline; }
+  .banner-headline .title-link { display: grid; justify-items: end; }
   .band-title { margin: 0 0 4rem; padding-left: 0.5rem; font-size: clamp(2.6rem, 4.6vw, 4.6rem); }
-  .band-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .band-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 22rem)); justify-content: center; gap: 18px; }
   .band-card { display: block; background: var(--light-100); color: var(--navy-800); padding: 1.2rem 1.2rem 1.6rem; text-decoration: none; }
   .band-card img, .band-blank { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; margin-bottom: 1.2rem; }
   .band-blank { background: #fff; }
@@ -266,5 +269,8 @@ const slides = slidesFor(upcoming, past);
     .tile-body { padding: 1rem 1.1rem; }
     .tile p { font-size: 0.95rem; }
     .band-grid { grid-template-columns: 1fr 1fr; }
+    /* ungerade Anzahl: letzte Karte über die volle Breite statt allein in der Ecke */
+    .band-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .band-card:last-child:nth-child(odd) :is(img, .band-blank) { aspect-ratio: 2 / 1; }
   }
 </style>

@@ -2,10 +2,10 @@
   import Layout from "../layouts/Layout.astro";
   ---
 
-  <Layout title="Shop">
+  <Layout title="Shop" description="Das Season 2026 Kit von Gruppetto Tübingen – Trikot und Bib, gefertigt von Spatzwear. Weitere Items folgen in Kürze." image="/images/og-shop.jpg">
   <section class="shop-hero">
   <h1>Shop</h1>
-  <p class="shop-intro">Hier findet ihr unser aktuelles Kit der Saison 2026. Merch und weitere Sachen folgen in Kürze!</p>
+  <p class="shop-intro">Hier findet ihr unser aktuelles Kit der Saison 2026. Weitere Items folgen in Kürze!</p>
   </section>
 
   <section class="shop-row">
@@ -27,11 +27,7 @@
 
   <section class="shop-row shop-row-reverse">
   <div class="shop-carousel">
-  <img src="https://picsum.photos/seed/gruppetto-sticker-1/600/600" alt="Sticker Set Ansicht 1" class="carousel-img active" />
-  <img src="https://picsum.photos/seed/gruppetto-sticker-2/600/600" alt="Sticker Set Ansicht 2" class="carousel-img" />
-  <img src="https://picsum.photos/seed/gruppetto-sticker-3/600/600" alt="Sticker Set Ansicht 3" class="carousel-img" />
-  <img src="https://picsum.photos/seed/gruppetto-sticker-4/600/600" alt="Sticker Set Ansicht 4" class="carousel-img" />
-  <img src="https://picsum.photos/seed/gruppetto-sticker-5/600/600" alt="Sticker Set Ansicht 5" class="carousel-img" />
+  <div class="shop-soon" role="img" aria-label="Fotos vom Sticker Set folgen"><span>Fotos folgen</span></div>
   </div>
   <div class="shop-info">
   <h2>Gruppetto Sticker Set</h2>
@@ -47,19 +43,22 @@
   <button type="button" class="variant-btn" data-variant="schwarz">Schwarz</button>
   </div>
   </div>
-  <a href="#" class="btn shop-buy">Kaufen</a>
+  <span class="btn shop-buy is-soon" aria-disabled="true">Bald verfügbar</span>
   </div>
   </section>
   </Layout>
 
   <script>
-  document.querySelectorAll(".shop-carousel").forEach((carousel) => { const imgs = carousel.querySelectorAll("img"); let idx = 0; setInterval(() => { imgs[idx].classList.remove("active"); idx = (idx + 1) % imgs.length; imgs[idx].classList.add("active"); }, 3000); });
+  document.querySelectorAll(".shop-carousel").forEach((carousel) => { const imgs = carousel.querySelectorAll("img"); if (imgs.length < 2) return; let idx = 0; setInterval(() => { imgs[idx].classList.remove("active"); idx = (idx + 1) % imgs.length; imgs[idx].classList.add("active"); }, 3000); });
   document.querySelectorAll(".quantity-control").forEach((control) => { const input = control.querySelector(".qty-input"); const dec = control.querySelector('[data-action="decrease"]'); const inc = control.querySelector('[data-action="increase"]'); dec.addEventListener("click", () => { input.value = Math.max(1, parseInt(input.value || "1", 10) - 1); }); inc.addEventListener("click", () => { input.value = parseInt(input.value || "1", 10) + 1; }); });
   document.querySelectorAll(".variant-control").forEach((control) => { control.querySelectorAll(".variant-btn").forEach((btn) => { btn.addEventListener("click", () => { control.querySelectorAll(".variant-btn").forEach((b) => b.classList.remove("active")); btn.classList.add("active"); }); }); });
   </script>
 
   <style>
   .shop-hero { padding: 4rem 0 2rem; }
+  /* Sticker Set: noch keine Fotos, noch nicht bestellbar */
+  .shop-soon { aspect-ratio: 1; display: grid; place-items: center; background: var(--color-bg-alt, #e8e8e8); color: var(--color-text-muted); font-weight: 600; letter-spacing: 0.04em; }
+  .shop-buy.is-soon { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
   .shop-hero h1 { font-size: 2.75rem; margin-bottom: 1rem; }
   .shop-intro { color: var(--color-text-muted); font-size: 1.1rem; max-width: 42rem; }
   .shop-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center; padding: 3rem 0; }
