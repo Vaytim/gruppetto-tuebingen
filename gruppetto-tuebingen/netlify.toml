@@ -6,6 +6,22 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# Sicherheits-Header für alle Seiten (für Besucher unsichtbar)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Nicht in fremde Seiten einbetten lassen (Schutz vor Klick-Tricks)
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    # Dateien nur als das ausliefern, was sie sind
+    X-Content-Type-Options = "nosniff"
+    # Externe Seiten erfahren nur die Domain, nicht die genaue Unterseite
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Immer verschlüsselt (https)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    # Kamera, Mikrofon, Standort usw. werden nicht gebraucht
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+
 # Danke-Seite und Teilnehmerliste nicht in Suchmaschinen
 [[headers]]
   for = "/events/danke*"
