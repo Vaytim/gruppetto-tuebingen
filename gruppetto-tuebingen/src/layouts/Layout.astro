@@ -429,7 +429,7 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
       .btn-accent:hover { background: var(--navy-700); }
 
       /* ---------- Strava: alle Links und Buttons seitenweit in Strava-Orange ---------- */
-      a[href*="strava.com"]:not(.btn):not(.btn-strava) { color: #fc5200; }
+      main a[href*="strava.com"]:not(.btn):not(.btn-strava) { color: #fc5200; } /* nur im Inhalt – Footer und Menü bleiben weiß */
       body.is-subpage main a[href*="strava.com"]:not(.btn):not(.btn-strava) { color: #c2410c; } /* dunkleres Orange auf hellem Grund, besser lesbar */
       a.btn[href*="strava.com"], a.btn-strava[href*="strava.com"] { background: #fc4c02; border-color: #fc4c02; color: #fff; }
       a.btn[href*="strava.com"]:hover, a.btn-strava[href*="strava.com"]:hover { background: #d94102; border-color: #d94102; color: #fff; }
