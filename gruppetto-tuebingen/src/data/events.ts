@@ -36,6 +36,7 @@ export interface GruppettoEvent {
 
 /** Datum als "12. Dezember 2026" */
 export function germanDateLabel(dateISO: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return "Termin folgt"; // Event ohne festen Termin (tbd)
   return new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(`${dateISO}T12:00:00Z`),
   );
@@ -146,7 +147,8 @@ export function findEvent(id: string): GruppettoEvent | undefined {
 
 /** Anmeldeschluss: closesAt oder Beginn des Event-Tages (Europe/Berlin). */
 export function registrationClosesAt(event: GruppettoEvent): Date {
-  const raw = event.registration?.closesAt ?? `${event.dateISO}T00:00`;
+  // Ohne festen Termin bleibt die Anmeldung offen, bis ein Datum oder ein Anmeldeschluss gesetzt ist
+  const raw = event.registration?.closesAt ?? (event.dateISO ? `${event.dateISO}T00:00` : "2999-12-31T00:00");
   // Ohne Zeitzonenangabe als deutsche Zeit interpretieren (grob: MEZ/MESZ).
   if (/[zZ]|[+-]\d\d:?\d\d$/.test(raw)) return new Date(raw);
   const month = Number(raw.slice(5, 7));
