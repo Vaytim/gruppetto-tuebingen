@@ -125,7 +125,7 @@ const faqLd = {
                 <span>{it.q}</span>
                 <span class="faq-plus" aria-hidden="true"></span>
               </summary>
-              {it.html ? <p set:html={it.html} /> : <p class="faq-todo">Antwort folgt.</p>}
+              <div class="faq-a">{it.html ? <p set:html={it.html} /> : <p class="faq-todo">Antwort folgt.</p>}</div>
             </details>
           ))}
         </div>
@@ -133,6 +133,41 @@ const faqLd = {
     ))}
   </section>
 </Layout>
+
+<script>
+  // Weiches Auf- und Zuklappen in allen Browsern (auch Safari): Höhe per Web Animation
+  const EASE = "cubic-bezier(0.76, 0, 0.24, 1)";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelectorAll<HTMLDetailsElement>(".faq-list details").forEach((d) => {
+    const body = d.querySelector<HTMLElement>(".faq-a")!;
+    let anim: Animation | null = null;
+    d.querySelector("summary")!.addEventListener("click", (e) => {
+      e.preventDefault();
+      const opening = !d.classList.contains("is-open");
+      // Zu = Höhe 0 (geschlossene details melden sonst ihre alte Höhe); läuft gerade eine Animation, dort weitermachen
+      const from = anim || d.classList.contains("is-open") ? body.getBoundingClientRect().height : 0;
+      anim?.cancel();
+      d.classList.toggle("is-open", opening);
+      if (opening) d.open = true;
+      if (reduce) {
+        d.open = opening;
+        return;
+      }
+      const to = opening ? body.scrollHeight : 0;
+      anim = body.animate(
+        [
+          { height: `${from}px`, opacity: opening ? 0 : 1 },
+          { height: `${to}px`, opacity: opening ? 1 : 0 },
+        ],
+        { duration: 450, easing: EASE },
+      );
+      anim.onfinish = () => {
+        anim = null;
+        if (!opening) d.open = false;
+      };
+    });
+  });
+</script>
 
 <style>
   .faq { padding: 3rem 0 6rem; max-width: 52rem; margin: 0 auto; text-align: center; }
@@ -168,23 +203,16 @@ const faqLd = {
     content: ""; position: absolute; left: 0; top: calc(50% - 1px); width: 100%; height: 2px; background: var(--blue-500);
   }
   .faq-plus::after { transform: rotate(90deg); }
-  details[open] .faq-plus { transform: rotate(45deg); }
+  details.is-open .faq-plus { transform: rotate(45deg); }
 
   .faq-list details p { margin: 0; padding: 0 1.4rem 1.4rem; max-width: 42rem; color: var(--color-text-muted); line-height: 1.65; }
   .faq-list details p :global(a) { color: var(--color-text); text-underline-offset: 3px; }
   .faq-list details p :global(a:hover) { text-decoration-thickness: 2px; }
   .faq-todo { font-style: italic; opacity: 0.7; }
 
-  /* weiches Aufklappen in Browsern, die das schon können */
-  @supports (interpolate-size: allow-keywords) {
-    .faq-list { interpolate-size: allow-keywords; }
-    .faq-list details::details-content {
-      height: 0; overflow: clip; transition: height 0.4s cubic-bezier(0.76, 0, 0.24, 1), content-visibility 0.4s allow-discrete;
-    }
-    .faq-list details[open]::details-content { height: auto; }
-  }
+  .faq-a { overflow: hidden; }
   @media (prefers-reduced-motion: reduce) {
-    .faq-plus, .faq-list details::details-content { transition: none; }
+    .faq-plus { transition: none; }
   }
 
   @media (max-width: 760px) {
