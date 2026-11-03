@@ -149,7 +149,9 @@ export function applyOverride(e: GruppettoEvent, ov?: EventOverride): PublicEven
 export async function allEvents(store: LedgerStore): Promise<PublicEventData[]> {
   const [stored, overrides] = await Promise.all([readStoredEvents(store), readOverrides(store)]);
   const code = codeEvents.map((e) => applyOverride(e, overrides[e.id]));
-  return [...code, ...stored.map(toPublicEvent)].sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
+  // Events ohne Datum („tbd“) ans Ende sortieren
+  const key = (e: PublicEventData) => (/^\d{4}-\d{2}-\d{2}$/.test(e.dateISO) ? `${e.dateISO} ${e.time}` : `9999-99-99 ${e.title}`);
+  return [...code, ...stored.map(toPublicEvent)].sort((a, b) => key(a).localeCompare(key(b)));
 }
 
 export type RegisteredEvent = PublicEventData & { registration: Registration };

@@ -274,17 +274,21 @@ function card(r: AdminRow, status: "heute" | "kommend" | "vergangen") {
 function editorForm(e?: AdminRow) {
   const isCode = e?.source === "code";
   const timeValue = e ? (isCode ? e.time : e.time) : "";
+  // Event aus der Verwaltung ohne festes Datum („tbd“)?
+  const isTbd = !!e && !isCode && !/^\d{4}-\d{2}-\d{2}$/.test(e.dateISO ?? "");
   return `<details class="ev-editor" id="editor" ${e ? "open" : ""}>
 <summary>${e ? `Event bearbeiten: ${h(e.title)}` : "Neues Event anlegen"}</summary>
 <form class="ev-form" method="post" action="?tab=events&action=event-save" enctype="multipart/form-data" id="ev-form">
   ${e ? `<input type="hidden" name="id" value="${h(e.id)}"><input type="hidden" name="source" value="${e.source}">` : ""}
   <input type="hidden" name="newVideoId" id="ev-new-video">
   <label class="full">Titel *<input name="title" required maxlength="120" value="${h(e?.title ?? "")}"></label>
-  <label>Datum *<input type="date" name="date" required value="${h(e?.dateISO ?? "")}"></label>
   ${
     isCode
-      ? `<label>Uhrzeit <span class="muted">(Text, z. B. „18:15 Uhr“ oder „11:00–18:00 Uhr“)</span><input name="timeText" maxlength="40" value="${h(timeValue)}"></label>`
-      : `<label>Uhrzeit<input type="time" name="time" value="${h(timeValue)}"></label>`
+      ? `<label>Datum *<input type="date" name="date" required value="${h(e?.dateISO ?? "")}"></label>
+  <label>Uhrzeit <span class="muted">(Text, z. B. „18:15 Uhr“ oder „11:00–18:00 Uhr“)</span><input name="timeText" maxlength="40" value="${h(timeValue)}"></label>`
+      : `<label>Datum ${isTbd ? "" : "*"}<input type="date" name="date" id="ev-date" ${isTbd ? "" : "required"} value="${h(e?.dateISO ?? "")}"></label>
+  <label>Uhrzeit<input type="time" name="time" id="ev-time" value="${h(isTbd ? "" : timeValue)}"></label>
+  <label class="chk full"><input type="checkbox" name="dateTbd" id="ev-date-tbd" ${isTbd ? "checked" : ""}> Termin steht noch nicht fest – Event schon anzeigen, Datum als „tbd“</label>`
   }
   <label class="full">Treffpunkt <span class="muted">(optional)</span><input name="location" maxlength="120" value="${h(e?.location ?? "")}" placeholder="z. B. Finanzamt Tübingen"></label>
   <label class="full">Beschreibung<textarea name="description" maxlength="2000">${h(e?.description ?? "")}</textarea></label>
@@ -359,6 +363,18 @@ const SCRIPT = `<script>
       if (i.name === "regPrice" || i.name === "regCapacity") i.required = regOn.checked;
     });
     regOn.addEventListener("change", sync); sync();
+  }
+  // „Termin steht noch nicht fest“: Datum/Uhrzeit sperren, wenn angehakt
+  const tbd = document.getElementById("ev-date-tbd");
+  if (tbd) {
+    const date = document.getElementById("ev-date");
+    const time = document.getElementById("ev-time");
+    const sync = () => {
+      for (const el of [date, time]) { if (!el) continue; el.disabled = tbd.checked; }
+      if (date) { date.required = !tbd.checked; if (tbd.checked) date.value = ""; }
+      if (time && tbd.checked) time.value = "";
+    };
+    tbd.addEventListener("change", sync); sync();
   }
   const form = document.getElementById("ev-form");
   const img = document.getElementById("ev-image");
@@ -522,9 +538,11 @@ export async function eventsAdminBody(store: LedgerStore, opts: { editId?: strin
   const today = todayISO();
   const editing = opts.editId ? rows.find((r) => r.id === opts.editId) : undefined;
 
+  const hasD = (r: AdminRow) => /^\d{4}-\d{2}-\d{2}$/.test(r.dateISO);
+  const key = (r: AdminRow) => (hasD(r) ? `${r.dateISO} ${r.time}` : `9999-99-99 ${r.title}`); // tbd ans Ende
   const heute = rows.filter((r) => r.dateISO === today);
-  const kommend = rows.filter((r) => r.dateISO > today).sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
-  const vergangen = rows.filter((r) => r.dateISO < today).sort((a, b) => (b.dateISO + b.time).localeCompare(a.dateISO + a.time));
+  const kommend = rows.filter((r) => !hasD(r) || r.dateISO > today).sort((a, b) => key(a).localeCompare(key(b)));
+  const vergangen = rows.filter((r) => hasD(r) && r.dateISO < today).sort((a, b) => key(b).localeCompare(key(a)));
   const withReel = rows.filter((r) => r.reelUrl || r.reelVideoId).length;
   const upcomingBooked = [...heute, ...kommend].reduce((n, r) => n + (r.registration ? r.booking.active : 0), 0);
 
@@ -691,10 +709,11 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
     return { flash: `„${title}“ gespeichert.` };
   }
 
-  // ---- Event aus der Verwaltung
-  const dateISO = str("date", 10);
-  const time = str("time", 5);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return { error: "Bitte ein gültiges Datum angeben.", ...back };
+  // ---- Event aus der Verwaltung (Datum darf „tbd“ sein = noch offen)
+  const dateTbd = form.get("dateTbd") != null;
+  const dateISO = dateTbd ? "" : str("date", 10);
+  const time = dateTbd ? "" : str("time", 5);
+  if (!dateTbd && !/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return { error: "Bitte ein gültiges Datum angeben – oder „Termin steht noch nicht fest“ ankreuzen.", ...back };
   if (time && !/^\d{2}:\d{2}$/.test(time)) return { error: "Bitte eine gültige Uhrzeit angeben.", ...back };
 
   const stored = await readStoredEvents(store);
@@ -707,7 +726,7 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
 
   let newId = existing?.id;
   if (!newId) {
-    const base = `${dateISO}-${slug(title) || "event"}`;
+    const base = `${dateISO || "tbd"}-${slug(title) || "event"}`;
     const taken = new Set([...codeEvents.map((e) => e.id), ...stored.map((e) => e.id)]);
     newId = base;
     for (let n = 2; taken.has(newId); n++) newId = `${base}-${n}`;
