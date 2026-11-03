@@ -44,19 +44,16 @@ const infoBar = {
   offseason: "Season Closed! We’ll be back 2027.",
 };
 
+// image: erscheint im geöffneten Menü rechts, sobald man über den Link fährt
 const mainNav = [
-  { label: "Weekly Rides", href: "/rides" },
-  { label: "Events", href: "/events" },
-  { label: "Rookies", href: "/rookies" },
-  { label: "Über uns", href: "/ueber-uns" },
-  { label: "Shop", href: "/shop" },
+  { label: "Weekly Rides", href: "/rides", image: "/images/weekly-rides.jpg" },
+  { label: "Events", href: "/events", image: "/images/events-everesting.jpg" },
+  { label: "Rookies", href: "/rookies", image: "/images/rookies-banner.jpg" },
+  { label: "Über uns", href: "/ueber-uns", image: "/images/ueber-uns.jpg" },
+  { label: "Shop", href: "/shop", image: "/images/shop-collage.jpg" },
 ];
-
-// Bildkacheln im geöffneten Menü (rechts)
-const menuTeasers = [
-  { label: "Unsere Routen", href: "/rides#unsere-routen", image: "/images/ueber-uns.jpg" },
-  { label: "Season 2026 Kit", href: "/shop", image: "/images/shop-collage.jpg" },
-];
+// Startbild: die aktuelle Seite, sonst der erste Menüpunkt
+const menuStart = Math.max(0, mainNav.findIndex((m) => m.href === path));
 
 const menuSmallLinks = [
   { label: "FAQ", href: "/faq" },
@@ -140,26 +137,24 @@ const footerColumns = [
     </header>
 
     <!-- Vollbild-Menü -->
-    <div class="site-menu" id="site-menu" style={`--menu-n:${mainNav.length + menuTeasers.length + menuSmallLinks.length}`} hidden>
+    <div class="site-menu" id="site-menu" style={`--menu-n:${mainNav.length + menuSmallLinks.length}`} hidden>
       <div class="site-menu-inner">
         <nav class="menu-main" aria-label="Hauptnavigation">
           {mainNav.map((item, i) => (
             <span class="menu-mask" style={`--i:${i}`}>
-              <a href={item.href} aria-current={path === item.href ? "page" : undefined}>{item.label}</a>
+              <a href={item.href} data-menu-img={i} aria-current={path === item.href ? "page" : undefined}>{item.label}</a>
             </span>
           ))}
         </nav>
-        <div class="menu-teasers">
-          {menuTeasers.map((t, i) => (
-            <a href={t.href} class="menu-teaser menu-fade" style={`--i:${mainNav.length + i}`}>
-              <img src={t.image} alt="" loading="lazy" />
-              <span>{t.label}</span>
-            </a>
+        <!-- Bild zum Menüpunkt (Vorbild Villiers): neues Bild wischt von oben nach unten über das alte -->
+        <div class="menu-media" aria-hidden="true">
+          {mainNav.map((item, i) => (
+            <img src={item.image} alt="" loading="lazy" class={i === menuStart ? "is-front" : undefined} />
           ))}
         </div>
         <nav class="menu-small" aria-label="Weitere Links">
           {menuSmallLinks.map((l, i) => (
-            <a class="menu-fade" style={`--i:${mainNav.length + menuTeasers.length + i}`} href={l.href} target={l.external ? "_blank" : undefined} rel={l.external ? "noopener" : undefined}>{l.label}{l.external && " ↗"}</a>
+            <a class="menu-fade" style={`--i:${mainNav.length + i}`} href={l.href} target={l.external ? "_blank" : undefined} rel={l.external ? "noopener" : undefined}>{l.label}{l.external && " ↗"}</a>
           ))}
         </nav>
       </div>
@@ -275,6 +270,28 @@ const footerColumns = [
       toggle.addEventListener("click", () => {
         setOpen(!isOpen);
       });
+      // Menübilder: beim Hovern/Fokussieren wischt das passende Bild von oben über das aktuelle
+      const media = [...menu.querySelectorAll<HTMLImageElement>(".menu-media img")];
+      const menuLinks = [...menu.querySelectorAll<HTMLAnchorElement>("[data-menu-img]")];
+      let shown = Math.max(0, media.findIndex((m) => m.classList.contains("is-front")));
+      const markShown = () => menuLinks.forEach((a, k) => a.classList.toggle("is-shown", k === shown));
+      markShown();
+      const showImg = (i: number) => {
+        if (i === shown || !media[i]) return;
+        media.forEach((m) => m.classList.remove("is-back", "is-front", "is-wipe"));
+        media[shown].classList.add("is-back");
+        media[i].classList.add("is-front", "is-wipe");
+        shown = i;
+        markShown();
+      };
+      menuLinks.forEach((a) => {
+        const i = Number(a.dataset.menuImg);
+        a.addEventListener("mouseenter", () => showImg(i));
+        a.addEventListener("focus", () => a.matches(":focus-visible") && showImg(i)); // nur Tastatur, nicht das Fokussieren beim Öffnen
+      });
+      // Bilder erst laden, wenn das Menü zum ersten Mal aufgeht
+      toggle.addEventListener("click", () => media.forEach((m) => (m.loading = "eager")), { once: true });
+
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && isOpen) {
           setOpen(false);
@@ -402,7 +419,7 @@ const footerColumns = [
       }
       .site-menu.is-open { transform: translateY(0); transition-delay: 0s; }
       /* Links: Text schiebt sich aus einer unsichtbaren Maske nach oben (gestaffelt) */
-      .menu-mask { display: block; width: fit-content; overflow: hidden; padding-bottom: 4px; }
+      .menu-mask { display: block; width: fit-content; overflow: hidden; padding: 0 clamp(1.4rem, 2.6vw, 2.4rem) 4px 0; } /* rechts Platz für den Punkt */
       .menu-mask > a { display: block; transform: translateY(110%); }
       .menu-fade { opacity: 0; transform: translateY(1.2rem); }
       .menu-mask > a, .menu-fade {
@@ -427,11 +444,36 @@ const footerColumns = [
         text-decoration: none; border-bottom: 2px solid currentColor;
       }
       .menu-main a:hover, .menu-main a[aria-current="page"] { border-bottom-color: var(--blue-500); border-bottom-width: 4px; }
-      .menu-teasers { display: flex; gap: var(--gutter); align-self: center; }
-      .menu-teaser { width: min(220px, 40%); text-decoration: none; font-size: 0.95rem; }
-      .menu-teaser img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; margin-bottom: 0.5rem; }
-      .menu-teaser span { text-decoration: underline; text-underline-offset: 4px; }
-      .menu-teaser:hover span { text-decoration-thickness: 2px; }
+      /* Bild rechts: erscheint beim Öffnen unscharf → scharf, beim Hovern wischt das neue von oben herein */
+      .menu-media {
+        position: relative; justify-self: center; align-self: center; grid-column: 2; grid-row: 1;
+        width: min(30vw, 27rem); aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: var(--navy-900);
+        opacity: 0; filter: blur(14px); transform: scale(0.97);
+        transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease;
+      }
+      .site-menu.is-open .menu-media {
+        opacity: 1; filter: blur(0); transform: none;
+        transition: opacity 0.7s ease 0.5s, filter 0.9s ease 0.5s, transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s;
+      }
+      .menu-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; visibility: hidden; }
+      .menu-media img.is-back, .menu-media img.is-front { visibility: visible; }
+      .menu-media img.is-front { z-index: 2; }
+      .menu-media img.is-wipe { animation: menu-wipe 0.55s cubic-bezier(0.65, 0, 0.35, 1) both; }
+      @keyframes menu-wipe {
+        from { clip-path: inset(0 0 100% 0); transform: scale(1.12) translateY(-4%); }
+        to { clip-path: inset(0 0 0 0); transform: none; }
+      }
+      /* kleiner Punkt hinter dem Menüpunkt, dessen Bild gerade zu sehen ist */
+      .menu-main a::after {
+        content: ""; position: absolute; right: -0.38em; top: 0.48em; width: 0.2em; height: 0.2em; border-radius: 50%;
+        background: var(--light-100); transform: scale(0); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .menu-main a { position: relative; }
+      .menu-main a.is-shown::after { transform: scale(1); }
+      @media (prefers-reduced-motion: reduce) {
+        .menu-media, .site-menu.is-open .menu-media { transition: none; filter: none; }
+        .menu-media img.is-wipe { animation: none; }
+      }
       .menu-small { grid-column: 1 / -1; display: grid; gap: 0.4rem; font-size: 0.95rem; }
       .menu-small a { width: fit-content; text-underline-offset: 4px; }
       .menu-small a:hover { text-decoration-thickness: 2px; }
@@ -511,7 +553,8 @@ const footerColumns = [
       @media (max-width: 760px) {
         .site-menu-inner { grid-template-columns: 1fr; padding-top: calc(var(--info-bar-h) + 7rem); }
         .menu-main { padding-left: 0; }
-        .menu-teaser { width: 50%; }
+        .menu-media { display: none; } /* auf dem Handy gibt es kein Hovern */
+        .menu-main a::after { display: none; }
         .main-contained { padding-top: calc(var(--gutter) + 7rem); }
         .contact, .contact-form { grid-template-columns: 1fr; }
         .footer-top { grid-template-columns: 1fr; }
