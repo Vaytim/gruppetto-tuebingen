@@ -8,11 +8,14 @@ import { applyLive, type LiveData } from "../../src/lib/live-html.ts";
 
 const EVENT_PAGES = new Set(["/", "/rookies"]);
 
+const problems: string[] = [];
 async function getJSON<T>(url: URL): Promise<T | null> {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(2500), headers: { accept: "application/json" } });
+    if (!res.ok) problems.push(`${url.pathname}:${res.status}`);
     return res.ok ? ((await res.json()) as T) : null;
-  } catch {
+  } catch (e) {
+    problems.push(`${url.pathname}:${e instanceof Error ? e.message : String(e)}`);
     return null;
   }
 }
@@ -24,6 +27,7 @@ export default async (req: Request, context: Context) => {
   const headers = new Headers(res.headers);
   headers.delete("content-length");
 
+  problems.length = 0;
   try {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -35,8 +39,12 @@ export default async (req: Request, context: Context) => {
     ]);
     const html = applyLive(path, original, { events: Array.isArray(events) ? events : null, settings, seats });
     headers.set("cache-control", "public, max-age=0, must-revalidate");
+    // Diagnose (im Browser unter Netzwerk → Antwort-Header sichtbar)
+    headers.set("x-gt-live", problems.length ? `teilweise: ${problems.join(", ")}`.slice(0, 300) : "ok");
     return new Response(html, { status: res.status, headers });
-  } catch {
+  } catch (e) {
+    console.error("live-content", e);
+    headers.set("x-gt-live", `fehler: ${e instanceof Error ? e.message : String(e)}`.slice(0, 300));
     return new Response(original, { status: res.status, headers });
   }
 };
