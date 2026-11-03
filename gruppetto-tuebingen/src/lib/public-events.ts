@@ -36,11 +36,19 @@ export function todayISO(now = new Date()): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(now);
 }
 
-/** Kommende Events (ab dem nächsten, aufsteigend) + vergangene (neueste zuerst, standardmäßig die letzten 4) */
+/** Hat das Event ein festes Datum? Leeres dateISO = „Termin folgt“ (tbd). */
+export const hasDate = (e: { dateISO: string }) => /^\d{4}-\d{2}-\d{2}$/.test(e.dateISO);
+
+/** Sortierschlüssel: Events ohne Datum („tbd“) kommen ans Ende der kommenden Events. */
+export const eventSortKey = (e: { dateISO: string; time: string; title: string }) =>
+  hasDate(e) ? `${e.dateISO} ${e.time}` : `9999-99-99 ${e.title}`;
+
+/** Kommende Events (ab dem nächsten, aufsteigend; tbd zuletzt) + vergangene (neueste zuerst, standardmäßig die letzten 4) */
 export function splitEvents(all: PublicEvent[], pastLimit = 4, today = todayISO()) {
-  const sorted = all.slice().sort((a, b) => (a.dateISO + a.time).localeCompare(b.dateISO + b.time));
-  const upcoming = sorted.filter((e) => e.dateISO >= today);
-  const past = sorted.filter((e) => e.dateISO < today).reverse().slice(0, pastLimit);
+  const sorted = all.slice().sort((a, b) => eventSortKey(a).localeCompare(eventSortKey(b)));
+  // Ohne Datum = noch kommend (Termin folgt), nie „vergangen“
+  const upcoming = sorted.filter((e) => !hasDate(e) || e.dateISO >= today);
+  const past = sorted.filter((e) => hasDate(e) && e.dateISO < today).reverse().slice(0, pastLimit);
   return { upcoming, past };
 }
 
@@ -190,6 +198,7 @@ export function wireSlider(slider: HTMLElement) {
 }
 
 export const shortDate = (iso: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "tbd."; // Event ohne festen Termin
   const [y, m, d] = iso.split("-");
   return `${d.padStart(2, "0")}.${m.padStart(2, "0")}.${y.slice(2)}`; // z. B. 07.04.27
 };
@@ -204,6 +213,7 @@ export function nextRookieRide(all: PublicEvent[], today = todayISO()): PublicEv
 
 /** Kurzer Termin-Text, z. B. "Mi, 12. November · 18:15 Uhr" */
 export function rookieDateText(e: PublicEvent): string {
+  if (!hasDate(e)) return `Termin folgt${e.time ? ` · ${e.time}` : ""}`;
   const wd = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "long", timeZone: "UTC" }).format(
     new Date(`${e.dateISO}T12:00:00Z`),
   );

@@ -4,7 +4,7 @@
 // Beim Scrollen rastet die Box ein: runter geht es erst nach dem letzten kommenden Event weiter,
 // hoch erst nach dem ältesten vergangenen.
 import type Lenis from "lenis";
-import { esc, eventAnchor, splitEvents, type PublicEvent } from "./public-events.ts";
+import { esc, eventAnchor, hasDate, splitEvents, type PublicEvent } from "./public-events.ts";
 
 const FALLBACK_IMG = "/images/gruppe-ausfahrt.jpg";
 
@@ -26,19 +26,20 @@ interface DialItem {
 
 const weekday = (iso: string) =>
   new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
-const bigDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`;
+// Großes Datum unten links: Tag.Monat. – oder „tbd.“, wenn der Termin noch nicht feststeht
+const bigDate = (e: PublicEvent) => (hasDate(e) ? `${e.dateISO.slice(8, 10)}.${e.dateISO.slice(5, 7)}.` : "tbd.");
 
 /** Reihenfolge: vergangene (älteste oben) → kommende (aufsteigend) → „Mehr folgt“ */
 function dialItems(all: PublicEvent[]) {
   const { upcoming, past } = splitEvents(all, 8);
-  const meta = (e: PublicEvent) => [weekday(e.dateISO), e.time, e.location].filter(Boolean).join(" · ");
+  const meta = (e: PublicEvent) => [hasDate(e) ? weekday(e.dateISO) : "", e.time, e.location].filter(Boolean).join(" · ");
   const video = (e: PublicEvent) => (e.reelVideo && e.reelVideo.startsWith("/api/event-video?") ? e.reelVideo : "");
   const items: DialItem[] = [
     ...past.slice().reverse().map((e): DialItem => ({
       id: e.id,
       title: e.title,
       kicker: `Vergangenes Event · ${e.dateISO.slice(0, 4)}`,
-      date: bigDate(e.dateISO),
+      date: bigDate(e),
       meta: meta(e),
       href: `/events#${eventAnchor(e.id)}`,
       cta: e.hasMedia ? "Fotos & Videos" : "Zum Event",
@@ -51,7 +52,7 @@ function dialItems(all: PublicEvent[]) {
       id: e.id,
       title: e.title,
       kicker: i === 0 ? "Nächstes Event" : "Kommendes Event",
-      date: bigDate(e.dateISO),
+      date: bigDate(e),
       meta: meta(e),
       href: `/events#${eventAnchor(e.id)}`,
       cta: e.registration ? "Zur Anmeldung" : "Zum Event",
