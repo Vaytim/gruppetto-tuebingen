@@ -84,17 +84,6 @@ const footerColumns = [
 ];
 
 // Menü-Button: Rennrad-Laufrad (SVG). 20 Speichen, abwechselnd zur linken/rechten Nabenseite versetzt.
-const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
-  const a = (i / 20) * Math.PI * 2;
-  const off = (i % 2 ? 1 : -1) * 0.18; // leicht tangential wie bei echten Laufrädern
-  const r0 = 2.6, r1 = 16.6;
-  return {
-    x1: (24 + r0 * Math.cos(a + off)).toFixed(2),
-    y1: (24 + r0 * Math.sin(a + off)).toFixed(2),
-    x2: (24 + r1 * Math.cos(a)).toFixed(2),
-    y2: (24 + r1 * Math.sin(a)).toFixed(2),
-  };
-});
 ---
 
 <!doctype html>
@@ -141,13 +130,7 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
     <!-- Kopf: Menü-Button links (fixiert), Wortmarke rechts -->
     <header class="site-header">
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Menü öffnen">
-        <svg class="menu-wheel" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-          <circle class="tire" cx="24" cy="24" r="21" />
-          <circle class="rim" cx="24" cy="24" r="17.4" />
-          {wheelSpokes.map((sp) => <line class="spoke" x1={sp.x1} y1={sp.y1} x2={sp.x2} y2={sp.y2} />)}
-          <line class="valve" x1="24" y1="6.8" x2="24" y2="10.6" />
-          <circle class="hub" cx="24" cy="24" r="3" />
-        </svg>
+        <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
       </button>
       <a href="/" class="wordmark" aria-label="Gruppetto Tübingen – Startseite">
         <span>gruppetto</span><span>tübingen</span>
@@ -287,19 +270,11 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
           }, SLIDE_MS);
         }
       };
-      // Laufrad dreht sich bei jedem Öffnen/Schließen 1,5 Umdrehungen vorwärts
-      let wheelTurn = 0;
-      const spin = () => {
-        wheelTurn += 540;
-        toggle.style.setProperty("--wheel-rot", `${wheelTurn}deg`);
-      };
       toggle.addEventListener("click", () => {
-        spin();
         setOpen(!isOpen);
       });
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && isOpen) {
-          spin();
           setOpen(false);
           toggle.focus();
         }
@@ -387,27 +362,27 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
         position: fixed; top: calc(var(--info-bar-h) + var(--gutter) * 1.2); left: var(--gutter); z-index: 60;
         display: grid; place-items: center; width: 50px; height: 50px; padding: 0;
         background: transparent; border: 0; cursor: pointer; border-radius: 50%;
-        color: var(--navy-800); /* Farbe wie die klickbaren Kacheln: Navy, beim Drüberfahren Akzentblau */
+        color: inherit; /* wie die Wortmarke: hell auf der dunklen Startseite, Navy auf Unterseiten; beim Drüberfahren Akzentblau */
         transition: top 0.2s ease, color 0.2s ease;
       }
       body.scrolled .menu-toggle { top: var(--gutter); }
       .menu-toggle:hover { color: var(--blue-500); }
-      /* Geöffnetes Menü (Navy-Hintergrund): Rad hell, damit es sichtbar bleibt */
+      /* Geöffnetes Menü (Navy-Hintergrund): Symbol hell, damit es sichtbar bleibt */
       body.menu-open .menu-toggle { color: var(--light-100); }
       body.menu-open .menu-toggle:hover { color: var(--blue-500); }
-      /* Rennrad-Laufrad – dreht sich beim Öffnen/Schließen */
-      .menu-wheel {
-        width: 46px; height: 46px; display: block; overflow: visible;
-        transform: rotate(var(--wheel-rot, 0deg));
-        transition: transform 0.9s cubic-bezier(0.22, 0.8, 0.25, 1);
+      /* Menü-Symbol: zwei Linien (unten kürzer); beim Drüberfahren gleich lang, geöffnet ein X */
+      .menu-icon { position: relative; display: block; width: 34px; height: 14px; }
+      .menu-icon span {
+        position: absolute; left: 0; height: 2.5px; width: 100%; background: currentColor; border-radius: 2px;
+        transition: transform 0.45s cubic-bezier(0.76, 0, 0.24, 1), width 0.3s cubic-bezier(0.76, 0, 0.24, 1), top 0.45s cubic-bezier(0.76, 0, 0.24, 1);
       }
-      .menu-wheel circle, .menu-wheel line { fill: none; stroke: currentColor; }
-      .menu-wheel .tire { stroke-width: 4.2; }
-      .menu-wheel .rim { stroke-width: 1.6; }
-      .menu-wheel .spoke { stroke-width: 0.7; stroke-linecap: round; }
-      .menu-wheel .valve { stroke-width: 2; stroke-linecap: round; }
-      .menu-wheel .hub { fill: currentColor; stroke: none; }
-      @media (prefers-reduced-motion: reduce) { .menu-wheel { transition: none; } }
+      .menu-icon span:first-child { top: 0; }
+      .menu-icon span:last-child { top: calc(100% - 2.5px); width: 62%; }
+      .menu-toggle:hover .menu-icon span:last-child { width: 100%; }
+      .menu-toggle[aria-expanded="true"] .menu-icon span { top: calc(50% - 1.25px); width: 100%; }
+      .menu-toggle[aria-expanded="true"] .menu-icon span:first-child { transform: rotate(45deg) scaleX(0.85); }
+      .menu-toggle[aria-expanded="true"] .menu-icon span:last-child { transform: rotate(-45deg) scaleX(0.85); }
+      @media (prefers-reduced-motion: reduce) { .menu-icon span { transition: none; } }
       .menu-toggle:focus-visible { outline: 2px solid var(--color-highlight); outline-offset: 4px; }
 
       .wordmark {
