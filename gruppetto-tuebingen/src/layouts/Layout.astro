@@ -447,7 +447,9 @@ const footerColumns = [
       /* Bild rechts: erscheint beim Öffnen unscharf → scharf, beim Hovern wischt das neue von oben herein */
       .menu-media {
         position: relative; justify-self: center; align-self: center; grid-column: 2; grid-row: 1;
-        width: min(30vw, 27rem); aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: var(--navy-900);
+        /* Bilder sind 3:2 – ganz zeigen, so groß wie die rechte Spalte und die Bildschirmhöhe es zulassen */
+        width: min(100%, 62rem, calc((100svh - var(--info-bar-h) - 16rem) * 1.5)); aspect-ratio: 3 / 2;
+        border-radius: 10px; overflow: hidden; background: var(--navy-900);
         opacity: 0; filter: blur(14px); transform: scale(0.97);
         transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease;
       }
