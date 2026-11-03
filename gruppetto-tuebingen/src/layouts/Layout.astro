@@ -155,24 +155,26 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
     </header>
 
     <!-- Vollbild-Menü -->
-    <div class="site-menu" id="site-menu" hidden>
+    <div class="site-menu" id="site-menu" style={`--menu-n:${mainNav.length + menuTeasers.length + menuSmallLinks.length}`} hidden>
       <div class="site-menu-inner">
         <nav class="menu-main" aria-label="Hauptnavigation">
-          {mainNav.map((item) => (
-            <a href={item.href} aria-current={path === item.href ? "page" : undefined}>{item.label}</a>
+          {mainNav.map((item, i) => (
+            <span class="menu-mask" style={`--i:${i}`}>
+              <a href={item.href} aria-current={path === item.href ? "page" : undefined}>{item.label}</a>
+            </span>
           ))}
         </nav>
         <div class="menu-teasers">
-          {menuTeasers.map((t) => (
-            <a href={t.href} class="menu-teaser">
+          {menuTeasers.map((t, i) => (
+            <a href={t.href} class="menu-teaser menu-fade" style={`--i:${mainNav.length + i}`}>
               <img src={t.image} alt="" loading="lazy" />
               <span>{t.label}</span>
             </a>
           ))}
         </div>
         <nav class="menu-small" aria-label="Weitere Links">
-          {menuSmallLinks.map((l) => (
-            <a href={l.href} target={l.external ? "_blank" : undefined} rel={l.external ? "noopener" : undefined}>{l.label}{l.external && " ↗"}</a>
+          {menuSmallLinks.map((l, i) => (
+            <a class="menu-fade" style={`--i:${mainNav.length + menuTeasers.length + i}`} href={l.href} target={l.external ? "_blank" : undefined} rel={l.external ? "noopener" : undefined}>{l.label}{l.external && " ↗"}</a>
           ))}
         </nav>
       </div>
@@ -259,8 +261,9 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
     <script>
       const toggle = document.querySelector<HTMLButtonElement>(".menu-toggle")!;
       const menu = document.getElementById("site-menu")!;
-      // Menü gleitet von oben herein (und beim Schließen wieder hoch)
-      const SLIDE_MS = 600;
+      // Menü gleitet von unten herein, danach schieben sich die Links nacheinander aus einer Maske nach oben.
+      // Beim Schließen verschwinden erst die Links (umgekehrte Reihenfolge), dann gleitet die Fläche nach unten.
+      const SLIDE_MS = 900;
       let isOpen = false;
       let closeTimer: ReturnType<typeof setTimeout> | undefined;
       const setOpen = (open: boolean) => {
@@ -415,11 +418,28 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
 
       /* ---------- Vollbild-Menü ---------- */
       .site-menu {
+        --menu-ease: cubic-bezier(0.76, 0, 0.24, 1);
         position: fixed; inset: 0; z-index: 50; background: var(--navy-800); overflow-y: auto;
-        transform: translateY(-100%); transition: transform 0.6s cubic-bezier(0.45, 0, 0.55, 1); /* gleichmäßig von oben */
+        /* Schließen: Fläche gleitet nach unten, nachdem die Links weg sind */
+        transform: translateY(100%); transition: transform 0.55s var(--menu-ease) 0.3s;
       }
-      .site-menu.is-open { transform: translateY(0); }
-      @media (prefers-reduced-motion: reduce) { .site-menu { transition: none; } }
+      .site-menu.is-open { transform: translateY(0); transition-delay: 0s; }
+      /* Links: Text schiebt sich aus einer unsichtbaren Maske nach oben (gestaffelt) */
+      .menu-mask { display: block; width: fit-content; overflow: hidden; padding-bottom: 4px; }
+      .menu-mask > a { display: block; transform: translateY(110%); }
+      .menu-fade { opacity: 0; transform: translateY(1.2rem); }
+      .menu-mask > a, .menu-fade {
+        transition: transform 0.3s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.25s ease, border-color 0.2s ease;
+        transition-delay: calc((var(--menu-n) - var(--i)) * 0.02s), calc((var(--menu-n) - var(--i)) * 0.02s), 0s;
+      }
+      .site-menu.is-open .menu-mask > a, .site-menu.is-open .menu-fade {
+        transform: none; opacity: 1;
+        transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease, border-color 0.2s ease;
+        transition-delay: calc(0.35s + var(--i) * 0.06s), calc(0.35s + var(--i) * 0.06s), 0s;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .site-menu, .menu-mask > a, .menu-fade, .site-menu.is-open .menu-mask > a, .site-menu.is-open .menu-fade { transition: none; }
+      }
       .site-menu-inner {
         min-height: 100%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto;
         gap: 2rem var(--gutter); padding: calc(var(--info-bar-h) + 9rem) var(--gutter) var(--gutter);
@@ -429,7 +449,6 @@ const wheelSpokes = Array.from({ length: 20 }, (_, i) => {
         width: fit-content; font-family: var(--font-title); font-size: clamp(2.2rem, 4.2vw, 4rem); line-height: 1.1;
         text-decoration: none; border-bottom: 2px solid currentColor;
       }
-      .menu-main a { transition: border-color 0.2s ease; }
       .menu-main a:hover, .menu-main a[aria-current="page"] { border-bottom-color: var(--blue-500); border-bottom-width: 4px; }
       .menu-teasers { display: flex; gap: var(--gutter); align-self: center; }
       .menu-teaser { width: min(220px, 40%); text-decoration: none; font-size: 0.95rem; }
