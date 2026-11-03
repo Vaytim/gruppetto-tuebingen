@@ -125,6 +125,8 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
  * auch mit wenigen Events gefüllt wirkt. Anzahl hier ändern.
  */
 export const TBD_SLIDES = 3;
+/** Events-Seite (Raster mit 4 Spalten): so viele tbd-Kacheln, dass die letzte Reihe voll ist */
+export const tbdFill = (count: number) => (4 - (count % 4)) % 4;
 export function tbdSlidesHTML(count = TBD_SLIDES): string {
   return Array.from(
     { length: count },
