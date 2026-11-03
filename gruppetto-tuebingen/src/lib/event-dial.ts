@@ -4,7 +4,7 @@
 // Beim Scrollen rastet die Box ein: runter geht es erst nach dem letzten kommenden Event weiter,
 // hoch erst nach dem ältesten vergangenen.
 import type Lenis from "lenis";
-import { esc, eventAnchor, splitEvents, type PublicEvent } from "./public-events";
+import { esc, eventAnchor, splitEvents, type PublicEvent } from "./public-events.ts";
 
 const FALLBACK_IMG = "/images/gruppe-ausfahrt.jpg";
 
@@ -91,7 +91,7 @@ function seatsHTML(kind: string, reg: boolean, s?: SeatStatus[string]): string {
 }
 
 /** Inneres HTML der Box – im Build und im Browser gleich */
-export function dialHTML(all: PublicEvent[]): string {
+export function dialHTML(all: PublicEvent[], seats: SeatStatus = {}): string {
   const { items, start, down } = dialItems(all);
   const s = items[start];
   const bgs = items
@@ -118,13 +118,14 @@ export function dialHTML(all: PublicEvent[]): string {
   ${line("evd-date", esc(s.date))}
   ${line("evd-name", esc(s.title))}
   ${line("evd-meta", esc(s.meta))}
-  ${line("evd-seats", seatsHTML(s.kind, s.reg))}
+  ${line("evd-seats", seatsHTML(s.kind, s.reg, seats[s.id]))}
   <span class="evd-l evd-cta-wrap"><a class="btn evd-cta" href="${esc(s.href)}">${esc(s.cta)} →</a></span>
 </div>
 <div class="evd-nav">
   <button type="button" data-step="-1" aria-label="Vorheriges Event">↑</button>
   <button type="button" data-step="1" aria-label="Nächstes Event">↓</button>
-</div>`;
+</div>
+<i hidden data-dial-end></i>`; // Endmarke für die Edge Function (live-html.ts)
 }
 
 /** Steuerung. Gibt ein Objekt mit Aufräumfunktion und Platz-Update zurück. */

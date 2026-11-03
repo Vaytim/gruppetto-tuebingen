@@ -1,5 +1,5 @@
 // Gemeinsame Logik für Events-Seite und Startseite (läuft im Build UND im Browser).
-import { events as codeEvents, registrationClosesAt } from "../data/events";
+import { events as codeEvents, registrationClosesAt } from "../data/events.ts";
 
 export interface PublicEvent {
   id: string;
