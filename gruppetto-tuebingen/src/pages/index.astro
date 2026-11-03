@@ -8,8 +8,9 @@
 //  6. Farbiges Band mit 4 Karten + Button
 // Alle Texte/Bilder unten in den Konstanten anpassen.
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
-import "../styles/event-slider.css";
+import { codeEventsPublic, nextRookieRide, shortDate, splitEvents } from "../lib/public-events";
+import { dialHTML } from "../lib/event-dial";
+import "../styles/event-dial.css";
 
 const hero = {
   // Hintergrundvideo: stumm, Dauerschleife. Poster = Standbild, bis das Video lädt.
@@ -61,8 +62,8 @@ const shopBand = {
 const { upcoming } = splitEvents(codeEventsPublic(), 0);
 const rookie = nextRookieRide(codeEventsPublic());
 const next = upcoming[0];
-// Im Wipe nur kommende Events + „tbd“-Kacheln; Vergangenes gibt's auf der Events-Seite
-const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
+// Events-Rad: oben vergangene, unten kommende Events – Start beim nächsten Event
+const dial = dialHTML(codeEventsPublic());
 ---
 
 <Layout title="Startseite" description="Gruppetto Tübingen – die offene Rennrad- und Gravel-Community rund um Tübingen. Weekly Rides mittwochs und donnerstags, Rookie Rides für Einsteiger:innen und eigene Events." image="/images/og-startseite.jpg" fullBleed>
@@ -110,25 +111,9 @@ const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
     </a>
   </section>
 
-  <!-- 5. Slider Events -->
-  <section class="slider" aria-labelledby="slider-title">
-    <div class="slider-head">
-      <div>
-        <h2 id="slider-title"><a class="title-link" href="/events">Events</a></h2>
-        <p class="slider-sub"><a href="/events">Alle kommenden und vergangenen Events – plus Fotos &amp; Videos →</a></p>
-      </div>
-      <div class="slider-nav">
-        <button type="button" data-dir="-1" aria-label="Zurück">←</button>
-        <button type="button" data-dir="1" aria-label="Weiter">→</button>
-      </div>
-    </div>
-    <!-- Wipe: beim Runterscrollen wandern die Events nach links durch (Touch-Geräte: seitlich wischen) -->
-    <div class="wipe-runway" id="home-wipe">
-      <div class="wipe-viewport">
-        <div class="wipe-strip" id="home-events" set:html={slides} />
-        <div class="wipe-progress" aria-hidden="true"></div>
-      </div>
-    </div>
+  <!-- 5. Events-Rad (Vorbild SWSH): Bild füllt die Box, rechts drehen sich die Titel -->
+  <section class="evd-section" aria-labelledby="evd-title">
+    <div class="evd" id="home-dial" tabindex="0" set:html={dial} />
   </section>
 
   <!-- 5b. Claim über einem Gruppenfoto (volle Breite) -->
@@ -158,8 +143,12 @@ const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
 </Layout>
 
 <script>
-  import { ensureAutoplay, initReelHover, initWipe } from "../lib/motion";
-  import { fetchEvents, codeEventsPublic, fetchRookieFull, nextRookieRide, shortDate, showRookieStatus, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
+  import { ensureAutoplay } from "../lib/motion";
+  import { fetchEvents, codeEventsPublic, fetchRookieFull, nextRookieRide, shortDate, showRookieStatus, splitEvents } from "../lib/public-events";
+  import { dialHTML, initDial } from "../lib/event-dial";
+
+  const dialBox = document.getElementById("home-dial")!;
+  let stopDial = initDial(dialBox);
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
   Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
@@ -178,8 +167,9 @@ const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
   fetchEvents().then((all) => {
     if (!all) return;
     const { upcoming } = splitEvents(all, 0);
-    const strip = document.getElementById("home-events");
-    if (strip) strip.innerHTML = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
+    stopDial();
+    dialBox.innerHTML = dialHTML(all);
+    stopDial = initDial(dialBox);
     const next = upcoming[0];
     const hero = document.querySelector<HTMLAnchorElement>(".hero-date");
     if (hero) {
@@ -195,12 +185,6 @@ const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
   const heroVideo = document.querySelector<HTMLVideoElement>(".hero video");
   if (heroVideo) ensureAutoplay(heroVideo);
 
-  // Events-Wipe wie bisher auf der Events-Seite: Abschnitt bleibt stehen, Karten wandern nach links
-  const wipe = initWipe(document.getElementById("home-wipe")!);
-  document.querySelectorAll<HTMLButtonElement>(".slider .slider-nav button").forEach((b) =>
-    b.addEventListener("click", () => wipe.step(Number(b.dataset.dir))),
-  );
-  initReelHover(document.getElementById("home-events")!);
 </script>
 
 <style>
@@ -282,9 +266,6 @@ const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
 
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
-  .slider-sub { margin: 0.8rem 0 0; font-size: 1.1rem; }
-  .slider-sub a { color: var(--color-text-muted); text-decoration: none; text-underline-offset: 4px; }
-  .slider-sub a:hover { color: var(--color-text); text-decoration: underline; }
   /* Abschnitts-Titel sind Links zur jeweiligen Seite */
   .title-link { color: inherit; text-decoration: none; text-underline-offset: 0.12em; text-decoration-thickness: 0.06em; }
   .title-link:hover, .title-link:focus-visible { text-decoration-line: underline; }
