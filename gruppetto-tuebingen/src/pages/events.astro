@@ -68,7 +68,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
           Passwort
           <input name="password" type="password" autocomplete="current-password" required maxlength="200" />
         </label>
-        <p class="form-hint" style="text-align:left;margin-top:.6rem">Das Passwort bekommst du von uns – frag einfach bei der nächsten Ausfahrt oder auf Instagram.</p>
+        <p class="form-hint" style="text-align:left;margin-top:.6rem">Jedes Event hat sein eigenes Passwort. Es steht in deiner Anmeldebestätigung – oder frag uns bei der nächsten Ausfahrt.</p>
       </div>
       <p class="form-error" role="alert" hidden></p>
       <button type="submit" class="btn-pay" data-step="password">Öffnen</button>
@@ -220,12 +220,12 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
   const mediaForm = document.getElementById("media-form") as HTMLFormElement;
   const mediaError = mediaForm.querySelector<HTMLElement>(".form-error")!;
   const mediaOpen = mediaForm.querySelector<HTMLAnchorElement>(".media-open")!;
-  const PW_KEY = "gt-medien-pw";
+  const pwKey = () => `gt-medien-pw:${mediaEventId}`; // pro Event gemerkt (nur in diesem Tab)
   let mediaEventId = "";
   const showStep = (step: "password" | "open") =>
     mediaForm.querySelectorAll<HTMLElement>("[data-step]").forEach((el) => (el.hidden = el.dataset.step !== step));
-  const readPw = () => { try { return sessionStorage.getItem(PW_KEY) ?? ""; } catch { return ""; } };
-  const savePw = (pw: string) => { try { sessionStorage.setItem(PW_KEY, pw); } catch {} };
+  const readPw = () => { try { return sessionStorage.getItem(pwKey()) ?? ""; } catch { return ""; } };
+  const savePw = (pw: string) => { try { sessionStorage.setItem(pwKey(), pw); } catch {} };
 
   async function unlock(password: string): Promise<boolean> {
     mediaError.hidden = true;
