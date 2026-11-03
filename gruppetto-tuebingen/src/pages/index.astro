@@ -50,13 +50,11 @@ const shopBand = {
 
 // Events: vorab aus src/data/events.ts gerendert, im Browser durch /api/events
 // ersetzt (dann auch mit den Events aus der Verwaltung).
-const { upcoming, past } = splitEvents(codeEventsPublic(), 4); // die letzten 4 vergangenen
+const { upcoming } = splitEvents(codeEventsPublic(), 0);
 const rookie = nextRookieRide(codeEventsPublic());
 const next = upcoming[0];
-// Reihenfolge im Wipe: kommende Events → „tbd“-Kacheln → Rückblick (jüngstes vergangenes Event zuerst)
-const slidesFor = (u: typeof upcoming, p: typeof past) =>
-  u.map((e) => slideHTML(e)).join("") + tbdSlidesHTML() + p.map((e) => slideHTML(e, { past: true })).join("");
-const slides = slidesFor(upcoming, past);
+// Im Wipe nur kommende Events + „tbd“-Kacheln; Vergangenes gibt's auf der Events-Seite
+const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
 ---
 
 <Layout title="Startseite" description="Gruppetto Tübingen – die offene Rennrad- und Gravel-Community rund um Tübingen. Weekly Rides mittwochs und donnerstags, Rookie Rides für Einsteiger:innen und eigene Events." image="/images/og-startseite.jpg" fullBleed>
@@ -107,7 +105,10 @@ const slides = slidesFor(upcoming, past);
   <!-- 5. Slider Events -->
   <section class="slider" aria-labelledby="slider-title">
     <div class="slider-head">
-      <h2 id="slider-title"><a class="title-link" href="/events">Events</a></h2>
+      <div>
+        <h2 id="slider-title"><a class="title-link" href="/events">Events</a></h2>
+        <p class="slider-sub"><a href="/events">Alle kommenden und vergangenen Events – plus Fotos &amp; Videos →</a></p>
+      </div>
       <div class="slider-nav">
         <button type="button" data-dir="-1" aria-label="Zurück">←</button>
         <button type="button" data-dir="1" aria-label="Weiter">→</button>
@@ -158,11 +159,9 @@ const slides = slidesFor(upcoming, past);
   // Events inkl. der in der Verwaltung angelegten nachladen
   fetchEvents().then((all) => {
     if (!all) return;
-    const { upcoming, past } = splitEvents(all, 4);
+    const { upcoming } = splitEvents(all, 0);
     const strip = document.getElementById("home-events");
-    if (strip) {
-      strip.innerHTML = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML() + past.map((e) => slideHTML(e, { past: true })).join("");
-    }
+    if (strip) strip.innerHTML = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
     const next = upcoming[0];
     const hero = document.querySelector<HTMLAnchorElement>(".hero-date");
     if (hero) {
@@ -247,6 +246,9 @@ const slides = slidesFor(upcoming, past);
 
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
+  .slider-sub { margin: 0.8rem 0 0; font-size: 1.1rem; }
+  .slider-sub a { color: var(--color-text-muted); text-decoration: none; text-underline-offset: 4px; }
+  .slider-sub a:hover { color: var(--color-text); text-decoration: underline; }
   /* Abschnitts-Titel sind Links zur jeweiligen Seite */
   .title-link { color: inherit; text-decoration: none; text-underline-offset: 0.12em; text-decoration-thickness: 0.06em; }
   .title-link:hover, .title-link:focus-visible { text-decoration-line: underline; }
