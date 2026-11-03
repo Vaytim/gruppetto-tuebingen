@@ -63,8 +63,8 @@ function dialItems(all: PublicEvent[]) {
     {
       id: "",
       title: "Mehr folgt",
-      kicker: "Bald",
-      date: "Bald",
+      kicker: "In Planung",
+      date: "tbd.",
       meta: "Neue Events kündigen wir zuerst im Strava Club an.",
       href: "/events",
       cta: "Alle Events",
