@@ -143,12 +143,22 @@ const dial = dialHTML(codeEventsPublic());
 </Layout>
 
 <script>
-  import { ensureAutoplay } from "../lib/motion";
+  import { ensureAutoplay, initSmoothScroll, setScrollHold } from "../lib/motion";
   import { fetchEvents, codeEventsPublic, fetchRookieFull, nextRookieRide, shortDate, showRookieStatus, splitEvents } from "../lib/public-events";
-  import { dialHTML, initDial } from "../lib/event-dial";
+  import { dialHTML, initDial, type SeatStatus } from "../lib/event-dial";
 
   const dialBox = document.getElementById("home-dial")!;
-  let stopDial = initDial(dialBox);
+  const dialScroll = { lenis: initSmoothScroll(), hold: setScrollHold }; // gibt das bestehende Lenis zurück
+  let dialCtl = initDial(dialBox, dialScroll);
+  // Teilnehmerzahlen der Events mit Anmeldung
+  let seatStatus: SeatStatus = {};
+  fetch("/api/event-status", { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((s: SeatStatus) => {
+      seatStatus = s;
+      dialCtl.setSeats(s);
+    })
+    .catch(() => {});
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
   Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
@@ -167,9 +177,10 @@ const dial = dialHTML(codeEventsPublic());
   fetchEvents().then((all) => {
     if (!all) return;
     const { upcoming } = splitEvents(all, 0);
-    stopDial();
+    dialCtl.stop();
     dialBox.innerHTML = dialHTML(all);
-    stopDial = initDial(dialBox);
+    dialCtl = initDial(dialBox, dialScroll);
+    dialCtl.setSeats(seatStatus);
     const next = upcoming[0];
     const hero = document.querySelector<HTMLAnchorElement>(".hero-date");
     if (hero) {
