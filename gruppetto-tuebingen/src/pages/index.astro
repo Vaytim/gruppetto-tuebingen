@@ -262,22 +262,22 @@ const slides = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML();
   .banner-date .rookie-status { margin-top: 0.9rem; }
   @media (max-width: 760px) { .banner-date { bottom: calc(var(--gutter) + 4.2rem); } }
 
-  /* 5b. Claim: Bild über die volle Breite, Box rechts mittig über dem Gebäude, damit die Gesichter frei bleiben (Vorbild navtec.com) */
-  .claim { position: relative; display: flex; align-items: center; justify-content: flex-end; min-height: clamp(30rem, 85vh, 60rem); padding: var(--gutter); overflow: hidden; }
-  .claim-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%; }
+  /* 5b. Claim: Bild über die volle Breite, Box unten links (Vorbild navtec.com) */
+  .claim { position: relative; display: flex; align-items: flex-end; justify-content: flex-start; min-height: clamp(26rem, 68vh, 46rem); padding: var(--gutter); overflow: hidden; }
+  .claim-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 55% 8%; }
   .claim-box {
-    position: relative; z-index: 1; max-width: 32rem; margin-right: clamp(0rem, 6vw, 7rem);
+    position: relative; z-index: 1; max-width: 32rem; margin: 0 0 0 clamp(0rem, 4vw, 4rem);
     padding: clamp(1.6rem, 3vw, 2.4rem); border-radius: 10px;
-    background: rgba(2, 24, 89, 0.88); color: var(--light-100); box-shadow: 0 20px 60px rgba(2, 24, 89, 0.35);
+    background: rgba(2, 24, 89, 0.9); color: var(--light-100); box-shadow: 0 20px 60px rgba(2, 24, 89, 0.35);
   }
   .claim-box h2 { margin: 0 0 1rem; font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1.1; text-wrap: balance; }
   .claim-box p { margin: 0 0 1.6rem; font-size: 1.05rem; line-height: 1.55; color: rgba(242, 242, 242, 0.88); }
   .claim-cta { background: var(--light-100); color: var(--navy-800); }
   .claim-cta:hover { background: var(--color-accent); color: var(--color-on-accent); }
   @media (max-width: 760px) {
-    .claim { align-items: flex-end; min-height: 36rem; }
-    .claim-box { margin-right: 0; }
-    .claim-img { object-position: 40% 30%; }
+    .claim { min-height: 34rem; }
+    .claim-box { margin: 0; }
+    .claim-img { object-position: 45% 25%; }
   }
 
   /* 6. Farbiges Band */
