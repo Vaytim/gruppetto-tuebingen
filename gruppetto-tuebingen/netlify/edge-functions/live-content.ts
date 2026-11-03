@@ -1,0 +1,47 @@
+// Edge Function: holt vor dem Ausliefern die aktuellen Events und Website-Schalter und schreibt sie
+// direkt ins HTML (siehe src/lib/live-html.ts). So sieht man auf der Startseite, den Weekly Rides
+// und den Rookies sofort den aktuellen Stand statt kurz den vom letzten Build.
+// Klappt etwas nicht (Timeout, Fehler), geht die Seite unverändert raus – das Script im Browser
+// aktualisiert dann wie bisher.
+import type { Config, Context } from "@netlify/edge-functions";
+import { applyLive, type LiveData } from "../../src/lib/live-html.ts";
+
+const EVENT_PAGES = new Set(["/", "/rookies"]);
+
+async function getJSON<T>(url: URL): Promise<T | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(2500), headers: { accept: "application/json" } });
+    return res.ok ? ((await res.json()) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+export default async (req: Request, context: Context) => {
+  const res = await context.next();
+  if (!(res.headers.get("content-type") ?? "").includes("text/html")) return res;
+  const original = await res.text();
+  const headers = new Headers(res.headers);
+  headers.delete("content-length");
+
+  try {
+    const url = new URL(req.url);
+    const path = url.pathname.replace(/\/+$/, "") || "/";
+    const api = (p: string) => new URL(p, url.origin);
+    const [events, settings, seats] = await Promise.all([
+      EVENT_PAGES.has(path) ? getJSON<LiveData["events"]>(api("/api/events")) : null,
+      getJSON<LiveData["settings"]>(api("/api/site-settings")),
+      path === "/" ? getJSON<LiveData["seats"]>(api("/api/event-status")) : null,
+    ]);
+    const html = applyLive(path, original, { events: Array.isArray(events) ? events : null, settings, seats });
+    headers.set("cache-control", "public, max-age=0, must-revalidate");
+    return new Response(html, { status: res.status, headers });
+  } catch {
+    return new Response(original, { status: res.status, headers });
+  }
+};
+
+export const config: Config = {
+  path: "/*",
+  excludedPath: ["/api/*", "/_astro/*", "/images/*", "/vendor/*", "/fonts/*", "/.well-known/*", "/*.css", "/*.js", "/*.jpg", "/*.png", "/*.webp", "/*.svg", "/*.ico", "/*.mp4", "/*.webm", "/*.gpx", "/*.webmanifest", "/*.txt", "/*.xml"],
+};
