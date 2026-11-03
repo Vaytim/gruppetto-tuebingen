@@ -9,9 +9,25 @@ const next = nextRookieRide(codeEventsPublic());
 const STRAVA = "https://www.strava.com/clubs/gruppetto-tuebingen";
 
 const keyFacts = [
-  { value: "Ride Leader", label: "zeigen dir unterwegs alles" },
+  { value: "Max & Tim", label: "leiten die Rookie Rides und zeigen dir unterwegs alles" },
   { value: "max. 20", label: "Leute pro Rookie Ride" },
   { value: "31 km", label: "und rund 240 Höhenmeter" },
+];
+
+// Checkliste über "Gut zu wissen" (drei Schritte mit Sechseck-Nummer)
+const steps = [
+  {
+    title: "Jedes Rad ist willkommen",
+    text: "Ob Gravelbike oder Rennrad ist egal – jeder darf mitfahren. Hauptsache, dein Rad ist fahrbereit.",
+  },
+  {
+    title: "Helm ist Pflicht",
+    text: "Ohne Helm geht es nicht los: Wer keinen Helm trägt, kann am Ride leider nicht teilnehmen.",
+  },
+  {
+    title: "Frag uns alles",
+    text: "Der Ride ist ein offener Ort für alle Fragen rund ums Radfahren und den Radsport. Max und Tim fahren beide im Radverein Rennen – sie haben fast immer eine Antwort.",
+  },
 ];
 
 // html: erlaubt Links im Text
@@ -68,7 +84,7 @@ const facts = [
         Du bist ganz neu in der Rad-Bubble, hast gerade ein neues Rad, bist aber noch nie wirklich in einer Gruppe gefahren? Genau dafür bauen dir die Rookie Rides die Brücke.
       </p>
       <p>
-        Wir zeigen dir, welche Handzeichen man braucht, was die Do’s and Don’ts sind und worauf man in der Gruppe achten sollte. Bei diesen Touren gibt es feste Ride Leader, die dir alles erklären – und du bist nicht allein: Pro Rookie Ride fahren bis zu 20 Leute mit.
+        Wir zeigen dir, welche Handzeichen man braucht, was die Do’s and Don’ts sind und worauf man in der Gruppe achten sollte. Bei diesen Touren gibt es feste Ride Leader, die dir alles erklären – bisher haben Max und Tim die Rookie Rides geleitet. Und du bist nicht allein: Pro Rookie Ride fahren bis zu 20 Leute mit.
       </p>
     </div>
   </section>
@@ -97,6 +113,19 @@ const facts = [
         <span>{f.label}</span>
       </div>
     ))}
+  </section>
+
+  <section class="rk-steps" aria-labelledby="rk-steps-title">
+    <h2 id="rk-steps-title">Deine Checkliste</h2>
+    <ol class="rk-steps-list">
+      {steps.map((st, i) => (
+        <li>
+          <span class="rk-hex" aria-hidden="true">{i + 1}</span>
+          <h3>{st.title}</h3>
+          <p>{st.text}</p>
+        </li>
+      ))}
+    </ol>
   </section>
 
   <section class="rk-guide" aria-labelledby="rk-guide-title">
@@ -176,6 +205,32 @@ const facts = [
   .rk-stat { background: var(--color-bg-alt); padding: 1.6rem 1.4rem; display: grid; gap: 0.4rem; }
   .rk-stat strong { font-family: var(--font-title); font-weight: 500; font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1; }
   .rk-stat span { color: var(--color-text-muted); }
+
+  .rk-steps { padding: 5rem var(--gutter) 2rem; text-align: center; }
+  .rk-steps > h2 { margin: 0 0 3rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
+  .rk-steps-list {
+    list-style: none; margin: 0 auto; padding: 0; max-width: 1100px; position: relative;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem;
+  }
+  /* dünne Linie, die die drei Sechsecke verbindet */
+  .rk-steps-list::before {
+    content: ""; position: absolute; top: 2.25rem; left: calc(100% / 6); right: calc(100% / 6);
+    height: 1px; background: var(--color-text-muted); opacity: 0.5;
+  }
+  .rk-steps-list li { position: relative; display: grid; justify-items: center; align-content: start; gap: 0.8rem; }
+  .rk-hex {
+    width: 4rem; height: 4.5rem; display: grid; place-items: center;
+    background: var(--navy-800); color: var(--light-100);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    font-family: var(--font-title); font-weight: 500; font-size: 1.5rem; line-height: 1;
+    margin-bottom: 0.6rem;
+  }
+  .rk-steps-list h3 { margin: 0; font-family: var(--font-title); font-weight: 500; font-size: clamp(1.35rem, 2vw, 1.7rem); line-height: 1.15; }
+  .rk-steps-list p { margin: 0; max-width: 22rem; color: var(--color-text-muted); line-height: 1.6; }
+  @media (max-width: 760px) {
+    .rk-steps-list { grid-template-columns: 1fr; gap: 2.8rem; }
+    .rk-steps-list::before { display: none; }
+  }
 
   .rk-guide { padding: 4rem var(--gutter) 2rem; }
   .rk-guide > h2 { margin: 0 0 2rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
