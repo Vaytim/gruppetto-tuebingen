@@ -12,7 +12,12 @@
   [headers.values]
     # Nicht in fremde Seiten einbetten lassen (Schutz vor Klick-Tricks)
     X-Frame-Options = "DENY"
-    Content-Security-Policy = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    # Content-Security-Policy: legt fest, woher Inhalte geladen werden dürfen.
+    # - script-src 'self' = nur eigene Skripte; 'unsafe-inline' lässt die von Astro eingebetteten
+    #   Skripte zu, verbietet aber weiterhin das Nachladen fremder Skripte und eval() – der Kern des Schutzes.
+    # - img-src erlaubt zusätzlich die Kartenkacheln (ArcGIS) und data:-Bilder (Icons/OG).
+    # - connect-src 'self' = AJAX nur zur eigenen API. form-action 'self' = Formulare nur an die eigene Seite.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
     # Dateien nur als das ausliefern, was sie sind
     X-Content-Type-Options = "nosniff"
     # Externe Seiten erfahren nur die Domain, nicht die genaue Unterseite
