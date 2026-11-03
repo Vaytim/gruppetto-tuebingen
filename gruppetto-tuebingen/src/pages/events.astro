@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
+import { codeEventsPublic, slideHTML, splitEvents, tbdFill, tbdSlidesHTML } from "../lib/public-events";
 import "../styles/event-slider.css";
 
 // Vorab gerendert (Fallback ohne JavaScript/Backend). Im Browser wird die Liste
@@ -13,22 +13,13 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
   <section class="slider events-slider" aria-labelledby="events-title">
     <div class="slider-head">
       <h1 id="events-title">Events</h1>
-      <div class="slider-nav">
-        <button type="button" data-dir="-1" aria-label="Zurück">←</button>
-        <button type="button" data-dir="1" aria-label="Weiter">→</button>
-      </div>
     </div>
     <p class="events-intro">Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
     <p class="notice" id="cancel-notice" hidden>
       Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
     </p>
-    <!-- Wipe: beim Runterscrollen wandern alle kommenden Events nach links durch -->
-    <div class="wipe-runway" id="wipe">
-      <div class="wipe-viewport">
-        <div class="wipe-strip" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("") + tbdSlidesHTML()} />
-        <div class="wipe-progress" aria-hidden="true"></div>
-      </div>
-    </div>
+    <!-- Kommende Events als Raster (der seitliche Scroll-Effekt läuft jetzt auf der Startseite) -->
+    <div class="upcoming-grid" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("") + tbdSlidesHTML(tbdFill(upcoming.length))} />
     <p class="no-events" id="events-none" hidden={upcoming.length > 0}>Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
   </section>
 
@@ -68,8 +59,8 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
 </Layout>
 
 <script>
-  import { fetchEvents, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
-  import { getLenis, initReelHover, initWipe } from "../lib/motion";
+  import { fetchEvents, slideHTML, splitEvents, tbdFill, tbdSlidesHTML } from "../lib/public-events";
+  import { getLenis, initReelHover } from "../lib/motion";
 
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
   const form = document.getElementById("register-form") as HTMLFormElement;
@@ -182,7 +173,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     const all = await fetchEvents();
     if (all) {
       const { upcoming, past } = splitEvents(all, Infinity);
-      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("") + tbdSlidesHTML();
+      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("") + tbdSlidesHTML(tbdFill(upcoming.length));
       document.getElementById("events-none")!.hidden = upcoming.length > 0;
       document.getElementById("events-past")!.innerHTML = past.map((ev) => slideHTML(ev, { past: true, mode: "detail" })).join("");
       document.getElementById("past-section")!.hidden = past.length === 0;
@@ -196,10 +187,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     const id = decodeURIComponent(location.hash.slice(1));
     const el = id ? document.getElementById(id) : null;
     if (!el) return;
-    const go = () => {
-      if (el.closest(".wipe-strip")) wipe.scrollToCard(el, true);
-      else el.scrollIntoView({ block: "center" });
-    };
+    const go = () => el.scrollIntoView({ block: "center" });
     go();
     // Bilder/Schriften verändern das Layout noch → nach dem Laden nachjustieren
     if (document.readyState !== "complete") addEventListener("load", go, { once: true });
@@ -208,17 +196,17 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     setTimeout(() => el.classList.remove("is-target"), 2200);
   }
 
-  const wipe = initWipe(document.getElementById("wipe")!);
-  document.querySelectorAll<HTMLButtonElement>(".events-slider .slider-nav button").forEach((b) =>
-    b.addEventListener("click", () => wipe.step(Number(b.dataset.dir))),
-  );
   initReelHover();
   init();
 </script>
 
 <style is:global>
   .events-slider { padding-top: calc(var(--gutter) * 2 + 8rem); padding-bottom: 3rem; }
-  .events-slider:not(:has(.is-wiping)) .slider-nav { visibility: hidden; }
+  /* Kommende Events: Raster, so viele Spalten wie Platz ist */
+  /* Kommende Events: 4 nebeneinander (Tablet 2, Handy 1); tbd-Kacheln füllen die letzte Reihe auf */
+  .upcoming-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; padding: 1rem var(--gutter) 2rem; }
+  @media (max-width: 1100px) { .upcoming-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 760px) { .upcoming-grid { grid-template-columns: 1fr; gap: 2.5rem; } .upcoming-grid .is-tbd ~ .is-tbd { display: none; } } /* Handy: nur eine tbd-Kachel */
   .events-intro { max-width: 42rem; margin: 0 0 2.5rem; padding: 0 var(--gutter); color: var(--color-text-muted); font-size: 1.1rem; }
   .no-events { padding: 0 var(--gutter); color: var(--color-text-muted); }
   .events-slider .notice { margin: 0 var(--gutter) 1.5rem; }

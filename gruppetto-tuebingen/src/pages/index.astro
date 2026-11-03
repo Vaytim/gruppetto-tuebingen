@@ -53,9 +53,9 @@ const shopBand = {
 const { upcoming, past } = splitEvents(codeEventsPublic(), 4); // die letzten 4 vergangenen
 const rookie = nextRookieRide(codeEventsPublic());
 const next = upcoming[0];
-// Vergangene Events links vom nächsten Event (älteste ganz links), kommende rechts
+// Reihenfolge im Wipe: kommende Events → „tbd“-Kacheln → Rückblick (jüngstes vergangenes Event zuerst)
 const slidesFor = (u: typeof upcoming, p: typeof past) =>
-  [...p.slice().reverse().map((e) => slideHTML(e, { past: true })), ...u.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
+  u.map((e) => slideHTML(e)).join("") + tbdSlidesHTML() + p.map((e) => slideHTML(e, { past: true })).join("");
 const slides = slidesFor(upcoming, past);
 ---
 
@@ -113,7 +113,13 @@ const slides = slidesFor(upcoming, past);
         <button type="button" data-dir="1" aria-label="Weiter">→</button>
       </div>
     </div>
-    <div class="slider-track" tabindex="0" set:html={slides} />
+    <!-- Wipe: beim Runterscrollen wandern die Events nach links durch (Touch-Geräte: seitlich wischen) -->
+    <div class="wipe-runway" id="home-wipe">
+      <div class="wipe-viewport">
+        <div class="wipe-strip" id="home-events" set:html={slides} />
+        <div class="wipe-progress" aria-hidden="true"></div>
+      </div>
+    </div>
   </section>
 
   <!-- 6. Farbiges Band -->
@@ -133,8 +139,8 @@ const slides = slidesFor(upcoming, past);
 </Layout>
 
 <script>
-  import { ensureAutoplay, initReelHover } from "../lib/motion";
-  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, tbdSlidesHTML, wireSlider } from "../lib/public-events";
+  import { ensureAutoplay, initReelHover, initWipe } from "../lib/motion";
+  import { fetchEvents, codeEventsPublic, fetchRookieFull, nextRookieRide, shortDate, showRookieStatus, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
   Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
@@ -153,10 +159,9 @@ const slides = slidesFor(upcoming, past);
   fetchEvents().then((all) => {
     if (!all) return;
     const { upcoming, past } = splitEvents(all, 4);
-    const track = document.querySelector<HTMLElement>(".slider-track");
-    if (track) {
-      track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
-      scrollToFirstUpcoming(track);
+    const strip = document.getElementById("home-events");
+    if (strip) {
+      strip.innerHTML = upcoming.map((e) => slideHTML(e)).join("") + tbdSlidesHTML() + past.map((e) => slideHTML(e, { past: true })).join("");
     }
     const next = upcoming[0];
     const hero = document.querySelector<HTMLAnchorElement>(".hero-date");
@@ -173,13 +178,12 @@ const slides = slidesFor(upcoming, past);
   const heroVideo = document.querySelector<HTMLVideoElement>(".hero video");
   if (heroVideo) ensureAutoplay(heroVideo);
 
-  document.querySelectorAll<HTMLElement>(".slider").forEach((slider) => {
-    wireSlider(slider);
-    const track = slider.querySelector<HTMLElement>(".slider-track")!;
-    scrollToFirstUpcoming(track); // vorab gerenderte Liste
-    keepAlignedOnResize(track);
-    initReelHover(track);
-  });
+  // Events-Wipe wie bisher auf der Events-Seite: Abschnitt bleibt stehen, Karten wandern nach links
+  const wipe = initWipe(document.getElementById("home-wipe")!);
+  document.querySelectorAll<HTMLButtonElement>(".slider .slider-nav button").forEach((b) =>
+    b.addEventListener("click", () => wipe.step(Number(b.dataset.dir))),
+  );
+  initReelHover(document.getElementById("home-events")!);
 </script>
 
 <style>
