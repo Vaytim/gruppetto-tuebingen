@@ -14,8 +14,8 @@ export interface PublicEvent {
   strava?: string;
   /** Link zum Instagram-Reel */
   reelUrl?: string;
-  /** Link zu Fotos & Videos (Google Drive o. ä.) – Button bei vergangenen Events */
-  mediaUrl?: string;
+  /** Gibt es einen (passwortgeschützten) Medien-Ordner? Der Link selbst kommt nur über /api/medien. */
+  hasMedia?: boolean;
   /** Reel-Video (spielt stumm ab, sobald die Karte im Fokus ist) */
   reelVideo?: string;
   registration?: { price: number; closesAt: string };
@@ -82,7 +82,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
     (e.image ? `<img src="${esc(e.image)}" alt="" loading="lazy" />` : `<span class="slide-noimg"></span>`) +
     (video ? `<video class="slide-reel" muted loop playsinline preload="none" data-src="${esc(video)}" aria-hidden="true"></video><span class="reel-badge">▶ Reel</span>` : "");
   const reel = safeUrl(e.reelUrl);
-  const mediaLink = past ? safeUrl(e.mediaUrl) : "";
+  const hasMedia = past && !!e.hasMedia;
   const cls = `slide${past ? " is-past" : ""}${video ? " has-reel" : ""}`;
   const meta = `${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}`;
 
@@ -105,7 +105,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
   ${e.level ? `<p class="slide-loc">${esc(e.level)}</p>` : ""}
   ${e.description ? `<p class="slide-desc">${esc(e.description)}</p>` : ""}
   ${
-    r || strava || reel || mediaLink
+    r || strava || reel || hasMedia
       ? `<div class="slide-actions">
     ${
       r
@@ -117,7 +117,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
     }
     ${strava ? `<a class="btn-strava" href="${esc(strava)}" target="_blank" rel="noopener">${past ? "Aktivität auf Strava" : "Auf Strava ansehen"} ↗</a>` : ""}
     ${reel ? `<a class="btn-strava btn-reel" href="${esc(reel)}" target="_blank" rel="noopener">Reel auf Instagram ↗</a>` : ""}
-    ${mediaLink ? `<a class="btn-strava btn-media" href="${esc(mediaLink)}" target="_blank" rel="noopener">Fotos &amp; Videos ↗</a>` : ""}
+    ${hasMedia ? `<button type="button" class="btn-strava btn-media" data-media-event="${esc(e.id)}" data-media-title="${esc(e.title)}">Fotos &amp; Videos ↗</button>` : ""}
   </div>`
       : ""
   }
