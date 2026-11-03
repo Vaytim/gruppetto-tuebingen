@@ -9,9 +9,9 @@ import { applyLive, type LiveData } from "../../src/lib/live-html.ts";
 const EVENT_PAGES = new Set(["/", "/rookies"]);
 
 const problems: string[] = [];
-async function getJSON<T>(url: URL): Promise<T | null> {
+async function getJSON<T>(url: URL, pass: Headers): Promise<T | null> {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(2500), headers: { accept: "application/json" } });
+    const res = await fetch(url, { signal: AbortSignal.timeout(2500), headers: pass });
     if (!res.ok) problems.push(`${url.pathname}:${res.status}`);
     return res.ok ? ((await res.json()) as T) : null;
   } catch (e) {
@@ -32,10 +32,16 @@ export default async (req: Request, context: Context) => {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
     const api = (p: string) => new URL(p, url.origin);
+    // Zugangsdaten des Besuchers durchreichen (z. B. Passwortschutz der Deploy-Previews)
+    const pass = new Headers({ accept: "application/json" });
+    for (const h of ["cookie", "authorization"]) {
+      const v = req.headers.get(h);
+      if (v) pass.set(h, v);
+    }
     const [events, settings, seats] = await Promise.all([
-      EVENT_PAGES.has(path) ? getJSON<LiveData["events"]>(api("/api/events")) : null,
-      getJSON<LiveData["settings"]>(api("/api/site-settings")),
-      path === "/" ? getJSON<LiveData["seats"]>(api("/api/event-status")) : null,
+      EVENT_PAGES.has(path) ? getJSON<LiveData["events"]>(api("/api/events"), pass) : null,
+      getJSON<LiveData["settings"]>(api("/api/site-settings"), pass),
+      path === "/" ? getJSON<LiveData["seats"]>(api("/api/event-status"), pass) : null,
     ]);
     const html = applyLive(path, original, { events: Array.isArray(events) ? events : null, settings, seats });
     headers.set("cache-control", "public, max-age=0, must-revalidate");
