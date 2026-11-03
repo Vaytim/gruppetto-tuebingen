@@ -24,7 +24,7 @@ const groups = [
       },
       {
         q: "Muss ich mich vorher anmelden?",
-        html: `Für die Weekly Rides reicht ein kurzes „Ja“ auf Strava, damit wir wissen, mit wie vielen Leuten wir rechnen können. Tritt dafür am besten unserem <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a> bei.`,
+        html: `Für die Weekly Rides musst du dich nicht anmelden. Ein kurzes „Ja“ auf Strava hilft uns aber sehr, weil wir dann wissen, mit wie vielen Leuten wir rechnen können. Tritt dafür am besten unserem <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a> bei.`,
       },
       {
         q: "Welches Rad brauche ich?",
@@ -38,9 +38,14 @@ const groups = [
         q: "Wie lang sind die Runden?",
         html: `Ein Weekly Ride hat rund 40 km und 350 Höhenmeter, ein Rookie Ride rund 31 km und 240 Höhenmeter. Bei Events geben wir Strecke und Höhenmeter vorher bekannt.`,
       },
-      { q: "Was passiert, wenn ich nicht mithalten kann?", html: `` },
-      { q: "Darf ich mit E-Bike mitfahren?", html: `` },
-      { q: "Fahrt ihr auch bei Regen und im Winter?", html: `` },
+      {
+        q: "Was passiert, wenn ich nicht mithalten kann?",
+        html: `Keine Sorge: Bei uns wird niemand zurückgelassen. Wir warten und bringen die Runde gemeinsam zu Ende. Fürs nächste Mal empfehlen wir dir dann eine langsamere Gruppe oder einen <a href="/rookies">Rookie Ride</a>.`,
+      },
+      {
+        q: "Fahrt ihr auch bei Regen und im Winter?",
+        html: `Bei zu starkem Regen sagen wir den After Work Ride ab – das erfährst du rechtzeitig im <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a> und auf <a href="${INSTAGRAM}" target="_blank" rel="noopener">Instagram</a>. Im Winter gibt es keine offiziellen Rides, unsere <a href="/events">Events</a> laufen aber weiter.`,
+      },
     ],
   },
   {
@@ -67,9 +72,18 @@ const groups = [
         q: "Wie bleibe ich auf dem Laufenden?",
         html: `Alle Ausfahrten, Absagen und Neuigkeiten gibt es zuerst im <a href="${STRAVA}" target="_blank" rel="noopener">Strava Club</a>. Eindrücke von unterwegs findest du auf <a href="${INSTAGRAM}" target="_blank" rel="noopener">Instagram</a>.`,
       },
-      { q: "Muss ich Mitglied im Verein werden?", html: `` },
-      { q: "Gibt es ein Gruppetto-Trikot?", html: `` },
-      { q: "Wie kann ich mithelfen oder Ride Leader werden?", html: `` },
+      {
+        q: "Muss ich Mitglied im Verein werden?",
+        html: `Nein. Den Verein haben wir nur gegründet, um eine Veranstaltungshaftpflichtversicherung abschließen zu können. Mitglieder nehmen wir nicht auf – mitfahren kannst du auch so.`,
+      },
+      {
+        q: "Gibt es ein Gruppetto-Trikot?",
+        html: `Ja! Unser Gruppetto-Trikot findest du im <a href="/shop">Shop</a>.`,
+      },
+      {
+        q: "Wie kann ich mithelfen oder Ride Leader werden?",
+        html: `Schreib uns einfach über das <a href="#kontakt">Kontaktformular</a> unten auf der Seite. Wir freuen uns über jede helfende Hand.`,
+      },
       {
         q: "Bin ich bei euch versichert?",
         html: `Die Teilnahme an unseren Ausfahrten und Events erfolgt auf eigene Verantwortung. Eine eigene Haftpflichtversicherung empfehlen wir dir deshalb sehr.`,
