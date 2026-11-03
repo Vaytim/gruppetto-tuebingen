@@ -8,8 +8,10 @@ export default async () => {
   const events = await allEvents(ledgerStore());
   // Preise/Plätze bleiben serverseitig – nur das, was die Seite anzeigen muss
   return json(
-    events.map(({ registration, ...e }) => ({
+    events.map(({ registration, mediaUrl, ...e }) => ({
       ...e,
+      // Der Medien-Link bleibt geheim – er kommt nur nach dem Passwort über /api/medien
+      hasMedia: !!mediaUrl,
       registration: registration && !registration.paused
         ? { price: registration.price, closesAt: registrationClosesAt({ ...e, registration }).toISOString() }
         : undefined,
