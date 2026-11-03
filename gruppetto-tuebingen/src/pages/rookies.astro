@@ -9,7 +9,7 @@ const next = nextRookieRide(codeEventsPublic());
 const STRAVA = "https://www.strava.com/clubs/gruppetto-tuebingen";
 
 const keyFacts = [
-  { value: "Max & Tim", label: "leiten die Rookie Rides und zeigen dir unterwegs alles" },
+  { value: "Max & Tim", label: "leiten die Rookie Rides und erklären dir unterwegs alles" },
   { value: "max. 20", label: "Leute pro Rookie Ride" },
   { value: "31 km", label: "und rund 240 Höhenmeter" },
 ];
@@ -18,15 +18,15 @@ const keyFacts = [
 const steps = [
   {
     title: "Jedes Rad ist willkommen",
-    text: "Ob Gravelbike oder Rennrad ist egal – jeder darf mitfahren. Hauptsache, dein Rad ist fahrbereit.",
+    text: "Rennrad oder Gravelbike? Ganz egal. Bei uns zählt nicht das Material, sondern dass du Lust aufs Fahren hast.",
   },
   {
-    title: "Helm ist Pflicht",
-    text: "Ohne Helm geht es nicht los: Wer keinen Helm trägt, kann am Ride leider nicht teilnehmen.",
+    title: "Ohne Helm kein Ride",
+    text: "Der Helm ist bei jeder Ausfahrt Pflicht. Ohne Helm können wir dich leider nicht mitnehmen – da machen wir keine Ausnahme.",
   },
   {
-    title: "Frag uns alles",
-    text: "Der Ride ist ein offener Ort für alle Fragen rund ums Radfahren und den Radsport. Max und Tim fahren beide im Radverein Rennen – sie haben fast immer eine Antwort.",
+    title: "Keine Frage ist zu klein",
+    text: "Schaltung, Reifendruck, Verpflegung oder dein erstes Rennen: Frag einfach drauflos. Max und Tim fahren beide im Radverein Rennen und haben auf fast alles eine Antwort.",
   },
 ];
 
@@ -84,7 +84,7 @@ const facts = [
         Du bist ganz neu in der Rad-Bubble, hast gerade ein neues Rad, bist aber noch nie wirklich in einer Gruppe gefahren? Genau dafür bauen dir die Rookie Rides die Brücke.
       </p>
       <p>
-        Wir zeigen dir, welche Handzeichen man braucht, was die Do’s and Don’ts sind und worauf man in der Gruppe achten sollte. Bei diesen Touren gibt es feste Ride Leader, die dir alles erklären – bisher haben Max und Tim die Rookie Rides geleitet. Und du bist nicht allein: Pro Rookie Ride fahren bis zu 20 Leute mit.
+        Wir zeigen dir, welche Handzeichen man braucht, was die Do’s and Don’ts sind und worauf man in der Gruppe achten sollte. Bei diesen Touren gibt es feste Ride Leader, die dir alles erklären – bisher waren das Max und Tim. Und du bist nicht allein: Pro Rookie Ride fahren bis zu 20 Leute mit.
       </p>
     </div>
   </section>
@@ -116,7 +116,7 @@ const facts = [
   </section>
 
   <section class="rk-steps" aria-labelledby="rk-steps-title">
-    <h2 id="rk-steps-title">Deine Checkliste</h2>
+    <h2 id="rk-steps-title">Bevor du losfährst</h2>
     <ol class="rk-steps-list">
       {steps.map((st, i) => (
         <li>
