@@ -82,7 +82,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
     (e.image ? `<img src="${esc(e.image)}" alt="" loading="lazy" />` : `<span class="slide-noimg"></span>`) +
     (video ? `<video class="slide-reel" muted loop playsinline preload="none" data-src="${esc(video)}" aria-hidden="true"></video><span class="reel-badge">▶ Reel</span>` : "");
   const reel = safeUrl(e.reelUrl);
-  const hasMedia = past && !!e.hasMedia;
+  const hasMedia = mode === "detail" && !!e.hasMedia; // Button nur auf der Events-Seite
   const cls = `slide${past ? " is-past" : ""}${video ? " has-reel" : ""}`;
   const meta = `${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}`;
 
