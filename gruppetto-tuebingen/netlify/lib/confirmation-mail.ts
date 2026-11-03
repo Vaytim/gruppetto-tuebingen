@@ -12,8 +12,11 @@ const berlinDate = (iso: string) =>
     timeZone: "Europe/Berlin",
   }).format(new Date(iso));
 
-export function confirmationMail(event: GruppettoEvent, p: Participant) {
+export function confirmationMail(event: GruppettoEvent & { mediaUrl?: string; mediaPassword?: string }, p: Participant) {
   const firstName = p.name.split(" ")[0] || p.name;
+  // Fotos & Videos: Passwort für den Ordner dieses Events (falls in der Verwaltung hinterlegt)
+  const mediaPw = event.mediaUrl && event.mediaPassword ? event.mediaPassword : "";
+  const eventsUrl = "https://gruppetto-tuebingen.de/events";
   const subject = `Startnummer ${p.startNumber} · ${event.title}`;
 
   const text = `Hallo ${firstName},
@@ -31,7 +34,12 @@ Zahlungseingang
   Referenz:       ${p.reservationId}
 
 Bitte bring deine Startnummer zum Event mit (einfach diese Mail zeigen).
-
+${mediaPw ? `
+Fotos & Videos
+  Alle Bilder und Videos vom Event findest du auf ${eventsUrl}
+  beim Event unter „Fotos & Videos“.
+  Passwort:       ${mediaPw}
+` : ""}
 Bis bald auf der Straße!
 Gruppetto Tübingen
 `;
@@ -58,6 +66,15 @@ Gruppetto Tübingen
     ${row("Bezahlt am", `${berlinDate(p.paidAt)} Uhr`)}
     ${row("Referenz", `<span style="font-family:monospace;font-weight:400">${escapeHtml(p.reservationId)}</span>`)}
   </table>
+  ${
+    mediaPw
+      ? `<div style="background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:24px">
+    <h2 style="font-size:16px;margin:0 0 6px">Fotos &amp; Videos</h2>
+    <p style="margin:0 0 10px;line-height:1.5">Alle Bilder und Videos vom Event findest du auf <a href="${eventsUrl}" style="color:#0f4abf">gruppetto-tuebingen.de/events</a> beim Event unter „Fotos &amp; Videos“.</p>
+    <p style="margin:0">Passwort: <span style="font-family:monospace;font-size:16px;font-weight:700">${escapeHtml(mediaPw)}</span></p>
+  </div>`
+      : ""
+  }
   <p style="margin:0 0 24px;line-height:1.5">Zeig diese Mail einfach beim Treffpunkt vor. Bei Fragen antworte direkt auf diese Nachricht.</p>
   <p style="margin:0;color:#04328c;font-size:13px">Keep it simple. Ride together.</p>
 </div></body></html>`;

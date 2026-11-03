@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
+import { codeEventsPublic, slideHTML, splitEvents, tbdFill, tbdSlidesHTML } from "../lib/public-events";
 import "../styles/event-slider.css";
 
 // Vorab gerendert (Fallback ohne JavaScript/Backend). Im Browser wird die Liste
@@ -13,22 +13,13 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
   <section class="slider events-slider" aria-labelledby="events-title">
     <div class="slider-head">
       <h1 id="events-title">Events</h1>
-      <div class="slider-nav">
-        <button type="button" data-dir="-1" aria-label="Zurück">←</button>
-        <button type="button" data-dir="1" aria-label="Weiter">→</button>
-      </div>
     </div>
     <p class="events-intro">Wir haben euer Feedback der letzten Saison ausgewertet. Der klare Wunsch: mehr gemeinsame Events! Wer wären wir, wenn wir dem nicht nachkommen? Hier findet ihr unseren aktuellen Eventkalender und alle von uns organisierten Rides.</p>
     <p class="notice" id="cancel-notice" hidden>
       Bezahlung abgebrochen – du bist nicht angemeldet. Dein reservierter Platz wird in Kürze wieder freigegeben.
     </p>
-    <!-- Wipe: beim Runterscrollen wandern alle kommenden Events nach links durch -->
-    <div class="wipe-runway" id="wipe">
-      <div class="wipe-viewport">
-        <div class="wipe-strip" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("") + tbdSlidesHTML()} />
-        <div class="wipe-progress" aria-hidden="true"></div>
-      </div>
-    </div>
+    <!-- Kommende Events als Raster (der seitliche Scroll-Effekt läuft jetzt auf der Startseite) -->
+    <div class="upcoming-grid" id="events-upcoming" set:html={upcoming.map((e) => slideHTML(e, { mode: "detail" })).join("") + tbdSlidesHTML(tbdFill(upcoming.length))} />
     <p class="no-events" id="events-none" hidden={upcoming.length > 0}>Aktuell sind keine Events geplant - schaut bald wieder vorbei!</p>
   </section>
 
@@ -39,7 +30,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
   </section>
 
   <dialog id="register-dialog" aria-labelledby="register-title" data-lenis-prevent>
-    <form id="register-form" novalidate>
+    <form id="register-form" class="dialog-form" novalidate>
       <button type="button" class="dialog-close" aria-label="Schließen" data-close>×</button>
       <p class="event-date" id="register-date"></p>
       <h2 id="register-title">Anmeldung</h2>
@@ -65,11 +56,30 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
       <p class="form-hint">Sichere Bezahlung über Stripe (Karte, Apple Pay, Google Pay). Dein Platz ist 30 Minuten für dich reserviert.</p>
     </form>
   </dialog>
+
+  <!-- Fotos & Videos: Passwort abfragen, dann Link zum Medien-Ordner -->
+  <dialog id="media-dialog" aria-labelledby="media-title" data-lenis-prevent>
+    <form id="media-form" class="dialog-form" novalidate>
+      <button type="button" class="dialog-close" aria-label="Schließen" data-close>×</button>
+      <p class="event-date" id="media-event"></p>
+      <h2 id="media-title">Fotos &amp; Videos</h2>
+      <div data-step="password">
+        <label>
+          Passwort
+          <input name="password" type="password" autocomplete="current-password" required maxlength="200" />
+        </label>
+        <p class="form-hint" style="text-align:left;margin-top:.6rem">Jedes Event hat sein eigenes Passwort. Es steht in deiner Anmeldebestätigung – oder frag uns bei der nächsten Ausfahrt.</p>
+      </div>
+      <p class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn-pay" data-step="password">Öffnen</button>
+      <a class="btn-pay media-open" data-step="open" href="#" target="_blank" rel="noopener" hidden>Ordner öffnen ↗</a>
+    </form>
+  </dialog>
 </Layout>
 
 <script>
-  import { fetchEvents, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
-  import { getLenis, initReelHover, initWipe } from "../lib/motion";
+  import { fetchEvents, slideHTML, splitEvents, tbdFill, tbdSlidesHTML } from "../lib/public-events";
+  import { getLenis, initReelHover } from "../lib/motion";
 
   const dialog = document.getElementById("register-dialog") as HTMLDialogElement;
   const form = document.getElementById("register-form") as HTMLFormElement;
@@ -182,7 +192,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     const all = await fetchEvents();
     if (all) {
       const { upcoming, past } = splitEvents(all, Infinity);
-      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("") + tbdSlidesHTML();
+      document.getElementById("events-upcoming")!.innerHTML = upcoming.map((ev) => slideHTML(ev, { mode: "detail" })).join("") + tbdSlidesHTML(tbdFill(upcoming.length));
       document.getElementById("events-none")!.hidden = upcoming.length > 0;
       document.getElementById("events-past")!.innerHTML = past.map((ev) => slideHTML(ev, { past: true, mode: "detail" })).join("");
       document.getElementById("past-section")!.hidden = past.length === 0;
@@ -196,10 +206,7 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     const id = decodeURIComponent(location.hash.slice(1));
     const el = id ? document.getElementById(id) : null;
     if (!el) return;
-    const go = () => {
-      if (el.closest(".wipe-strip")) wipe.scrollToCard(el, true);
-      else el.scrollIntoView({ block: "center" });
-    };
+    const go = () => el.scrollIntoView({ block: "center" });
     go();
     // Bilder/Schriften verändern das Layout noch → nach dem Laden nachjustieren
     if (document.readyState !== "complete") addEventListener("load", go, { once: true });
@@ -208,17 +215,76 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     setTimeout(() => el.classList.remove("is-target"), 2200);
   }
 
-  const wipe = initWipe(document.getElementById("wipe")!);
-  document.querySelectorAll<HTMLButtonElement>(".events-slider .slider-nav button").forEach((b) =>
-    b.addEventListener("click", () => wipe.step(Number(b.dataset.dir))),
-  );
+  // ---------- Fotos & Videos (passwortgeschützt) ----------
+  const mediaDialog = document.getElementById("media-dialog") as HTMLDialogElement;
+  const mediaForm = document.getElementById("media-form") as HTMLFormElement;
+  const mediaError = mediaForm.querySelector<HTMLElement>(".form-error")!;
+  const mediaOpen = mediaForm.querySelector<HTMLAnchorElement>(".media-open")!;
+  const pwKey = () => `gt-medien-pw:${mediaEventId}`; // pro Event gemerkt (nur in diesem Tab)
+  let mediaEventId = "";
+  const showStep = (step: "password" | "open") =>
+    mediaForm.querySelectorAll<HTMLElement>("[data-step]").forEach((el) => (el.hidden = el.dataset.step !== step));
+  const readPw = () => { try { return sessionStorage.getItem(pwKey()) ?? ""; } catch { return ""; } };
+  const savePw = (pw: string) => { try { sessionStorage.setItem(pwKey(), pw); } catch {} };
+
+  async function unlock(password: string): Promise<boolean> {
+    mediaError.hidden = true;
+    const res = await fetch("/api/medien", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ eventId: mediaEventId, password }),
+    }).catch(() => null);
+    const body = res ? await res.json().catch(() => ({})) : {};
+    if (res?.ok && body.url) {
+      savePw(password);
+      mediaOpen.href = body.url;
+      showStep("open");
+      mediaOpen.focus();
+      return true;
+    }
+    mediaError.textContent = body.error || "Das hat nicht geklappt. Bitte versuch es noch einmal.";
+    mediaError.hidden = false;
+    return false;
+  }
+
+  document.addEventListener("click", async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".btn-media");
+    if (!btn) return;
+    mediaEventId = btn.dataset.mediaEvent!;
+    document.getElementById("media-event")!.textContent = btn.dataset.mediaTitle ?? "";
+    mediaForm.reset();
+    mediaError.hidden = true;
+    showStep("password");
+    getLenis()?.stop();
+    mediaDialog.showModal();
+    // Schon einmal eingegeben (in diesem Tab)? Dann direkt freischalten.
+    const saved = readPw();
+    if (!saved || !(await unlock(saved))) {
+      mediaError.hidden = !saved ? true : mediaError.hidden;
+      mediaForm.querySelector<HTMLInputElement>("input[name=password]")!.focus();
+    }
+  });
+  mediaForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pw = String(new FormData(mediaForm).get("password") ?? "");
+    if (pw) await unlock(pw);
+  });
+  mediaOpen.addEventListener("click", () => setTimeout(() => mediaDialog.close(), 100));
+  mediaDialog.addEventListener("close", () => getLenis()?.start());
+  mediaDialog.querySelector("[data-close]")!.addEventListener("click", () => mediaDialog.close());
+  mediaDialog.addEventListener("click", (e) => { if (e.target === mediaDialog) mediaDialog.close(); });
+
   initReelHover();
   init();
 </script>
 
 <style is:global>
   .events-slider { padding-top: calc(var(--gutter) * 2 + 8rem); padding-bottom: 3rem; }
-  .events-slider:not(:has(.is-wiping)) .slider-nav { visibility: hidden; }
+  /* Kommende Events: Raster, so viele Spalten wie Platz ist */
+  /* Kommende Events: 4 nebeneinander (Tablet 2, Handy 1); tbd-Kacheln füllen die letzte Reihe auf */
+  .upcoming-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; padding: 1rem var(--gutter) 2rem; }
+  @media (max-width: 1100px) { .upcoming-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 760px) { .upcoming-grid { grid-template-columns: 1fr; gap: 2.5rem; } .upcoming-grid .is-tbd ~ .is-tbd { display: none; } } /* Handy: nur eine tbd-Kachel */
   .events-intro { max-width: 42rem; margin: 0 0 2.5rem; padding: 0 var(--gutter); color: var(--color-text-muted); font-size: 1.1rem; }
   .no-events { padding: 0 var(--gutter); color: var(--color-text-muted); }
   .events-slider .notice { margin: 0 var(--gutter) 1.5rem; }
@@ -266,23 +332,26 @@ const { upcoming, past } = splitEvents(codeEventsPublic(), Infinity); // alle ve
     background: var(--color-bg-alt); color: var(--color-text); box-shadow: 0 30px 80px rgba(2, 24, 89, 0.7);
   }
   dialog::backdrop { background: rgba(13, 30, 64, 0.75); backdrop-filter: blur(3px); }
-  #register-form { position: relative; display: grid; gap: 1rem; padding: 2rem 1.5rem 1.5rem; }
-  #register-form h2 { margin: 0 0 0.25rem; font-family: var(--font-title); }
-  #register-form .event-date { margin: 0; }
+  .dialog-form { position: relative; display: grid; gap: 1rem; padding: 2rem 1.5rem 1.5rem; }
+  .dialog-form h2 { margin: 0 0 0.25rem; font-family: var(--font-title); }
+  .dialog-form .event-date { margin: 0; }
   .dialog-close {
     position: absolute; top: 0.75rem; right: 0.75rem; width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%;
     background: transparent; color: var(--color-text-muted); font-size: 1.6rem; line-height: 1; cursor: pointer;
   }
   .dialog-close:hover { background: var(--color-bg-raised); color: var(--color-text); }
-  #register-form label { display: grid; gap: 0.4rem; font-size: 0.9rem; color: var(--color-text-muted); }
-  #register-form input:not([type="checkbox"]) {
+  .dialog-form label { display: grid; gap: 0.4rem; font-size: 0.9rem; color: var(--color-text-muted); }
+  .dialog-form input:not([type="checkbox"]) {
     padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px solid var(--color-line); background: var(--color-bg);
     color: var(--color-text); font: 1rem var(--font-body);
   }
-  #register-form input:focus { outline: 2px solid var(--color-highlight); outline-offset: 1px; }
-  #register-form label.checkbox { grid-template-columns: auto 1fr; align-items: start; gap: 0.6rem; }
-  #register-form label.checkbox input { margin-top: 0.2rem; accent-color: var(--color-accent); width: 1.1rem; height: 1.1rem; }
-  #register-form a { color: var(--color-highlight); }
+  .dialog-form input:focus { outline: 2px solid var(--color-highlight); outline-offset: 1px; }
+  .dialog-form label.checkbox { grid-template-columns: auto 1fr; align-items: start; gap: 0.6rem; }
+  .dialog-form label.checkbox input { margin-top: 0.2rem; accent-color: var(--color-accent); width: 1.1rem; height: 1.1rem; }
+  .dialog-form a:not(.btn-pay) { color: var(--color-highlight); }
   .form-error { margin: 0; padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(180, 35, 24, 0.1); color: #b42318; font-size: 0.9rem; }
+  .media-open { display: block; text-align: center; text-decoration: none; }
+  .media-open[hidden] { display: none; }
+  button.btn-media { width: 100%; background: transparent; font-family: inherit; cursor: pointer; }
   .form-hint { margin: 0; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; }
 </style>

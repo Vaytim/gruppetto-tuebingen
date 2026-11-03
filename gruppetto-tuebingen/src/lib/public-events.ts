@@ -1,5 +1,5 @@
 // Gemeinsame Logik für Events-Seite und Startseite (läuft im Build UND im Browser).
-import { events as codeEvents, registrationClosesAt } from "../data/events";
+import { events as codeEvents, registrationClosesAt } from "../data/events.ts";
 
 export interface PublicEvent {
   id: string;
@@ -14,6 +14,8 @@ export interface PublicEvent {
   strava?: string;
   /** Link zum Instagram-Reel */
   reelUrl?: string;
+  /** Gibt es einen (passwortgeschützten) Medien-Ordner? Der Link selbst kommt nur über /api/medien. */
+  hasMedia?: boolean;
   /** Reel-Video (spielt stumm ab, sobald die Karte im Fokus ist) */
   reelVideo?: string;
   registration?: { price: number; closesAt: string };
@@ -80,6 +82,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
     (e.image ? `<img src="${esc(e.image)}" alt="" loading="lazy" />` : `<span class="slide-noimg"></span>`) +
     (video ? `<video class="slide-reel" muted loop playsinline preload="none" data-src="${esc(video)}" aria-hidden="true"></video><span class="reel-badge">▶ Reel</span>` : "");
   const reel = safeUrl(e.reelUrl);
+  const hasMedia = mode === "detail" && !!e.hasMedia; // Button nur auf der Events-Seite
   const cls = `slide${past ? " is-past" : ""}${video ? " has-reel" : ""}`;
   const meta = `${esc(e.dateLabel)}${e.time ? ` · ${esc(e.time)}` : ""}`;
 
@@ -102,7 +105,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
   ${e.level ? `<p class="slide-loc">${esc(e.level)}</p>` : ""}
   ${e.description ? `<p class="slide-desc">${esc(e.description)}</p>` : ""}
   ${
-    r || strava || reel
+    r || strava || reel || hasMedia
       ? `<div class="slide-actions">
     ${
       r
@@ -114,6 +117,7 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
     }
     ${strava ? `<a class="btn-strava" href="${esc(strava)}" target="_blank" rel="noopener">${past ? "Aktivität auf Strava" : "Auf Strava ansehen"} ↗</a>` : ""}
     ${reel ? `<a class="btn-strava btn-reel" href="${esc(reel)}" target="_blank" rel="noopener">Reel auf Instagram ↗</a>` : ""}
+    ${hasMedia ? `<button type="button" class="btn-strava btn-media" data-media-event="${esc(e.id)}" data-media-title="${esc(e.title)}">Fotos &amp; Videos ↗</button>` : ""}
   </div>`
       : ""
   }
@@ -125,6 +129,8 @@ export function slideHTML(e: PublicEvent, opts: { past?: boolean; mode?: "home" 
  * auch mit wenigen Events gefüllt wirkt. Anzahl hier ändern.
  */
 export const TBD_SLIDES = 3;
+/** Events-Seite (Raster mit 4 Spalten): so viele tbd-Kacheln, dass die letzte Reihe voll ist */
+export const tbdFill = (count: number) => (4 - (count % 4)) % 4;
 export function tbdSlidesHTML(count = TBD_SLIDES): string {
   return Array.from(
     { length: count },

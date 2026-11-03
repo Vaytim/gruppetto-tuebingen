@@ -23,6 +23,10 @@ export interface StoredEvent {
   strava?: string;
   /** Link zum Instagram-Reel */
   reelUrl?: string;
+  /** Link zu Fotos & Videos (z. B. Google-Drive-Ordner) */
+  mediaUrl?: string;
+  /** Passwort für diesen Ordner (steht auch in der Anmeldebestätigung) */
+  mediaPassword?: string;
   /** Hochgeladenes Reel-Video (spielt beim Hovern stumm ab) */
   reelVideoId?: string;
   /** Anmeldung mit Bezahlung (Preis, Plätze, Anmeldeschluss …) */
@@ -39,6 +43,8 @@ export interface EventOverride {
   imageId?: string;
   strava?: string;
   reelUrl?: string;
+  mediaUrl?: string;
+  mediaPassword?: string;
   reelVideoId?: string;
   /** Neues Datum (YYYY-MM-DD) */
   dateISO?: string;
@@ -52,6 +58,9 @@ export interface EventOverride {
 /** Was die Website über ein Event bekommt */
 export interface PublicEventData extends GruppettoEvent {
   reelUrl?: string;
+  /** nur serverseitig – /api/events gibt beides NICHT heraus */
+  mediaUrl?: string;
+  mediaPassword?: string;
   reelVideo?: string;
 }
 
@@ -107,6 +116,8 @@ export function toPublicEvent(e: StoredEvent): PublicEventData {
     image: e.imageId ? imageUrl(e.imageId) : "",
     strava: e.strava || undefined,
     reelUrl: e.reelUrl || undefined,
+    mediaUrl: e.mediaUrl || undefined,
+    mediaPassword: e.mediaPassword || undefined,
     reelVideo: e.reelVideoId ? videoUrl(e.reelVideoId) : undefined,
     registration: e.registration,
     source: "admin",
@@ -124,6 +135,8 @@ export function applyOverride(e: GruppettoEvent, ov?: EventOverride): PublicEven
     image: ov.imageId ? imageUrl(ov.imageId) : e.image,
     strava: ov.strava !== undefined ? ov.strava || undefined : e.strava,
     reelUrl: ov.reelUrl || undefined,
+    mediaUrl: ov.mediaUrl || undefined,
+    mediaPassword: ov.mediaPassword || undefined,
     reelVideo: ov.reelVideoId ? videoUrl(ov.reelVideoId) : undefined,
     dateISO: ov.dateISO || e.dateISO,
     dateLabel: ov.dateISO ? germanDateLabel(ov.dateISO) : e.dateLabel,

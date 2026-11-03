@@ -24,3 +24,4 @@ export async function updateSettings(store: LedgerStore, patch: Partial<SiteSett
     return { ...doc };
   });
 }
+

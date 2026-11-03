@@ -95,7 +95,7 @@
 .slide.reel-playing .reel-badge { opacity: 0; }
 .slide.reel-focus .slide-media img { transform: none; }
 /* Fokus deutlich machen: Während ein Reel läuft, werden die übrigen Karten blasser */
-:is(.slider-track, .wipe-strip, .past-grid):has(.reel-focus) > .slide:not(.reel-focus) { opacity: 0.45; transition: opacity 0.35s ease; }
+:is(.slider-track, .wipe-strip, .past-grid, .upcoming-grid):has(.reel-focus) > .slide:not(.reel-focus) { opacity: 0.45; transition: opacity 0.35s ease; }
 @media (prefers-reduced-motion: reduce) { .slide.has-reel.reel-focus { scale: 1; } }
 .btn-reel { margin-top: 0.5rem; }
 
@@ -107,3 +107,4 @@
 }
 .slide.is-tbd .slide-meta { color: var(--color-text-muted); }
 .slide.is-tbd { opacity: 0.85; }
+.slider:not(:has(.is-wiping)) .slider-nav { visibility: hidden; }

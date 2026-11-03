@@ -134,6 +134,8 @@ interface AdminRow {
   imageId?: string;
   strava?: string;
   reelUrl?: string;
+  mediaUrl?: string;
+  mediaPassword?: string;
   reelVideoId?: string;
   /** Aktuelle Anmelde-Einstellungen (undefined = keine Anmeldung) */
   registration?: Registration;
@@ -171,6 +173,8 @@ function codeRow(e: GruppettoEvent, ov?: EventOverride): AdminRow {
     imageId: ov?.imageId,
     strava: ov?.strava !== undefined ? ov.strava || undefined : e.strava,
     reelUrl: ov?.reelUrl,
+    mediaUrl: ov?.mediaUrl,
+    mediaPassword: ov?.mediaPassword,
     reelVideoId: ov?.reelVideoId,
     registration: ov?.registration === null ? undefined : (ov?.registration ?? e.registration),
     booking: NO_BOOKING,
@@ -191,6 +195,8 @@ function adminRow(e: StoredEvent): AdminRow {
     imageId: e.imageId,
     strava: e.strava,
     reelUrl: e.reelUrl,
+    mediaUrl: e.mediaUrl,
+    mediaPassword: e.mediaPassword,
     reelVideoId: e.reelVideoId,
     registration: e.registration,
     booking: NO_BOOKING,
@@ -234,6 +240,7 @@ function card(r: AdminRow, status: "heute" | "kommend" | "vergangen") {
       : "",
     r.strava ? '<span class="tag">Strava</span>' : "",
     r.reelUrl ? '<span class="tag">Reel-Link</span>' : "",
+    r.mediaUrl ? `<span class="tag">Fotos &amp; Videos · Passwort: ${h(r.mediaPassword ?? "–")}</span>` : "",
     r.reelVideoId ? '<span class="tag">Reel-Video</span>' : "",
   ].join("");
   return `<article class="ev-card${r.reelVideoId ? " has-video" : ""}" data-status="${status}" data-search="${h(`${r.title} ${r.location} ${r.dateISO}`.toLowerCase())}">
@@ -288,6 +295,13 @@ function editorForm(e?: AdminRow) {
     <legend>Links</legend>
     <label>Strava-Link<input type="url" name="strava" maxlength="300" value="${h(e?.strava ?? "")}" placeholder="https://www.strava.com/…"></label>
     <label>Instagram-Reel-Link<input type="url" name="reelUrl" maxlength="300" value="${h(e?.reelUrl ?? "")}" placeholder="https://www.instagram.com/reel/…"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Fotos &amp; Videos</legend>
+    <label class="full">Ordner-Link <span class="muted">(z. B. Google-Drive-Ordner, Freigabe „Jeder mit dem Link“)</span><input type="url" name="mediaUrl" maxlength="500" value="${h(e?.mediaUrl ?? "")}" placeholder="https://drive.google.com/drive/folders/…"></label>
+    <label>Passwort für diesen Ordner <span class="muted">(mind. 4 Zeichen)</span><input type="text" name="mediaPassword" maxlength="100" autocomplete="off" value="${h(e?.mediaPassword ?? "")}" placeholder="z. B. christmas26"></label>
+    <p class="full muted" style="margin:0">Auf der Events-Seite erscheint dann beim Event der Button „Fotos &amp; Videos“. Wer das Passwort eingibt, wird zum Ordner weitergeleitet. Wer sich zum Event anmeldet, bekommt das Passwort automatisch in der Bestätigungsmail.</p>
   </fieldset>
 
   <fieldset>
@@ -632,10 +646,14 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
   const description = str("description", 2000);
   const strava = str("strava", 300);
   const reelUrl = str("reelUrl", 300);
+  const mediaUrl = str("mediaUrl", 500);
+  const mediaPassword = str("mediaPassword", 100);
   const back = { editId: id || undefined };
 
   if (title.length < 2) return { error: "Bitte einen Titel angeben.", ...back };
   if (strava && !/^https:\/\/[^\s]+$/i.test(strava)) return { error: "Der Strava-Link muss mit https:// beginnen.", ...back };
+  if (mediaUrl && !/^https:\/\/[^\s<>"]+$/i.test(mediaUrl)) return { error: "Der Ordner-Link muss mit https:// beginnen.", ...back };
+  if (mediaUrl && mediaPassword.length < 4) return { error: "Bitte für den Fotos-&-Videos-Ordner ein Passwort mit mindestens 4 Zeichen festlegen.", ...back };
   if (reelUrl && !REEL_RE.test(reelUrl))
     return { error: "Bitte einen Instagram-Link wie https://www.instagram.com/reel/… angeben.", ...back };
 
@@ -662,6 +680,8 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
       imageId: img.imageId,
       strava: strava !== (base.strava ?? "") ? strava : undefined,
       reelUrl: reelUrl || undefined,
+      mediaUrl: mediaUrl || undefined,
+      mediaPassword: mediaUrl ? mediaPassword : undefined,
       reelVideoId: vid.reelVideoId,
       dateISO: dateISO !== base.dateISO ? dateISO : undefined,
       time: timeText !== base.time ? timeText : undefined,
@@ -709,6 +729,8 @@ export async function handleEventSave(store: LedgerStore, form: FormData): Promi
     imageId: img.imageId,
     strava: strava || undefined,
     reelUrl: reelUrl || undefined,
+    mediaUrl: mediaUrl || undefined,
+    mediaPassword: mediaUrl ? mediaPassword : undefined,
     reelVideoId: vid.reelVideoId,
     registration: regRes.reg,
     createdAt: existing?.createdAt ?? now,

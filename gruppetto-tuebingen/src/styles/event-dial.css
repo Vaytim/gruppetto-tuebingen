@@ -1,0 +1,125 @@
+/* Events-Rad auf der Startseite (Inhalt kommt aus src/lib/event-dial.ts) */
+.evd-section { padding: clamp(4rem, 8vw, 7rem) var(--gutter) clamp(3rem, 6vw, 5rem); }
+
+.evd {
+  --evd-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative; overflow: hidden; isolation: isolate;
+  height: clamp(32rem, 86vh, 52rem); border-radius: 10px;
+  background: var(--navy-900); color: var(--light-100);
+}
+.evd:focus-visible { outline: 2px solid var(--blue-500); outline-offset: 4px; }
+
+/* Hintergrund: Bild des aktiven Events, weich überblendet */
+.evd-bgs, .evd-bg, .evd-shade { position: absolute; inset: 0; }
+.evd-bg {
+  width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06);
+  transition: opacity 0.7s ease, transform 1.4s var(--evd-ease);
+}
+.evd-bg.is-active { opacity: 1; transform: scale(1); }
+/* Reel im Hintergrund (falls im Admin hinterlegt) – blendet über das Bild, sobald es läuft */
+.evd-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.8s ease; }
+.evd-video.is-playing { opacity: 1; }
+.evd-shade {
+  background:
+    linear-gradient(90deg, rgba(13, 30, 64, 0.72) 0%, rgba(13, 30, 64, 0.35) 45%, rgba(13, 30, 64, 0.55) 100%),
+    linear-gradient(180deg, rgba(13, 30, 64, 0.45) 0%, rgba(13, 30, 64, 0) 35%, rgba(13, 30, 64, 0.7) 100%);
+}
+
+/* Titel oben links */
+.evd-head { position: absolute; top: clamp(1.4rem, 3vw, 2.6rem); left: clamp(1.4rem, 3vw, 2.8rem); z-index: 2; max-width: 45%; }
+.evd-title { margin: 0; font-size: clamp(3.2rem, 8vw, 7.5rem); line-height: 0.9; letter-spacing: -0.03em; }
+.evd-title a { color: inherit; text-decoration: none; text-underline-offset: 0.1em; text-decoration-thickness: 0.05em; }
+.evd-title a:hover { text-decoration-line: underline; }
+.evd-sub { margin: 1rem 0 0; font-size: 1rem; }
+.evd-sub a { color: rgba(242, 242, 242, 0.8); text-decoration: none; text-underline-offset: 4px; }
+.evd-sub a:hover { color: #fff; text-decoration: underline; }
+
+/* Kleine Vorschaukarte links neben dem aktiven Titel */
+.evd-card {
+  position: absolute; z-index: 2; top: 50%; right: calc(48% + 1.6rem); translate: 0 -50%;
+  width: clamp(10rem, 17vw, 16rem); aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 18px 50px rgba(2, 12, 40, 0.45); pointer-events: none;
+}
+.evd-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.evd-card.is-swap { animation: evd-card 0.55s var(--evd-ease); }
+@keyframes evd-card { from { opacity: 0.4; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+
+/* Titel auf dem Kreisbogen (Position setzt das Script) */
+.evd-list {
+  position: absolute; z-index: 2; inset: 0 0 0 52%; margin: 0; padding: 0; list-style: none;
+  cursor: grab; touch-action: pan-y; user-select: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
+}
+.evd-list:active { cursor: grabbing; }
+.evd-list li { position: absolute; left: 0; top: 50%; white-space: nowrap; will-change: transform, opacity; }
+.evd-list button {
+  all: unset; cursor: pointer; display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-title); font-weight: 500; letter-spacing: -0.02em; line-height: 1.1;
+  font-size: clamp(1.7rem, 3.3vw, 3.2rem); color: var(--light-100);
+}
+.evd-list li[aria-current] button { text-shadow: 0 2px 24px rgba(2, 12, 40, 0.4); }
+.evd-list li:not([aria-current]) button:hover { text-decoration: underline; text-underline-offset: 0.12em; text-decoration-thickness: 0.05em; }
+
+/* Infos zum aktiven Event unten links */
+.evd-info {
+  position: absolute; z-index: 2; left: clamp(1.4rem, 3vw, 2.8rem); bottom: clamp(1.4rem, 3vw, 2.6rem);
+  max-width: min(28rem, 44%); display: grid; justify-items: start;
+}
+/* Jede Zeile steckt in einer Maske: beim Wechsel gleitet sie nach oben raus und die neue von unten rein */
+.evd-l { display: block; overflow: hidden; padding-bottom: 0.08em; }
+.evd-l > * { display: block; }
+.evd-info.is-out .evd-l > * { transform: translateY(-105%); opacity: 0; transition: transform 0.26s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.26s ease; }
+.evd-info.is-in .evd-l > * { animation: evd-line-in 0.7s var(--evd-ease) both; }
+.evd-info.is-in .evd-l:nth-child(2) > * { animation-delay: 0.05s; }
+.evd-info.is-in .evd-l:nth-child(3) > * { animation-delay: 0.1s; }
+.evd-info.is-in .evd-l:nth-child(4) > * { animation-delay: 0.15s; }
+.evd-info.is-in .evd-l:nth-child(5) > * { animation-delay: 0.2s; }
+.evd-info.is-in .evd-l:nth-child(6) > * { animation-delay: 0.25s; }
+@keyframes evd-line-in { from { transform: translateY(105%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.evd-kicker > * { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(242, 242, 242, 0.75); }
+.evd-date > * { font-family: var(--font-title); font-weight: 500; font-size: clamp(3.6rem, 7.5vw, 6.8rem); line-height: 0.95; letter-spacing: -0.04em; margin: 0.15rem 0 0.2rem; }
+.evd-name > * { font-family: var(--font-title); font-size: clamp(1.3rem, 1.8vw, 1.6rem); line-height: 1.15; }
+.evd-meta > * { margin-top: 0.3rem; color: rgba(242, 242, 242, 0.85); line-height: 1.5; }
+.evd-seats > * { margin-top: 0.8rem; font-size: 0.95rem; color: rgba(242, 242, 242, 0.85); }
+.evd-seats > :empty { margin: 0; }
+.evd-seats strong { font-family: var(--font-title); font-weight: 500; font-size: 1.7rem; color: #fff; margin-right: 0.25rem; vertical-align: -0.12em; }
+.evd-seats-free { display: inline-block; padding: 0.3rem 0.7rem; border: 1px solid rgba(242, 242, 242, 0.5); border-radius: 99px; font-size: 0.85rem; }
+.evd-bar { display: block; width: min(16rem, 100%); height: 4px; margin-top: 0.5rem; border-radius: 99px; background: rgba(242, 242, 242, 0.25); overflow: hidden; }
+.evd-bar i { display: block; height: 100%; background: var(--light-100); }
+.evd-cta-wrap { margin-top: 1.2rem; }
+.evd-cta { background: var(--light-100); color: var(--navy-800); }
+.evd-cta:hover { background: var(--blue-500); color: #fff; }
+
+/* Pfeile unten rechts */
+.evd-nav { position: absolute; z-index: 3; right: clamp(1rem, 2vw, 1.8rem); bottom: clamp(1rem, 2vw, 1.8rem); display: grid; gap: 0.5rem; }
+.evd-nav button {
+  width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 1px solid rgba(242, 242, 242, 0.55);
+  background: rgba(13, 30, 64, 0.35); color: var(--light-100); font-size: 1rem; cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.evd-nav button:hover { background: var(--blue-500); border-color: var(--blue-500); }
+
+@media (prefers-reduced-motion: reduce) {
+  .evd-bg { transition: opacity 0.2s linear; transform: none; }
+  .evd-info.is-in .evd-l > *, .evd-info.is-out .evd-l > * { animation: none; transition: none; transform: none; opacity: 1; }
+  .evd-card.is-swap { animation: none; }
+}
+
+/* Handy: Titel kleiner, keine Vorschaukarte, Rad etwas höher */
+@media (max-width: 760px) {
+  .evd { height: min(84svh, 44rem); }
+  .evd-head { max-width: 70%; }
+  .evd-title { font-size: clamp(2.8rem, 14vw, 4rem); }
+  .evd-sub { font-size: 0.9rem; }
+  .evd-card { display: none; }
+  .evd-list { inset: 22% 0 46% 14%; }
+  .evd-list button { font-size: clamp(1.4rem, 6.4vw, 1.9rem); }
+  .evd-info { max-width: calc(100% - 5.5rem); }
+  .evd-date > * { font-size: clamp(3rem, 15vw, 4rem); }
+  .evd-name > * { font-size: 1.2rem; }
+  .evd-meta > * { font-size: 0.85rem; }
+  .evd-seats > * { margin-top: 0.5rem; }
+  .evd-cta-wrap { margin-top: 0.9rem; }
+}

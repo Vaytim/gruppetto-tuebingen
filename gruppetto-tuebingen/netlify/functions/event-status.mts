@@ -33,19 +33,18 @@ export default async (req: Request) => {
   const now = Date.now();
   const result: Record<string, { capacity: number; taken: number; remaining: number; open: boolean }> = {};
   await Promise.all(
-    (await registeredEvents(store))
-      .filter((e) => registrationClosesAt(e).getTime() > now - 86_400_000)
-      .map(async (e) => {
-        const reg = e.registration;
-        const ledger = await readLedger(store, e.id, reg.firstStartNumber);
-        const taken = seatsTaken(ledger, now);
-        result[e.id] = {
-          capacity: reg.capacity,
-          taken,
-          remaining: Math.max(0, reg.capacity - taken),
-          open: !reg.paused && now < registrationClosesAt(e).getTime() && taken < reg.capacity,
-        };
-      }),
+    // alle Events mit Anmeldung – auch vergangene (Teilnehmerzahl im Events-Rad der Startseite)
+    (await registeredEvents(store)).map(async (e) => {
+      const reg = e.registration;
+      const ledger = await readLedger(store, e.id, reg.firstStartNumber);
+      const taken = seatsTaken(ledger, now);
+      result[e.id] = {
+        capacity: reg.capacity,
+        taken,
+        remaining: Math.max(0, reg.capacity - taken),
+        open: !reg.paused && now < registrationClosesAt(e).getTime() && taken < reg.capacity,
+      };
+    }),
   );
   return json(result);
 };

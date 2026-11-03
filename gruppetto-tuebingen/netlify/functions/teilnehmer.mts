@@ -196,7 +196,7 @@ tfoot td{font-weight:700;border-top:1px solid var(--line)}
 .note{background:var(--alt);border-left:3px solid var(--blue);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
 .warn{border-left-color:var(--warn)}
 ${ADMIN_EVENTS_CSS}
-.setting{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;background:var(--alt);border-radius:14px;padding:1rem}
+.setting{margin-bottom:.6rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;background:var(--alt);border-radius:14px;padding:1rem}
 </style><main>${body}</main></html>`,
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
   );

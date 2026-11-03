@@ -8,8 +8,9 @@
 //  6. Farbiges Band mit 4 Karten + Button
 // Alle Texte/Bilder unten in den Konstanten anpassen.
 import Layout from "../layouts/Layout.astro";
-import { codeEventsPublic, nextRookieRide, shortDate, slideHTML, splitEvents, tbdSlidesHTML } from "../lib/public-events";
-import "../styles/event-slider.css";
+import { codeEventsPublic, nextRookieRide, shortDate, splitEvents } from "../lib/public-events";
+import { dialHTML } from "../lib/event-dial";
+import "../styles/event-dial.css";
 
 const hero = {
   // Hintergrundvideo: stumm, Dauerschleife. Poster = Standbild, bis das Video lädt.
@@ -28,6 +29,14 @@ const tiles = [
   { title: "Über uns", href: "/ueber-uns", text: "Wer wir sind, wie wir fahren und wie du Anschluss findest.", image: "/images/ueber-uns.jpg" },
   { title: "Shop", href: "/shop", text: "Season 2026 Kit, Sticker und mehr aus der Gruppetto-Ausrüstung.", image: "/images/shop-collage.jpg" },
 ];
+
+// Claim-Bild: Foto quer über die ganze Breite, darüber eine Box mit unserem Claim
+const claim = {
+  image: "/images/claim-gruppe.jpg",
+  headline: "Wir stehen für Ausfahrten, bei denen keiner zurückbleibt.",
+  text: "Egal ob erste Ausfahrt oder hundertste – wir fahren zusammen los und kommen zusammen an. Offen für alle, kostenlos, mitten in Tübingen.",
+  cta: { label: "Mehr über uns", href: "/ueber-uns" },
+};
 
 const banner = {
   image: "/images/rookies-banner.jpg",
@@ -50,13 +59,11 @@ const shopBand = {
 
 // Events: vorab aus src/data/events.ts gerendert, im Browser durch /api/events
 // ersetzt (dann auch mit den Events aus der Verwaltung).
-const { upcoming, past } = splitEvents(codeEventsPublic(), 4); // die letzten 4 vergangenen
+const { upcoming } = splitEvents(codeEventsPublic(), 0);
 const rookie = nextRookieRide(codeEventsPublic());
 const next = upcoming[0];
-// Vergangene Events links vom nächsten Event (älteste ganz links), kommende rechts
-const slidesFor = (u: typeof upcoming, p: typeof past) =>
-  [...p.slice().reverse().map((e) => slideHTML(e, { past: true })), ...u.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
-const slides = slidesFor(upcoming, past);
+// Events-Rad: oben vergangene, unten kommende Events – Start beim nächsten Event
+const dial = dialHTML(codeEventsPublic());
 ---
 
 <Layout title="Startseite" description="Gruppetto Tübingen – die offene Rennrad- und Gravel-Community rund um Tübingen. Weekly Rides mittwochs und donnerstags, Rookie Rides für Einsteiger:innen und eigene Events." image="/images/og-startseite.jpg" fullBleed>
@@ -67,7 +74,7 @@ const slides = slidesFor(upcoming, past);
       <source src={hero.videoWebm} type="video/webm" />
     </video>
     <h1 class="hero-headline">{hero.headline.map((line) => <span>{line}</span>)}</h1>
-    <a class="hero-date" href="/events" hidden={!next}>
+    <a class="hero-date" href="/events" data-next-event hidden={!next}>
       <span class="hero-date-label">Nächstes Event: <span data-next-title>{next?.title}</span></span>
       <span class="hero-date-value" data-next-date>{next ? shortDate(next.dateISO) : ""}</span>
     </a>
@@ -104,16 +111,19 @@ const slides = slidesFor(upcoming, past);
     </a>
   </section>
 
-  <!-- 5. Slider Events -->
-  <section class="slider" aria-labelledby="slider-title">
-    <div class="slider-head">
-      <h2 id="slider-title"><a class="title-link" href="/events">Events</a></h2>
-      <div class="slider-nav">
-        <button type="button" data-dir="-1" aria-label="Zurück">←</button>
-        <button type="button" data-dir="1" aria-label="Weiter">→</button>
-      </div>
+  <!-- 5. Events-Rad (Vorbild SWSH): Bild füllt die Box, rechts drehen sich die Titel -->
+  <section class="evd-section" aria-labelledby="evd-title">
+    <div class="evd" id="home-dial" tabindex="0" set:html={dial} />
+  </section>
+
+  <!-- 5b. Claim über einem Gruppenfoto (volle Breite) -->
+  <section class="claim" aria-labelledby="claim-title">
+    <img class="claim-img" src={claim.image} alt="Das Gruppetto am Treffpunkt vor der Ausfahrt" loading="lazy" />
+    <div class="claim-box">
+      <h2 id="claim-title">{claim.headline}</h2>
+      <p>{claim.text}</p>
+      <a class="btn claim-cta" href={claim.cta.href}>{claim.cta.label}</a>
     </div>
-    <div class="slider-track" tabindex="0" set:html={slides} />
   </section>
 
   <!-- 6. Farbiges Band -->
@@ -133,8 +143,22 @@ const slides = slidesFor(upcoming, past);
 </Layout>
 
 <script>
-  import { ensureAutoplay, initReelHover } from "../lib/motion";
-  import { fetchEvents, keepAlignedOnResize, codeEventsPublic, fetchRookieFull, nextRookieRide, scrollToFirstUpcoming, shortDate, showRookieStatus, slideHTML, splitEvents, tbdSlidesHTML, wireSlider } from "../lib/public-events";
+  import { ensureAutoplay, initSmoothScroll, setScrollHold } from "../lib/motion";
+  import { fetchEvents, codeEventsPublic, fetchRookieFull, nextRookieRide, shortDate, showRookieStatus, splitEvents } from "../lib/public-events";
+  import { dialHTML, initDial, type SeatStatus } from "../lib/event-dial";
+
+  const dialBox = document.getElementById("home-dial")!;
+  const dialScroll = { lenis: initSmoothScroll(), hold: setScrollHold }; // gibt das bestehende Lenis zurück
+  let dialCtl = initDial(dialBox, dialScroll);
+  // Teilnehmerzahlen der Events mit Anmeldung
+  let seatStatus: SeatStatus = {};
+  fetch("/api/event-status", { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((s: SeatStatus) => {
+      seatStatus = s;
+      dialCtl.setSeats(s);
+    })
+    .catch(() => {});
 
   // Nächster Rookie Ride im Banner (inkl. Events aus der Verwaltung) + Status
   Promise.all([fetchEvents(), fetchRookieFull()]).then(([all, full]) => {
@@ -152,11 +176,13 @@ const slides = slidesFor(upcoming, past);
   // Events inkl. der in der Verwaltung angelegten nachladen
   fetchEvents().then((all) => {
     if (!all) return;
-    const { upcoming, past } = splitEvents(all, 4);
-    const track = document.querySelector<HTMLElement>(".slider-track");
-    if (track) {
-      track.innerHTML = [...past.slice().reverse().map((e) => slideHTML(e, { past: true })), ...upcoming.map((e) => slideHTML(e))].join("") + tbdSlidesHTML();
-      scrollToFirstUpcoming(track);
+    const { upcoming } = splitEvents(all, 0);
+    // Hat die Edge Function das Rad schon mit aktuellen Daten ausgeliefert, nicht neu aufbauen
+    if (!dialBox.hasAttribute("data-live")) {
+      dialCtl.stop();
+      dialBox.innerHTML = dialHTML(all);
+      dialCtl = initDial(dialBox, dialScroll);
+      dialCtl.setSeats(seatStatus);
     }
     const next = upcoming[0];
     const hero = document.querySelector<HTMLAnchorElement>(".hero-date");
@@ -173,13 +199,6 @@ const slides = slidesFor(upcoming, past);
   const heroVideo = document.querySelector<HTMLVideoElement>(".hero video");
   if (heroVideo) ensureAutoplay(heroVideo);
 
-  document.querySelectorAll<HTMLElement>(".slider").forEach((slider) => {
-    wireSlider(slider);
-    const track = slider.querySelector<HTMLElement>(".slider-track")!;
-    scrollToFirstUpcoming(track); // vorab gerenderte Liste
-    keepAlignedOnResize(track);
-    initReelHover(track);
-  });
 </script>
 
 <style>
@@ -240,6 +259,24 @@ const slides = slidesFor(upcoming, past);
   .banner-date { bottom: var(--gutter); }
   .banner-date .rookie-status { margin-top: 0.9rem; }
   @media (max-width: 760px) { .banner-date { bottom: calc(var(--gutter) + 4.2rem); } }
+
+  /* 5b. Claim: Bild über die volle Breite, Box unten links (Vorbild navtec.com) */
+  .claim { position: relative; display: flex; align-items: flex-end; justify-content: flex-start; min-height: clamp(26rem, 68vh, 46rem); padding: var(--gutter); overflow: hidden; }
+  .claim-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 55% 8%; }
+  .claim-box {
+    position: relative; z-index: 1; max-width: 32rem; margin: 0 0 0 clamp(0rem, 4vw, 4rem);
+    padding: clamp(1.6rem, 3vw, 2.4rem); border-radius: 10px;
+    background: rgba(2, 24, 89, 0.9); color: var(--light-100); box-shadow: 0 20px 60px rgba(2, 24, 89, 0.35);
+  }
+  .claim-box h2 { margin: 0 0 1rem; font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1.1; text-wrap: balance; }
+  .claim-box p { margin: 0 0 1.6rem; font-size: 1.05rem; line-height: 1.55; color: rgba(242, 242, 242, 0.88); }
+  .claim-cta { background: var(--light-100); color: var(--navy-800); }
+  .claim-cta:hover { background: var(--color-accent); color: var(--color-on-accent); }
+  @media (max-width: 760px) {
+    .claim { min-height: 34rem; }
+    .claim-box { margin: 0; }
+    .claim-img { object-position: 45% 25%; }
+  }
 
   /* 6. Farbiges Band */
   .band { background: var(--color-accent); color: var(--color-on-accent); padding: 1.5rem var(--gutter) 3rem; }
