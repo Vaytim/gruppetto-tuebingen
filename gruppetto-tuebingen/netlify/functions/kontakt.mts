@@ -5,7 +5,8 @@
 // Absender: KONTAKT_FROM (z. B. "Gruppetto Tübingen Kontaktformular <kontakt@gruppetto-tuebingen.de>"),
 // ersatzweise MAIL_FROM. So bleibt shop@ den Anmeldungen und Shop-Käufen vorbehalten.
 import type { Config } from "@netlify/functions";
-import { escapeHtml as h, json, sendMail } from "../lib/services";
+import { hit } from "../lib/ratelimit";
+import { escapeHtml as h, json, ledgerStore, sendMail } from "../lib/services";
 
 /** Empfänger, falls KONTAKT_EMPFAENGER nicht gesetzt ist */
 const KONTAKT_EMPFAENGER = "";
@@ -13,15 +14,9 @@ const KONTAKT_EMPFAENGER = "";
 const MAX = { name: 100, email: 200, message: 5000 };
 const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
-// Einfache Bremse gegen Spam: höchstens 5 Nachrichten pro IP und Stunde (pro Function-Instanz)
-const recent = new Map<string, number[]>();
-function tooMany(ip: string): boolean {
-  const now = Date.now();
-  const list = (recent.get(ip) ?? []).filter((t) => now - t < 3600_000);
-  list.push(now);
-  recent.set(ip, list);
-  return list.length > 5;
-}
+// Bremse gegen Spam: höchstens 5 Nachrichten pro IP und Stunde. Der Zähler liegt im
+// geteilten Blob-Speicher (wie bei Anmeldung und Medien) – gilt also für alle Function-Instanzen.
+const LIMIT = { max: 6, windowMs: 3600_000, lockMs: 3600_000 };
 
 async function readBody(req: Request): Promise<Record<string, string>> {
   const type = req.headers.get("content-type") ?? "";
@@ -55,8 +50,8 @@ export default async (req: Request) => {
     return json({ error: "Die Nachricht ist zu lang." }, 400);
   if (!EMAIL_RE.test(email)) return json({ error: "Bitte gib eine gültige E-Mail-Adresse an." }, 400);
 
-  const ip = req.headers.get("x-nf-client-connection-ip") ?? req.headers.get("x-forwarded-for") ?? "?";
-  if (tooMany(ip)) return json({ error: "Zu viele Nachrichten – bitte versuch es später noch einmal." }, 429);
+  if (await hit(ledgerStore(), "kontakt", req, LIMIT))
+    return json({ error: "Zu viele Nachrichten – bitte versuch es später noch einmal." }, 429);
 
   const to = process.env.KONTAKT_EMPFAENGER || KONTAKT_EMPFAENGER || (process.env.GRUPPETTO_TESTMODUS === "1" ? "kontakt@test.local" : "");
   if (!to) {
