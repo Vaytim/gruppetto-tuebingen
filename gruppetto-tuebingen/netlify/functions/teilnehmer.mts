@@ -19,7 +19,7 @@ import { type PublicEventData, allEvents, registeredEvents } from "../lib/event-
 // Aktueller Stand aller Events (Code + Verwaltung) – wird pro Anfrage neu geladen
 let eventIndex = new Map<string, PublicEventData>();
 const findEvent = (id: string) => eventIndex.get(id);
-import { type SiteSettings, readSettings, setMediaPassword, updateSettings } from "../lib/settings";
+import { type SiteSettings, readSettings, updateSettings } from "../lib/settings";
 import {
   ADMIN_EVENTS_CSS,
   eventsAdminBody,
@@ -196,7 +196,6 @@ tfoot td{font-weight:700;border-top:1px solid var(--line)}
 .note{background:var(--alt);border-left:3px solid var(--blue);border-radius:10px;padding:.7rem 1rem;margin:1rem 0}
 .warn{border-left-color:var(--warn)}
 ${ADMIN_EVENTS_CSS}
-.pw-form{display:flex;gap:.5rem;flex-wrap:wrap}.pw-form input{padding:.55rem .8rem;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;border-radius:99px;min-width:14rem}
 .setting{margin-bottom:.6rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;background:var(--alt);border-radius:14px;padding:1rem}
 </style><main>${body}</main></html>`,
     { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } },
@@ -259,12 +258,6 @@ ${missing ? `<div class="note warn">Bei ${missing} Zahlung(en) fehlen noch die S
   <p class="muted" style="margin:.3rem 0 0">Zeigt auf der Rides-Seite „Season Closed“ über den Weekly Rides. Wirkt sofort, ohne neuen Deploy.</p></div>
   <form method="post" action="?action=offseason"><input type="hidden" name="value" value="${settings.offseason ? "off" : "on"}">
   <button class="btn ${settings.offseason ? "sec" : ""}">${settings.offseason ? "Off-Season beenden" : "Off-Season aktivieren"}</button></form>
-</div>
-<div class="setting">
-  <div><b>Passwort für Fotos &amp; Videos</b> <span class="tag ${settings.mediaPassword ? "" : "wait"}">${settings.mediaPassword ? "gesetzt" : "nicht gesetzt"}</span>
-  <p class="muted" style="margin:.3rem 0 0">Schützt die Medien-Ordner der vergangenen Events (Button „Fotos &amp; Videos“ auf der Events-Seite). Den Ordner-Link trägst du beim jeweiligen Event ein. Das Passwort wird nur verschlüsselt gespeichert und kann hier nicht angezeigt, nur neu gesetzt werden – also gut notieren.${settings.mediaPassword ? ` Zuletzt geändert: ${h(new Date(settings.mediaPassword.setAt).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" }))}.` : ""}</p></div>
-  <form method="post" action="?action=media-password" class="pw-form"><input type="text" name="password" minlength="6" maxlength="100" required placeholder="Neues Passwort" autocomplete="off">
-  <button class="btn">${settings.mediaPassword ? "Ändern" : "Festlegen"}</button></form>
 </div>
 
 <h2>Events</h2>
@@ -425,12 +418,6 @@ export default async (req: Request) => {
     const value = (await req.formData()).get("value");
     const s = await updateSettings(store, { offseason: value === "on" });
     return overviewPage(await loadAll(), await listPayouts(store), s, s.offseason ? "Off-Season ist jetzt aktiv." : "Off-Season ist beendet – die Rides sind wieder sichtbar.");
-  }
-  if (req.method === "POST" && action === "media-password") {
-    const pw = String((await req.formData()).get("password") ?? "").trim();
-    if (pw.length < 6) return overviewPage(await loadAll(), await listPayouts(store), await readSettings(store), "Das Medien-Passwort muss mindestens 6 Zeichen haben.");
-    const s = await setMediaPassword(store, pw);
-    return overviewPage(await loadAll(), await listPayouts(store), s, "Das Passwort für Fotos & Videos ist gespeichert und gilt ab sofort.");
   }
   const settings = await readSettings(store);
 

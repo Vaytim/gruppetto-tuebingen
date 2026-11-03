@@ -1,11 +1,16 @@
 // POST /api/medien  { eventId, password } → { url } des Medien-Ordners (Fotos & Videos)
-// Das Passwort wird in der Verwaltung festgelegt (Reiter „Anmeldungen & Zahlungen“ → Website).
+// Jedes Event hat seinen eigenen Ordner und sein eigenes Passwort (Verwaltung → Events → Event bearbeiten).
 // Nach 10 falschen Versuchen ist der Anschluss 15 Minuten gesperrt.
 import type { Config } from "@netlify/functions";
 import { findLiveEvent } from "../lib/event-store";
 import { hit, lockedMinutes, reset } from "../lib/ratelimit";
 import { json, ledgerStore } from "../lib/services";
-import { checkMediaPassword } from "../lib/settings";
+
+function sameText(a: string, b: string): boolean {
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
 
 const LIMIT = { max: 10, windowMs: 15 * 60_000, lockMs: 15 * 60_000 };
 
@@ -23,9 +28,9 @@ export default async (req: Request) => {
   if (locked) return json({ error: `Zu viele Versuche. Bitte in ${locked} Minute${locked === 1 ? "" : "n"} noch einmal probieren.` }, 429);
 
   const event = await findLiveEvent(store, eventId);
-  if (!event?.mediaUrl) return json({ error: "Für dieses Event gibt es (noch) keine Fotos und Videos." }, 404);
+  if (!event?.mediaUrl || !event.mediaPassword) return json({ error: "Für dieses Event gibt es (noch) keine Fotos und Videos." }, 404);
 
-  if (!(await checkMediaPassword(store, password))) {
+  if (!sameText(password.trim(), event.mediaPassword)) {
     await new Promise((r) => setTimeout(r, 500));
     if (await hit(store, "medien", req, LIMIT)) return json({ error: "Zu viele Versuche. Bitte in 15 Minuten noch einmal probieren." }, 429);
     return json({ error: "Das Passwort stimmt leider nicht." }, 401);
