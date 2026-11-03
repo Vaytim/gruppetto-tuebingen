@@ -74,7 +74,7 @@ const dial = dialHTML(codeEventsPublic());
       <source src={hero.videoWebm} type="video/webm" />
     </video>
     <h1 class="hero-headline">{hero.headline.map((line) => <span>{line}</span>)}</h1>
-    <a class="hero-date" href="/events" hidden={!next}>
+    <a class="hero-date" href="/events" data-next-event hidden={!next}>
       <span class="hero-date-label">Nächstes Event: <span data-next-title>{next?.title}</span></span>
       <span class="hero-date-value" data-next-date>{next ? shortDate(next.dateISO) : ""}</span>
     </a>
@@ -177,10 +177,13 @@ const dial = dialHTML(codeEventsPublic());
   fetchEvents().then((all) => {
     if (!all) return;
     const { upcoming } = splitEvents(all, 0);
-    dialCtl.stop();
-    dialBox.innerHTML = dialHTML(all);
-    dialCtl = initDial(dialBox, dialScroll);
-    dialCtl.setSeats(seatStatus);
+    // Hat die Edge Function das Rad schon mit aktuellen Daten ausgeliefert, nicht neu aufbauen
+    if (!dialBox.hasAttribute("data-live")) {
+      dialCtl.stop();
+      dialBox.innerHTML = dialHTML(all);
+      dialCtl = initDial(dialBox, dialScroll);
+      dialCtl.setSeats(seatStatus);
+    }
     const next = upcoming[0];
     const hero = document.querySelector<HTMLAnchorElement>(".hero-date");
     if (hero) {
