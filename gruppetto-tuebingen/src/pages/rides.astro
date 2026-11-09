@@ -127,15 +127,16 @@ const allRoutes = [...routes.map((r) => ({ ...r, kind: "road" })), ...gravelRout
 <section style="padding: 3rem 0;">
   <h2 class="rides-h">Unser Konzept</h2>
   <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
-    Seit der Saison 2026 bieten wir keinen aktiven Lead mehr an. Bedeutet für euch: Ihr seid selber verantwortlich, die Route parat zu haben. Keine Sorge: 
-    Falls ihr keinen Radcomputer oder ähnliches besitzt, hat sicher jemand anderes aus der Gruppe die Route parat!
+    Bei den Weekly Rides fahren wir seit der Saison 2026 ohne feste Ride Leader, die vorne die Strecke vorgeben. Jede und jeder fährt also ein Stück weit eigenverantwortlich mit – am besten lädst du dir die Route schon vorher aufs Gerät.
+    Kein Radcomputer? Kein Problem: Irgendjemand aus der Gruppe hat die Strecke bestimmt dabei, und gemeinsam findet ihr immer den Weg.
+    Alle Routen findest du <a href="#unsere-routen">weiter unten auf dieser Seite</a> – mit Link zu Komoot – und im <a href="https://www.strava.com/clubs/gruppetto-tuebingen" target="_blank" rel="noopener">Strava Club</a>.
   </p>
 </section>
 
 <section id="unsere-routen" style="padding: 3rem 0;">
     <h2 class="rides-h">Unsere Road-Routen</h2>
     <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
-      Unsere liebsten Rennrad-Strecken rund um Tübingen – für die Afterwork Rides am Mittwoch. Ladet die Strecke am besten vorab herunter, es gibt keinen offiziellen Lead mehr!
+      Unsere liebsten Rennrad-Strecken rund um Tübingen – für die Afterwork Rides am Mittwoch. Lade dir die Strecke am besten vorab herunter.
     </p>
 
     {allRoutes.filter((r) => r.kind === "road").map((route) => <RouteCard route={route} i={allRoutes.indexOf(route)} />)}
