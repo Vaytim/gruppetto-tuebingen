@@ -130,6 +130,7 @@ const facts = [
 
   <section class="rk-guide" aria-labelledby="rk-guide-title">
     <h2 id="rk-guide-title">Gut zu wissen für deinen ersten Ride</h2>
+    <p class="rk-guide-lead">Diese Regeln und Hinweise gelten für alle unsere Ausfahrten – nicht nur für die Rookie Rides.</p>
     <ol class="rk-list">
       {facts.map((f, i) => (
         <li>
@@ -233,7 +234,8 @@ const facts = [
   }
 
   .rk-guide { padding: 4rem var(--gutter) 2rem; }
-  .rk-guide > h2 { margin: 0 0 2rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
+  .rk-guide > h2 { margin: 0 0 0.8rem; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.1; }
+  .rk-guide-lead { margin: 0 0 2rem; max-width: 40rem; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1.55; }
   .rk-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
   .rk-list li { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.4rem 0; border-top: 1px solid var(--color-line); }
   .rk-num { font-family: var(--font-title); font-size: 1.3rem; color: var(--color-text-muted); line-height: 1.4; }
